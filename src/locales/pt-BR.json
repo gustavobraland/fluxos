@@ -1,0 +1,344 @@
+{
+  "common": {
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "confirm": "Confirmar",
+    "loading": "Carregando…",
+    "close": "Fechar",
+    "back": "← Voltar",
+    "edit": "Editar",
+    "view": "Ver",
+    "add": "Adicionar",
+    "remove": "Remover",
+    "deploy": "Deploy",
+    "publish": "Publicar",
+    "publishing": "Publicando…",
+    "published": "Publicado!",
+    "draft": "Rascunho",
+    "schedule": "Agendar",
+    "search": "Buscar",
+    "all": "Todos",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "connected": "Conectado",
+    "disconnected": "Desconectado",
+    "offline": "Offline",
+    "pro": "Pro",
+    "admin": "Admin",
+    "or": "ou",
+    "total": "total",
+    "items": "{{count}} itens",
+    "noData": "Nenhum dado disponível"
+  },
+
+  "nav": {
+    "sections": {
+      "Principal": "Principal",
+      "Produção": "Produção",
+      "Inteligência": "Inteligência",
+      "Operações": "Operações"
+    },
+    "dashboard": "Dashboard",
+    "timeline": "Timeline",
+    "warroom": "War Room",
+    "pipeline": "Pipeline",
+    "calendar": "Calendar",
+    "multipost": "Multipost",
+    "assets": "Assets",
+    "approvals": "Aprovações",
+    "analytics": "Analytics",
+    "integrations": "Integrações",
+    "reports": "Daily Reports",
+    "settings": "Configurações",
+    "help": "Ajuda & Suporte"
+  },
+
+  "topbar": {
+    "searchPlaceholder": "Buscar tasks, assets, posts…",
+    "cmdPalette": "Command palette (⌘K)",
+    "toggleTheme": "Alternar tema",
+    "notifications": "Notificações",
+    "workspacePlan": "Pro"
+  },
+
+  "languageSelector": {
+    "label": "Idioma",
+    "ptBR": "Português",
+    "zhCN": "中文",
+    "directorMode": "Modo Diretoria",
+    "directorModeDesc": "Força o sistema em Chinês",
+    "directorModeOn": "Diretoria: CN",
+    "directorModeOff": "Diretoria: OFF"
+  },
+
+  "login": {
+    "subtitle": "Plataforma operacional AI-native",
+    "tabDomain": "Login por Domínio",
+    "tabEmail": "E-mail & Senha",
+    "domainLabel": "Domínio da sua empresa",
+    "domainPlaceholder": "ex: braland.com",
+    "domainHint": "Você será redirecionado para o SSO da sua empresa",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "seu@email.com",
+    "passwordLabel": "Senha",
+    "forgotPassword": "Esqueci a senha",
+    "continueBtn": "Continuar",
+    "signInBtn": "Entrar",
+    "signInGoogle": "Entrar com Google",
+    "continueSso": "Continuar com SSO",
+    "domainFound": "Domínio encontrado",
+    "domainRedirecting": "Redirecionando para o provedor de identidade da sua empresa…",
+    "signingIn": "Entrando no Flux OS…",
+    "noAccount": "Não tem conta?",
+    "contactTeam": "Fale com o time",
+    "errors": {
+      "enterDomain": "Digite o domínio da sua empresa",
+      "emailRequired": "E-mail obrigatório",
+      "passwordRequired": "Senha obrigatória"
+    }
+  },
+
+  "dashboard": {
+    "newTask": "Nova Task",
+    "multipost": "Multipost",
+    "warRoom": "War Room",
+    "analytics": "Analytics",
+    "metrics": {
+      "inProduction": "Em Produção",
+      "inReview": "Em Revisão",
+      "ready": "Prontos",
+      "published": "Publicados"
+    },
+    "recentActivity": "Atividade Recente",
+    "noActivity": "Nenhuma atividade registrada",
+    "pipeline": "Pipeline",
+    "quickActions": "Ações Rápidas",
+    "multipostNow": "Multipost agora",
+    "deadlines": "Deadlines",
+    "noDeadlines": "Nenhum prazo agendado",
+    "platforms": "Plataformas",
+    "status": {
+      "backlog": "Backlog",
+      "production": "Produção",
+      "review": "Revisão",
+      "ready": "Pronto",
+      "published": "Publicado"
+    }
+  },
+
+  "pipeline": {
+    "addTask": "Nova Task",
+    "editTask": "Editar Task",
+    "deleteTask": "Excluir Task",
+    "dropHere": "Solte aqui",
+    "titleLabel": "Título",
+    "titlePlaceholder": "Título da task",
+    "descriptionLabel": "Descrição",
+    "descriptionPlaceholder": "Descreva a task (opcional)",
+    "typeLabel": "Tipo",
+    "statusLabel": "Status",
+    "priorityLabel": "Prioridade",
+    "dueDateLabel": "Prazo",
+    "tagsLabel": "Tags",
+    "tagsPlaceholder": "tag1, tag2",
+    "platformsLabel": "Plataformas",
+    "selectPlatforms": "Selecione as plataformas",
+    "saveTask": "Salvar Task",
+    "createTask": "Criar Task",
+    "priorities": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta"
+    },
+    "columns": {
+      "backlog": "Backlog",
+      "production": "Produção",
+      "review": "Revisão",
+      "ready": "Pronto",
+      "published": "Publicado"
+    },
+    "toast": {
+      "created": "Task criada!",
+      "saved": "Task salva!",
+      "deleted": "Task removida"
+    }
+  },
+
+  "warroom": {
+    "noMatch": "Nenhuma partida no War Room — vá à Timeline e promova uma partida",
+    "halftime": "INTERVALO",
+    "remove": "Remover",
+    "contentQueue": "Fila de Conteúdo",
+    "waitingEvents": "Aguardando eventos da partida…",
+    "prepacksBrazil": "Pré-packs Seleção",
+    "scenariosReady": "Cenários Pré-prontos",
+    "victory": "Vitória",
+    "defeat": "Derrota",
+    "draw": "Empate",
+    "assets": "assets",
+    "aiSignals": "AI SIGNALS",
+    "realtimeActivity": "Atividade em tempo real",
+    "waitingLiveEvents": "Aguardando eventos de partidas ao vivo",
+    "queueToday": "Na fila hoje",
+    "ready": "Prontos",
+    "priority": "Prioridade",
+    "statusBadge": {
+      "generating": "⟳ Gerando",
+      "ready": "✓ Pronto",
+      "reviewing": "⏳ Em revisão",
+      "published": "✦ Publicado"
+    }
+  },
+
+  "multipost": {
+    "title": "Multipost",
+    "publishShortcut": "Publicar",
+    "scheduleShortcut": "Agendar",
+    "presets": {
+      "breaking": "Breaking",
+      "breakingDesc": "Máximo alcance",
+      "meme": "Meme Push",
+      "memeDesc": "Virais rápidos",
+      "heavyX": "Heavy X",
+      "heavyXDesc": "280 chars",
+      "igFirst": "IG First",
+      "igFirstDesc": "Instagram first"
+    },
+    "platformsLabel": "Plataformas",
+    "captionLabel": "Caption",
+    "captionPlaceholder": "Escreva sua caption aqui, ou use a IA para gerar…",
+    "aiBtn": "✦ IA",
+    "aiGenerating": "Gerando IA...",
+    "hashBtn": "Hash",
+    "rewriteBtn": "↺ Rewrite",
+    "queueLabel": "FILA",
+    "queueEmpty": "Nenhum item na fila",
+    "saveDraft": "Salvar Rascunho",
+    "toApproval": "→ Aprovação",
+    "publishBtn": "⚡ Publicar",
+    "selectPlatformHint": "Selecione uma plataforma para publicar",
+    "resumeLabel": "Resumo",
+    "aiSuggestions": "Sugestões IA",
+    "connectAiHint": "Conecte um modelo de IA em Integrações para gerar sugestões automáticas.",
+    "goToIntegrations": "Ir para Integrações →",
+    "useBtn": "↑ Usar",
+    "toast": {
+      "captionRequired": "Escreva uma caption primeiro",
+      "platformRequired": "Selecione ao menos uma plataforma",
+      "connectPlatform": "Conecte ao menos uma plataforma em Integrações",
+      "presetApplied": "Preset \"{{name}}\" aplicado",
+      "suggestionApplied": "Sugestão aplicada",
+      "publishedCount": "Publicado em {{count}} plataforma{{plural}}!",
+      "aiConnectRequired": "Conecte um modelo de IA em Integrações para usar esta função",
+      "aiReady": "Pronto para gerar caption com IA ✦",
+      "draftSaved": "Rascunho salvo no Pipeline",
+      "sentToApproval": "Enviado para aprovação"
+    }
+  },
+
+  "reports": {
+    "title": "Daily Reports",
+    "newReport": "Novo Relatório",
+    "contentLabel": "Conteúdo",
+    "contentPlaceholder": "Resumo do dia {{date}}…\n\n• O que foi feito\n• Bloqueios / impedimentos\n• Próximos passos",
+    "saveBtn": "Salvar Relatório",
+    "saving": "Salvando…",
+    "history": "Histórico",
+    "noReports": "Nenhum relatório ainda",
+    "noReportsDesc": "Escreva seu primeiro relatório diário",
+    "characters": "chars",
+    "words": "palavras",
+    "thisMonth": "Relatórios este mês",
+    "totalHistory": "Total histórico",
+    "noSelected": "Nenhum relatório selecionado",
+    "noSelectedDesc": "Salve um relatório ou selecione um do histórico",
+    "reportTitle": "Relatório · {{date}}",
+    "byAt": "Por {{author}} às {{time}}",
+    "deleteBtn": "Excluir",
+    "toast": {
+      "saved": "Relatório salvo!",
+      "deleted": "Relatório removido",
+      "contentRequired": "Escreva o conteúdo do relatório"
+    }
+  },
+
+  "analytics": {
+    "title": "Analytics",
+    "allPlatforms": "Todos",
+    "dateRanges": {
+      "7d": "7 dias",
+      "30d": "30 dias",
+      "90d": "90 dias"
+    },
+    "connectToView": "Conectar para ver Analytics",
+    "notConnected": "Plataforma não conectada"
+  },
+
+  "integrations": {
+    "title": "Integrações",
+    "connect": "Conectar",
+    "connected": "Conectado",
+    "disconnect": "Desconectar",
+    "connecting": "Conectando…",
+    "allCategories": "Todas"
+  },
+
+  "calendar": {
+    "title": "Calendar",
+    "connectGcal": "Conectar Google Calendar",
+    "syncGcal": "Sincronizar",
+    "connectedBanner": "Google Calendar conectado",
+    "notConnectedBanner": "Conecte o Google Calendar para sincronizar seus eventos",
+    "viewIntegrations": "Ver integrações"
+  },
+
+  "approvals": {
+    "title": "Aprovações",
+    "type": "Tipo",
+    "channel": "Canal",
+    "format": "Formato",
+    "status": "Status",
+    "pending": "Pendente",
+    "inReview": "Em revisão",
+    "approved": "Aprovado"
+  },
+
+  "assets": {
+    "title": "Assets",
+    "upload": "Upload",
+    "filter": "Filtrar"
+  },
+
+  "settings": {
+    "title": "Configurações",
+    "tabs": {
+      "profile": "Perfil",
+      "security": "Segurança",
+      "preferences": "Preferências",
+      "workspace": "Workspace"
+    },
+    "directorMode": "Modo Diretoria",
+    "directorModeDesc": "Quando ativado, força o sistema em Chinês (Simplificado) — ideal para relatórios à diretoria internacional.",
+    "language": "Idioma",
+    "theme": "Tema",
+    "dark": "Escuro",
+    "light": "Claro"
+  },
+
+  "help": {
+    "title": "Ajuda & Suporte",
+    "comingSoon": "Em breve",
+    "sections": {
+      "docs": "Documentação",
+      "chat": "Chat",
+      "knowledge": "Base de Conhecimento"
+    }
+  },
+
+  "presence": {
+    "activeMembers": "{{count}} membros ativos",
+    "editingPipeline": "editando Pipeline"
+  }
+}

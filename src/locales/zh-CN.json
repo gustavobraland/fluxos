@@ -1,0 +1,344 @@
+{
+  "common": {
+    "save": "保存",
+    "saving": "保存中…",
+    "cancel": "取消",
+    "delete": "删除",
+    "confirm": "确认",
+    "loading": "加载中…",
+    "close": "关闭",
+    "back": "← 返回",
+    "edit": "编辑",
+    "view": "查看",
+    "add": "添加",
+    "remove": "移除",
+    "deploy": "部署",
+    "publish": "发布",
+    "publishing": "发布中…",
+    "published": "已发布!",
+    "draft": "草稿",
+    "schedule": "排期",
+    "search": "搜索",
+    "all": "全部",
+    "connect": "连接",
+    "disconnect": "断开连接",
+    "connected": "已连接",
+    "disconnected": "未连接",
+    "offline": "离线",
+    "pro": "专业版",
+    "admin": "管理员",
+    "or": "或",
+    "total": "总计",
+    "items": "{{count}} 个项目",
+    "noData": "暂无数据"
+  },
+
+  "nav": {
+    "sections": {
+      "Principal": "主要",
+      "Produção": "生产",
+      "Inteligência": "智能",
+      "Operações": "运营"
+    },
+    "dashboard": "仪表板",
+    "timeline": "时间轴",
+    "warroom": "战时指挥室",
+    "pipeline": "流程看板",
+    "calendar": "日历",
+    "multipost": "多平台发布",
+    "assets": "素材库",
+    "approvals": "审批",
+    "analytics": "数据分析",
+    "integrations": "集成",
+    "reports": "日报",
+    "settings": "设置",
+    "help": "帮助与支持"
+  },
+
+  "topbar": {
+    "searchPlaceholder": "搜索任务、素材、帖子…",
+    "cmdPalette": "命令面板 (⌘K)",
+    "toggleTheme": "切换主题",
+    "notifications": "通知",
+    "workspacePlan": "专业版"
+  },
+
+  "languageSelector": {
+    "label": "语言",
+    "ptBR": "葡萄牙语",
+    "zhCN": "中文",
+    "directorMode": "主管模式",
+    "directorModeDesc": "强制切换为中文",
+    "directorModeOn": "主管: 中文",
+    "directorModeOff": "主管: 关"
+  },
+
+  "login": {
+    "subtitle": "AI原生运营平台",
+    "tabDomain": "域名登录",
+    "tabEmail": "邮箱 & 密码",
+    "domainLabel": "公司域名",
+    "domainPlaceholder": "例如: braland.com",
+    "domainHint": "您将被重定向至公司的SSO提供商",
+    "emailLabel": "邮箱",
+    "emailPlaceholder": "您的邮箱",
+    "passwordLabel": "密码",
+    "forgotPassword": "忘记密码",
+    "continueBtn": "继续",
+    "signInBtn": "登录",
+    "signInGoogle": "使用Google登录",
+    "continueSso": "继续使用SSO",
+    "domainFound": "找到域名",
+    "domainRedirecting": "正在重定向至公司身份提供商…",
+    "signingIn": "正在登录 Flux OS…",
+    "noAccount": "没有账号？",
+    "contactTeam": "联系团队",
+    "errors": {
+      "enterDomain": "请输入公司域名",
+      "emailRequired": "邮箱为必填项",
+      "passwordRequired": "密码为必填项"
+    }
+  },
+
+  "dashboard": {
+    "newTask": "新建任务",
+    "multipost": "多平台发布",
+    "warRoom": "战时指挥室",
+    "analytics": "数据分析",
+    "metrics": {
+      "inProduction": "生产中",
+      "inReview": "审核中",
+      "ready": "就绪",
+      "published": "已发布"
+    },
+    "recentActivity": "最近活动",
+    "noActivity": "暂无活动记录",
+    "pipeline": "流程看板",
+    "quickActions": "快速操作",
+    "multipostNow": "立即多发",
+    "deadlines": "截止日期",
+    "noDeadlines": "暂无截止安排",
+    "platforms": "平台",
+    "status": {
+      "backlog": "待办",
+      "production": "生产",
+      "review": "审核",
+      "ready": "就绪",
+      "published": "已发布"
+    }
+  },
+
+  "pipeline": {
+    "addTask": "新建任务",
+    "editTask": "编辑任务",
+    "deleteTask": "删除任务",
+    "dropHere": "拖放至此",
+    "titleLabel": "标题",
+    "titlePlaceholder": "任务标题",
+    "descriptionLabel": "描述",
+    "descriptionPlaceholder": "任务描述（可选）",
+    "typeLabel": "类型",
+    "statusLabel": "状态",
+    "priorityLabel": "优先级",
+    "dueDateLabel": "截止日期",
+    "tagsLabel": "标签",
+    "tagsPlaceholder": "标签1, 标签2",
+    "platformsLabel": "平台",
+    "selectPlatforms": "选择平台",
+    "saveTask": "保存任务",
+    "createTask": "创建任务",
+    "priorities": {
+      "low": "低",
+      "medium": "中",
+      "high": "高"
+    },
+    "columns": {
+      "backlog": "待办",
+      "production": "生产",
+      "review": "审核",
+      "ready": "就绪",
+      "published": "已发布"
+    },
+    "toast": {
+      "created": "任务已创建!",
+      "saved": "任务已保存!",
+      "deleted": "任务已删除"
+    }
+  },
+
+  "warroom": {
+    "noMatch": "战时指挥室暂无比赛 — 请前往时间轴并推送一场比赛",
+    "halftime": "中场休息",
+    "remove": "移除",
+    "contentQueue": "内容队列",
+    "waitingEvents": "等待比赛事件…",
+    "prepacksBrazil": "国家队预制包",
+    "scenariosReady": "预制方案",
+    "victory": "胜利",
+    "defeat": "失败",
+    "draw": "平局",
+    "assets": "个素材",
+    "aiSignals": "AI 信号",
+    "realtimeActivity": "实时动态",
+    "waitingLiveEvents": "等待直播赛事事件",
+    "queueToday": "今日队列",
+    "ready": "就绪",
+    "priority": "优先级",
+    "statusBadge": {
+      "generating": "⟳ 生成中",
+      "ready": "✓ 就绪",
+      "reviewing": "⏳ 审核中",
+      "published": "✦ 已发布"
+    }
+  },
+
+  "multipost": {
+    "title": "多平台发布",
+    "publishShortcut": "发布",
+    "scheduleShortcut": "排期",
+    "presets": {
+      "breaking": "紧急",
+      "breakingDesc": "最大覆盖",
+      "meme": "梗图推送",
+      "memeDesc": "快速病毒传播",
+      "heavyX": "重点X",
+      "heavyXDesc": "280字符",
+      "igFirst": "IG优先",
+      "igFirstDesc": "Instagram优先"
+    },
+    "platformsLabel": "平台",
+    "captionLabel": "正文",
+    "captionPlaceholder": "在此输入正文，或使用AI生成…",
+    "aiBtn": "✦ AI",
+    "aiGenerating": "AI生成中...",
+    "hashBtn": "话题标签",
+    "rewriteBtn": "↺ 重写",
+    "queueLabel": "队列",
+    "queueEmpty": "队列为空",
+    "saveDraft": "保存草稿",
+    "toApproval": "→ 审批",
+    "publishBtn": "⚡ 发布",
+    "selectPlatformHint": "请选择至少一个平台",
+    "resumeLabel": "摘要",
+    "aiSuggestions": "AI建议",
+    "connectAiHint": "请在集成中连接AI模型以生成自动建议。",
+    "goToIntegrations": "前往集成 →",
+    "useBtn": "↑ 使用",
+    "toast": {
+      "captionRequired": "请先输入正文",
+      "platformRequired": "请至少选择一个平台",
+      "connectPlatform": "请在集成中连接至少一个平台",
+      "presetApplied": "预设\"{{name}}\"已应用",
+      "suggestionApplied": "已应用建议",
+      "publishedCount": "已在{{count}}个平台发布!",
+      "aiConnectRequired": "请在集成中连接AI模型以使用此功能",
+      "aiReady": "已准备好使用AI生成正文 ✦",
+      "draftSaved": "草稿已保存至流水线",
+      "sentToApproval": "已提交审批"
+    }
+  },
+
+  "reports": {
+    "title": "日报",
+    "newReport": "新建日报",
+    "contentLabel": "内容",
+    "contentPlaceholder": "{{date}} 日报…\n\n• 已完成事项\n• 阻碍 / 障碍\n• 下一步计划",
+    "saveBtn": "保存日报",
+    "saving": "保存中…",
+    "history": "历史记录",
+    "noReports": "暂无日报",
+    "noReportsDesc": "写下您的第一篇日报",
+    "characters": "字符",
+    "words": "字数",
+    "thisMonth": "本月日报数",
+    "totalHistory": "历史总计",
+    "noSelected": "未选择日报",
+    "noSelectedDesc": "保存一篇日报或从历史中选择",
+    "reportTitle": "日报 · {{date}}",
+    "byAt": "{{author}} · {{time}}",
+    "deleteBtn": "删除",
+    "toast": {
+      "saved": "日报已保存!",
+      "deleted": "日报已删除",
+      "contentRequired": "请填写日报内容"
+    }
+  },
+
+  "analytics": {
+    "title": "数据分析",
+    "allPlatforms": "全部",
+    "dateRanges": {
+      "7d": "7天",
+      "30d": "30天",
+      "90d": "90天"
+    },
+    "connectToView": "连接以查看数据分析",
+    "notConnected": "平台未连接"
+  },
+
+  "integrations": {
+    "title": "集成",
+    "connect": "连接",
+    "connected": "已连接",
+    "disconnect": "断开",
+    "connecting": "连接中…",
+    "allCategories": "全部"
+  },
+
+  "calendar": {
+    "title": "日历",
+    "connectGcal": "连接 Google 日历",
+    "syncGcal": "同步",
+    "connectedBanner": "Google 日历已连接",
+    "notConnectedBanner": "连接 Google 日历以同步您的活动",
+    "viewIntegrations": "查看集成"
+  },
+
+  "approvals": {
+    "title": "审批",
+    "type": "类型",
+    "channel": "渠道",
+    "format": "格式",
+    "status": "状态",
+    "pending": "待审批",
+    "inReview": "审核中",
+    "approved": "已通过"
+  },
+
+  "assets": {
+    "title": "素材库",
+    "upload": "上传",
+    "filter": "筛选"
+  },
+
+  "settings": {
+    "title": "设置",
+    "tabs": {
+      "profile": "个人资料",
+      "security": "安全",
+      "preferences": "偏好设置",
+      "workspace": "工作区"
+    },
+    "directorMode": "主管模式",
+    "directorModeDesc": "启用后，系统将强制切换为简体中文 — 适用于向国际董事会汇报。",
+    "language": "语言",
+    "theme": "主题",
+    "dark": "深色",
+    "light": "浅色"
+  },
+
+  "help": {
+    "title": "帮助与支持",
+    "comingSoon": "即将推出",
+    "sections": {
+      "docs": "文档",
+      "chat": "在线客服",
+      "knowledge": "知识库"
+    }
+  },
+
+  "presence": {
+    "activeMembers": "{{count}} 位活跃成员",
+    "editingPipeline": "正在编辑流程看板"
+  }
+}
