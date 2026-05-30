@@ -88,9 +88,9 @@ export default function LoginPage() {
           <div className="mb-3">
             <FluxLogo size="lg" />
           </div>
-          <div className="flex items-baseline gap-1">
-            <span style={{ fontFamily: "'Arial Black', 'Helvetica Neue', Arial, sans-serif", fontWeight: 900, fontSize: 26, letterSpacing: '-0.5px', textTransform: 'uppercase', color: 'var(--txt)' }}>FLUX</span>
-            <span style={{ fontFamily: "'Arial Black', 'Helvetica Neue', Arial, sans-serif", fontWeight: 900, fontSize: 16, letterSpacing: '-0.3px', textTransform: 'uppercase', color: '#E0201A' }}>OS</span>
+          <div className="flex items-baseline gap-2">
+            <span style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif", fontWeight: 800, fontSize: 30, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--txt)' }}>FLUX</span>
+            <span style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif", fontWeight: 700, fontSize: 17, letterSpacing: '0.04em', color: '#E0201A' }}>os</span>
           </div>
           <p className="text-[13px] mt-2" style={{ color: 'var(--txt2)' }}>{t('login.subtitle')}</p>
         </div>

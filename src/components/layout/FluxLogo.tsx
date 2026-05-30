@@ -1,17 +1,19 @@
 'use client'
 
 // ─── Flux OS logo ─────────────────────────────────────────────────────────────
-// Icon: the letter "F" as 3 rounded blocks, top→bottom decreasing width.
-// The middle block is the brand red (#E0201A), always — independent of theme.
-// Top/bottom blocks use currentColor (black on light, white on dark via --txt).
+// Matches the official mark: "F" as 3 rounded blocks (top wide → middle red →
+// bottom short), and the wordmark "FLUX" (geometric bold, wide tracking) + "os"
+// (smaller, brand red). Top/bottom blocks use currentColor (var(--txt)) so they
+// flip black↔white with the theme; the middle block is always brand red.
 
 const RED = '#E0201A'
+const FONT = "'Inter', 'Helvetica Neue', Arial, sans-serif"
 
-const ICON_W: Record<'sm' | 'md' | 'lg', number> = { sm: 18, md: 28, lg: 46 }
+const ICON_W: Record<'sm' | 'md' | 'lg', number> = { sm: 19, md: 30, lg: 48 }
 const WORD: Record<'sm' | 'md' | 'lg', { flux: number; os: number }> = {
-  sm: { flux: 16, os: 11 },
-  md: { flux: 22, os: 14 },
-  lg: { flux: 34, os: 20 },
+  sm: { flux: 15, os: 9 },
+  md: { flux: 21, os: 12 },
+  lg: { flux: 32, os: 18 },
 }
 
 export interface FluxLogoProps {
@@ -22,16 +24,15 @@ export interface FluxLogoProps {
 
 export function FluxLogo({ size = 'md', showWordmark = false, className }: FluxLogoProps) {
   const w = ICON_W[size]
-  const h = Math.round((w * 52) / 56)
 
   const icon = (
-    <svg width={w} height={h} viewBox="0 0 56 52" fill="none" aria-label="Flux OS" style={{ color: 'var(--txt)', flexShrink: 0 }}>
+    <svg width={w} height={w} viewBox="0 0 56 56" fill="none" aria-label="Flux OS" style={{ color: 'var(--txt)', flexShrink: 0 }}>
       {/* top — wide */}
-      <rect x="0" y="0" width="56" height="14" rx="4" fill="currentColor" />
+      <rect x="0" y="0"    width="56" height="15" rx="5" fill="currentColor" />
       {/* middle — brand red */}
-      <rect x="0" y="20" width="44" height="14" rx="4" fill={RED} />
-      {/* bottom — small */}
-      <rect x="0" y="40" width="26" height="12" rx="4" fill="currentColor" />
+      <rect x="0" y="20.5" width="42" height="15" rx="5" fill={RED} />
+      {/* bottom — short */}
+      <rect x="0" y="41"   width="26" height="15" rx="5" fill="currentColor" />
     </svg>
   )
 
@@ -41,14 +42,14 @@ export function FluxLogo({ size = 'md', showWordmark = false, className }: FluxL
 
   const { flux, os } = WORD[size]
   return (
-    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+    <span className={className} style={{ display: 'inline-flex', alignItems: 'center', gap: w * 0.55 }}>
       {icon}
-      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 3 }}>
-        <span style={{ fontFamily: "'Arial Black', 'Helvetica Neue', Arial, sans-serif", fontWeight: 900, fontSize: flux, letterSpacing: '-0.5px', textTransform: 'uppercase', color: 'var(--txt)', lineHeight: 1 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: flux * 0.42 }}>
+        <span style={{ fontFamily: FONT, fontWeight: 800, fontSize: flux, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--txt)', lineHeight: 1 }}>
           FLUX
         </span>
-        <span style={{ fontFamily: "'Arial Black', 'Helvetica Neue', Arial, sans-serif", fontWeight: 900, fontSize: os, letterSpacing: '-0.3px', textTransform: 'uppercase', color: RED, lineHeight: 1 }}>
-          OS
+        <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: os, letterSpacing: '0.04em', color: RED, lineHeight: 1 }}>
+          os
         </span>
       </span>
     </span>
