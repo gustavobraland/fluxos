@@ -46,6 +46,7 @@
     "pipeline": "Pipeline",
     "calendar": "Calendar",
     "multipost": "Multipost",
+    "prompts": "Prompts",
     "assets": "Assets",
     "approvals": "Aprovações",
     "analytics": "Analytics",

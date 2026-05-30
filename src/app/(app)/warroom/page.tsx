@@ -1,516 +1,50 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, ExternalLink, Loader2 } from 'lucide-react'
-import { useFootballStore, selectWarRoomMatch } from '@/store/useFootballStore'
-import { useAppStore } from '@/store/useAppStore'
-import { useShallow } from 'zustand/shallow'
-import { useTimelineStore } from '@/store/useTimelineStore'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTranslation } from '@/hooks/useTranslation'
-import type { ContentQueueItem } from '@/lib/football'
-import type { GoalEvent, MatchEntry } from '@/lib/timeline'
+import { Radio } from 'lucide-react'
+import { useWarRoomStore } from '@/store/useWarRoomStore'
+import { isLiveStatus, isFinishedStatus } from '@/types/fixtures'
+import { MatchHeader } from '@/components/warroom/MatchHeader'
+import { WarRoomTabs } from '@/components/warroom/WarRoomTabs'
+import { LineupPanel } from '@/components/warroom/LineupPanel'
+import { ContentQueue } from '@/components/warroom/ContentQueue'
+import { PrePackPanel } from '@/components/warroom/PrePackPanel'
+import { QuotaDisplay } from '@/components/warroom/QuotaDisplay'
+import { startPolling, stopPolling } from '@/services/warroom-polling'
+import { fetchLineup } from '@/services/warroom-lineup'
+import { startMockMatch, stopMockMatch, isMockRunning } from '@/services/warroom-mock'
 
-// ─── Goal workflow stages ─────────────────────────────────────────────────────
+const KICKOFF_WINDOW_MS = 10 * 60_000  // begin polling 10 min before kickoff
+const IS_DEV = process.env.NODE_ENV === 'development'
 
-type GoalStage = 'waiting' | 'assigned' | 'in_progress' | 'published'
+// ─── Empty state (no fixture selected) ────────────────────────────────────────
 
-const STAGE_LABELS: Record<GoalStage, string> = {
-  waiting:     'Aguardando',
-  assigned:    'Designer atribuído',
-  in_progress: 'Criando arte',
-  published:   'Publicado',
-}
-
-const STAGE_COLORS: Record<GoalStage, string> = {
-  waiting:     'var(--txt3)',
-  assigned:    'var(--yellow)',
-  in_progress: 'var(--blue)',
-  published:   'var(--green)',
-}
-
-const NEXT_STAGE: Record<GoalStage, GoalStage | null> = {
-  waiting:     'assigned',
-  assigned:    'in_progress',
-  in_progress: 'published',
-  published:   null,
-}
-
-const NEXT_LABEL: Record<GoalStage, string> = {
-  waiting:     'Atribuir',
-  assigned:    'Iniciar arte',
-  in_progress: 'Publicar',
-  published:   '',
-}
-
-// ─── Utils ────────────────────────────────────────────────────────────────────
-
-function nowTs() {
-  const d = new Date()
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
-}
-
-function PulsingDot({ color = 'var(--red)' }: { color?: string }) {
-  return (
-    <span style={{
-      display: 'inline-block', width: 7, height: 7, borderRadius: '50%',
-      background: color, animation: 'pulseDot 1.4s ease-in-out infinite', flexShrink: 0,
-    }} />
-  )
-}
-
-// ─── Resolve active match ─────────────────────────────────────────────────────
-// Football store match (real API) takes priority, then timeline store selection.
-
-function useActiveMatch(): (MatchEntry & { aiRecommendation?: string }) | null {
-  const storeMatch = useFootballStore(selectWarRoomMatch)
-  const timelineMatch = useTimelineStore(s => s.activeMatch)
-  if (storeMatch) return storeMatch
-  return timelineMatch
-}
-
-// ─── Match Banner ─────────────────────────────────────────────────────────────
-
-function MatchBanner() {
-  const match = useActiveMatch()
-  const storeMatch = useFootballStore(selectWarRoomMatch)
-  const { dismissFromWarRoom } = useFootballStore()
-  const setActiveMatch = useTimelineStore(s => s.setActiveMatch)
+function EmptyState() {
   const router = useRouter()
-
-  // Live score: latest goal for this match overrides base score
-  const latestGoal = useTimelineStore(
-    useShallow(s => match ? (s.goals.find(g => g.matchId === match.id) ?? null) : null)
-  )
-  const score = latestGoal?.score ?? match?.score
-
-  if (!match) {
-    return (
-      <div style={{
-        background: 'var(--s1)', borderBottom: '1px solid var(--border-subtle)',
-        padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12,
-        flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 22, opacity: 0.3 }}>🏟</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, color: 'var(--txt2)' }}>Nenhuma partida no War Room</div>
-          <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 2 }}>
-            Vá para a aba Partidas e envie uma ao vivo
-          </div>
-        </div>
-        <button
-          onClick={() => router.push('/timeline')}
-          style={{
-            height: 30, padding: '0 14px', borderRadius: 6,
-            background: 'rgba(91,184,232,0.12)', border: '1px solid rgba(91,184,232,0.3)',
-            color: 'var(--blue)', cursor: 'pointer', fontSize: 11, fontWeight: 600,
-          }}
-        >
-          ← Selecionar partida
-        </button>
-      </div>
-    )
-  }
-
-  const isLive = match.status === 'live' || match.status === 'halftime'
-
-  const handleDismiss = () => {
-    if (storeMatch) dismissFromWarRoom(storeMatch.id)
-    setActiveMatch(null)
-  }
-
   return (
     <div style={{
-      background: 'var(--s1)', borderBottom: '1px solid var(--border-subtle)',
-      padding: '12px 16px', flexShrink: 0,
-      display: 'flex', alignItems: 'center', gap: 16,
+      height: '100%', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 14, background: 'var(--bg)',
     }}>
-      {/* Competition */}
-      <div style={{ textAlign: 'center', flexShrink: 0 }}>
-        <div style={{ fontSize: 16 }}>{match.competition.emoji}</div>
-        <div style={{
-          fontSize: 8, fontWeight: 700, color: 'var(--txt3)',
-          textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 1,
-        }}>
-          {match.competition.shortName}
+      <Radio size={32} style={{ color: 'var(--txt3)', opacity: 0.4 }} />
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt2)' }}>
+          Nenhuma partida no War Room
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 4 }}>
+          Selecione um jogo na aba Partidas para começar a monitorar
         </div>
       </div>
-
-      {/* Home */}
-      <div style={{ flex: 1, textAlign: 'right' }}>
-        <div style={{ fontSize: 18, lineHeight: 1 }}>{match.homeTeam.emoji}</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)', marginTop: 2 }}>{match.homeTeam.name}</div>
-      </div>
-
-      {/* Score / kickoff */}
-      <div style={{ textAlign: 'center', flexShrink: 0 }}>
-        {isLive && score ? (
-          <>
-            <div style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 26, fontWeight: 800, color: 'var(--txt)', letterSpacing: 3, lineHeight: 1,
-            }}>
-              {score.home} — {score.away}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, justifyContent: 'center', marginTop: 4 }}>
-              <PulsingDot />
-              <span style={{ fontSize: 9, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: 'var(--red)' }}>
-                AO VIVO
-              </span>
-            </div>
-          </>
-        ) : (
-          <div style={{ fontSize: 11, color: 'var(--txt3)', fontFamily: 'JetBrains Mono, monospace' }}>
-            {match.kickoffLabel}
-          </div>
-        )}
-      </div>
-
-      {/* Away */}
-      <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 18, lineHeight: 1 }}>{match.awayTeam.emoji}</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)', marginTop: 2 }}>{match.awayTeam.name}</div>
-      </div>
-
-      {/* Dismiss */}
       <button
-        onClick={handleDismiss}
-        title="Remover do War Room"
+        onClick={() => router.push('/timeline')}
         style={{
-          width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-          background: 'var(--s2)', border: '1px solid var(--border-subtle)',
-          color: 'var(--txt3)', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: 32, padding: '0 16px', borderRadius: 8,
+          background: 'rgba(91,184,232,0.12)', border: '1px solid rgba(91,184,232,0.3)',
+          color: 'var(--blue)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
         }}
       >
-        <X size={12} />
+        ← Selecionar partida
       </button>
-    </div>
-  )
-}
-
-// ─── Goal Card ────────────────────────────────────────────────────────────────
-
-function GoalCard({
-  goal,
-  stage,
-  onAdvance,
-}: {
-  goal: GoalEvent
-  stage: GoalStage
-  onAdvance: () => void
-}) {
-  const isHome = goal.team === 'home'
-  const scorerTeam = isHome ? goal.homeTeam : goal.awayTeam
-  const nextStage = NEXT_STAGE[stage]
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.97 }}
-      transition={{ duration: 0.2 }}
-      style={{
-        background: 'var(--s1)', border: '1px solid var(--border-subtle)',
-        borderLeft: `3px solid ${STAGE_COLORS[stage]}`,
-        borderRadius: 10, overflow: 'hidden',
-      }}
-    >
-      {/* Goal info */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        padding: '12px 14px',
-      }}>
-        <span style={{ fontSize: 20, flexShrink: 0 }}>⚽</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>
-            {goal.scorer}
-            <span style={{
-              marginLeft: 8, fontFamily: 'JetBrains Mono, monospace',
-              fontSize: 11, fontWeight: 500, color: 'var(--txt3)',
-            }}>
-              {goal.minute}&apos;
-            </span>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--txt2)', marginTop: 1 }}>
-            {scorerTeam.emoji} {scorerTeam.name}
-          </div>
-        </div>
-        <div style={{
-          fontFamily: 'JetBrains Mono, monospace',
-          fontSize: 20, fontWeight: 800,
-          color: STAGE_COLORS[stage],
-        }}>
-          {goal.scoreStr}
-        </div>
-      </div>
-
-      {/* Status bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '8px 14px',
-        background: 'rgba(0,0,0,0.15)',
-        borderTop: '1px solid var(--border-subtle)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{
-            width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-            background: STAGE_COLORS[stage],
-            animation: stage !== 'published' ? 'pulseDot 2s ease-in-out infinite' : undefined,
-          }} />
-          <span style={{ fontSize: 11, fontWeight: 600, color: STAGE_COLORS[stage] }}>
-            {STAGE_LABELS[stage]}
-          </span>
-        </div>
-
-        {nextStage && (
-          <button
-            onClick={onAdvance}
-            style={{
-              height: 24, padding: '0 10px', borderRadius: 5,
-              background: `${STAGE_COLORS[nextStage]}18`,
-              border: `1px solid ${STAGE_COLORS[nextStage]}40`,
-              color: STAGE_COLORS[nextStage],
-              cursor: 'pointer', fontSize: 10, fontWeight: 700,
-            }}
-          >
-            {NEXT_LABEL[stage]} →
-          </button>
-        )}
-
-        {stage === 'published' && (
-          <span style={{
-            fontSize: 10, fontWeight: 700, color: 'var(--green)',
-            fontFamily: 'JetBrains Mono, monospace',
-          }}>
-            ✓ Publicado · {nowTs()}
-          </span>
-        )}
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── Goal Feed ────────────────────────────────────────────────────────────────
-
-function GoalFeed() {
-  const match = useActiveMatch()
-  const matchId = match?.id ?? null
-  const goals = useTimelineStore(
-    useShallow(s => matchId ? s.goals.filter(g => g.matchId === matchId) : [])
-  )
-
-  // Per-goal workflow stage (local session state)
-  const [stages, setStages] = useState<Record<string, GoalStage>>({})
-
-  const advance = (goalId: string) => {
-    setStages(prev => {
-      const current = prev[goalId] ?? 'waiting'
-      const next = NEXT_STAGE[current]
-      if (!next) return prev
-      return { ...prev, [goalId]: next }
-    })
-  }
-
-  if (!match) return null
-
-  return (
-    <div style={{
-      background: 'var(--s1)', border: '1px solid var(--border-subtle)',
-      borderRadius: 12, overflow: 'hidden',
-      display: 'flex', flexDirection: 'column',
-    }}>
-      {/* Header */}
-      <div style={{
-        padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', gap: 7,
-      }}>
-        <PulsingDot color="var(--green)" />
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>
-          Gols
-        </span>
-        {goals.length > 0 && (
-          <span style={{
-            marginLeft: 'auto',
-            fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700,
-            color: 'var(--green)', background: 'rgba(62,207,142,0.1)',
-            border: '1px solid rgba(62,207,142,0.2)', borderRadius: 99, padding: '1px 8px',
-          }}>
-            {goals.length}
-          </span>
-        )}
-      </div>
-
-      {/* List */}
-      <div style={{ padding: '10px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {goals.length === 0 ? (
-          <div style={{
-            padding: '32px 16px', textAlign: 'center',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-          }}>
-            <span style={{ fontSize: 28, opacity: 0.2 }}>⚽</span>
-            <span style={{ fontSize: 11, color: 'var(--txt3)' }}>
-              Aguardando gols…
-            </span>
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {goals.map(goal => (
-              <GoalCard
-                key={goal.id}
-                goal={goal}
-                stage={stages[goal.id] ?? 'waiting'}
-                onAdvance={() => advance(goal.id)}
-              />
-            ))}
-          </AnimatePresence>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Content Queue ────────────────────────────────────────────────────────────
-
-type QStatus = ContentQueueItem['status']
-
-function StatusBadge({ status }: { status: QStatus }) {
-  const { t } = useTranslation()
-  const map: Record<QStatus, { bg: string; color: string; label: string }> = {
-    generating: { bg: 'rgba(91,184,232,0.15)', color: 'var(--blue)',   label: t('warroom.statusBadge.generating') },
-    ready:      { bg: 'rgba(62,207,142,0.15)', color: 'var(--green)',  label: t('warroom.statusBadge.ready')      },
-    reviewing:  { bg: 'rgba(245,200,66,0.15)', color: 'var(--yellow)', label: t('warroom.statusBadge.reviewing')  },
-    published:  { bg: 'rgba(167,139,250,0.15)', color: '#A78BFA',     label: t('warroom.statusBadge.published')  },
-  }
-  const { bg, color, label } = map[status]
-  return (
-    <span style={{ background: bg, color, fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 99 }}>
-      {label}
-    </span>
-  )
-}
-
-function ContentQueue() {
-  const { contentQueue } = useFootballStore()
-  const { setActiveQueueItem } = useAppStore()
-  const { t } = useTranslation()
-  const router = useRouter()
-
-  if (contentQueue.length === 0) return null
-
-  return (
-    <div style={{
-      background: 'var(--s1)', border: '1px solid var(--border-subtle)',
-      borderRadius: 12, overflow: 'hidden',
-    }}>
-      <div style={{
-        padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{t('warroom.contentQueue')}</span>
-        <span style={{
-          background: 'rgba(91,184,232,0.15)', color: 'var(--blue)',
-          fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99,
-        }}>
-          {contentQueue.length}
-        </span>
-      </div>
-      <div>
-        {contentQueue.slice(0, 5).map(item => (
-          <div key={item.id} style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '9px 14px', borderBottom: '1px solid var(--border-subtle)',
-          }}>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontSize: 12, fontWeight: 600, color: 'var(--txt)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                marginBottom: 1,
-              }}>
-                {item.title}
-              </div>
-              <div style={{ fontSize: 10, color: 'var(--txt3)' }}>{item.triggeredBy}</div>
-            </div>
-            <StatusBadge status={item.status} />
-            {item.status === 'generating' && (
-              <Loader2 size={12} style={{ color: 'var(--txt3)', animation: 'spin 1s linear infinite', flexShrink: 0 }} />
-            )}
-            {item.status === 'ready' && (
-              <button
-                onClick={() => { setActiveQueueItem(item); router.push('/multipost') }}
-                style={{
-                  height: 26, padding: '0 8px', borderRadius: 5,
-                  background: 'rgba(91,184,232,.15)', color: 'var(--blue)',
-                  border: '1px solid rgba(91,184,232,.3)',
-                  cursor: 'pointer', fontSize: 10, fontWeight: 600,
-                  display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0,
-                }}
-              >
-                <ExternalLink size={9} /> Abrir
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── Activity log ─────────────────────────────────────────────────────────────
-
-interface LogEntry { id: string; ts: string; text: string }
-
-function ActivityLog({ entries }: { entries: LogEntry[] }) {
-  return (
-    <div style={{
-      background: 'var(--s1)', border: '1px solid var(--border-subtle)',
-      borderRadius: 12, overflow: 'hidden',
-      display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0,
-    }}>
-      <div style={{
-        padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0,
-      }}>
-        <PulsingDot color="var(--blue)" />
-        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>Atividade</span>
-      </div>
-      <div style={{ overflowY: 'auto', flex: 1 }}>
-        {entries.length === 0 ? (
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            height: '100%', padding: 24,
-          }}>
-            <span style={{ fontSize: 11, color: 'var(--txt3)', textAlign: 'center', lineHeight: 1.6 }}>
-              Monitorando partida.<br />Atividades aparecerão aqui.
-            </span>
-          </div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {entries.map(e => (
-              <motion.div
-                key={e.id}
-                initial={{ opacity: 0, y: -6, height: 0 }}
-                animate={{ opacity: 1, y: 0, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.18 }}
-                style={{
-                  padding: '7px 14px', borderBottom: '1px solid var(--border-subtle)',
-                  display: 'flex', gap: 10, alignItems: 'flex-start',
-                }}
-              >
-                <span style={{
-                  fontFamily: 'JetBrains Mono, monospace',
-                  fontSize: 10, color: 'var(--txt3)', flexShrink: 0, marginTop: 1,
-                }}>
-                  {e.ts}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--txt)', lineHeight: 1.4 }}>{e.text}</span>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        )}
-      </div>
     </div>
   )
 }
@@ -518,76 +52,140 @@ function ActivityLog({ entries }: { entries: LogEntry[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WarRoomPage() {
-  const { init, contentQueue } = useFootballStore()
-  const connect = useTimelineStore(s => s.connect)
-  const match = useActiveMatch()
-  const matchId = match?.id ?? null
-  const goals = useTimelineStore(
-    useShallow(s => matchId ? s.goals.filter(g => g.matchId === matchId) : [])
-  )
+  const fixture = useWarRoomStore(s => s.activeFixture)
+  const liveData = useWarRoomStore(s => s.liveData)
+  const queue = useWarRoomStore(s => s.queue)
+  const fixtureId = fixture?.fixture.id ?? null
+  const kickoffTs = fixture?.fixture.timestamp ?? 0
+  const cachedStatus = fixture?.fixture.status.short
 
-  const [log, setLog] = useState<LogEntry[]>([])
-  const prevGoalCount = useRef(goals.length)
-  const prevQueueLen = useRef(contentQueue.length)
-
-  useEffect(() => { init() }, [init])
-  useEffect(() => { connect() }, [connect])
-
-  // Append goal events to activity log
+  // Lineup: fetch once per fixture
   useEffect(() => {
-    if (goals.length > prevGoalCount.current) {
-      const g = goals[0]
-      if (g) {
-        setLog(prev => [{
-          id: `g-${g.id}`,
-          ts: nowTs(),
-          text: `⚽ Gol de ${g.scorer} (${g.minute}') · ${g.scoreStr}`,
-        }, ...prev.slice(0, 29)])
+    if (fixtureId == null) return
+    void fetchLineup(fixtureId)
+  }, [fixtureId])
+
+  // Adaptive polling lifecycle — only spin up near/at kickoff to save credits
+  useEffect(() => {
+    if (fixtureId == null) return
+
+    const liveNow = cachedStatus ? isLiveStatus(cachedStatus) : false
+    const finished = cachedStatus ? isFinishedStatus(cachedStatus) : false
+
+    const maybeStart = () => {
+      const st = useWarRoomStore.getState()
+      if (isMockRunning() || st.isPolling || st.matchEnded) return
+      const nearKickoff = kickoffTs * 1000 - Date.now() < KICKOFF_WINDOW_MS
+      if (isLiveStatus(st.liveData?.status ?? cachedStatus ?? 'NS') || nearKickoff) {
+        startPolling(fixtureId)
       }
     }
-    prevGoalCount.current = goals.length
-  }, [goals])
 
-  // Append content queue events to activity log
-  useEffect(() => {
-    if (contentQueue.length > prevQueueLen.current) {
-      const item = contentQueue[0]
-      if (item) {
-        setLog(prev => [{
-          id: `q-${item.id}`,
-          ts: nowTs(),
-          text: `📋 Conteúdo gerado: ${item.title}`,
-        }, ...prev.slice(0, 29)])
-      }
+    if (isMockRunning()) {
+      // a simulation owns the store — don't touch the live poller
+    } else if (liveNow) {
+      startPolling(fixtureId)
+    } else if (!finished) {
+      maybeStart()
     }
-    prevQueueLen.current = contentQueue.length
-  }, [contentQueue])
+
+    // Re-check every minute so a scheduled match auto-starts at kickoff
+    const iv = setInterval(maybeStart, 60_000)
+    return () => {
+      clearInterval(iv)
+      stopPolling()
+      stopMockMatch()
+    }
+  }, [fixtureId, kickoffTs, cachedStatus])
+
+  if (!fixture) return <EmptyState />
+
+  const status = liveData?.status ?? fixture.fixture.status.short
+  const showQueue = isLiveStatus(status) || isFinishedStatus(status) || queue.length > 0
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column',
       height: '100%', overflow: 'hidden', background: 'var(--bg)',
     }}>
-      {/* Match Banner */}
-      <MatchBanner />
+      <WarRoomTabs />
+      <MatchHeader />
 
-      {/* Body */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Left — Goal feed */}
+      {IS_DEV && (
         <div style={{
-          flex: '0 0 58%', display: 'flex', flexDirection: 'column', gap: 8,
-          padding: '10px 8px 10px 12px', overflowY: 'auto',
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '6px 16px', flexShrink: 0,
+          background: 'rgba(167,139,250,0.06)',
+          borderBottom: '1px solid var(--border-subtle)',
         }}>
-          <GoalFeed />
-          <ContentQueue />
+          <span style={{
+            fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+            color: '#A78BFA', background: 'rgba(167,139,250,0.12)',
+            border: '1px solid rgba(167,139,250,0.25)', borderRadius: 4, padding: '1px 6px',
+          }}>
+            DEV
+          </span>
+          <span style={{ fontSize: 10, color: 'var(--txt3)' }}>
+            Simula NS → gol → intervalo → gol → fim (3s/estado, sem gastar quota)
+          </span>
+          <button
+            onClick={() => startMockMatch()}
+            style={{
+              marginLeft: 'auto', height: 24, padding: '0 12px', borderRadius: 6,
+              background: 'rgba(167,139,250,0.15)', color: '#A78BFA',
+              border: '1px solid rgba(167,139,250,0.35)', cursor: 'pointer',
+              fontSize: 11, fontWeight: 700,
+            }}
+          >
+            ▶ Simular jogo
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Main column — live content */}
+        <div style={{
+          flex: '0 0 58%', display: 'flex', flexDirection: 'column', gap: 10,
+          padding: '12px 8px 12px 12px', overflowY: 'auto',
+        }}>
+          {showQueue ? (
+            <ContentQueue />
+          ) : null}
+
+          {showQueue && queue.length === 0 && (
+            <div style={{
+              background: 'var(--s1)', border: '1px solid var(--border-subtle)',
+              borderRadius: 12, padding: '32px 16px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 12, color: 'var(--txt3)' }}>
+                Monitorando ao vivo — conteúdo aparece em gol, intervalo e fim de jogo.
+              </div>
+            </div>
+          )}
+
+          {!showQueue && (
+            <div style={{
+              background: 'var(--s1)', border: '1px solid var(--border-subtle)',
+              borderRadius: 12, padding: '32px 16px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt2)' }}>
+                Aguardando o apito inicial
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 4 }}>
+                O monitoramento ao vivo começa automaticamente perto do horário do jogo.
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Right — Activity log */}
+        {/* Side column — lineup, pre-packs, quota */}
         <div style={{
-          flex: '0 0 42%', display: 'flex', flexDirection: 'column',
-          padding: '10px 12px 10px 4px', overflow: 'hidden',
+          flex: '0 0 42%', display: 'flex', flexDirection: 'column', gap: 10,
+          padding: '12px 12px 12px 4px', overflowY: 'auto',
         }}>
-          <ActivityLog entries={log} />
+          <LineupPanel />
+          <PrePackPanel />
+          <QuotaDisplay />
         </div>
       </div>
     </div>

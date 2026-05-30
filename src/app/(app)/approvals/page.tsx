@@ -1,121 +1,37 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
-import { CheckCircle2, XCircle, RotateCcw, Film, Trophy, BarChart2, Laugh, MessageSquare, MapPin, CheckCheck } from 'lucide-react'
+import {
+  CheckCircle2, XCircle, RotateCcw, Film, Trophy, BarChart2, Laugh,
+  MessageSquare, MapPin, CheckCheck, CornerDownLeft, ImageIcon, X,
+} from 'lucide-react'
 import type { ApprovalItem, Comment } from '@/types'
-
-// ─── Static Data ──────────────────────────────────────────────────────────────
-
-const INITIAL_ITEMS: ApprovalItem[] = [
-  {
-    id: 'a1',
-    name: 'Story Gol Arrascaeta',
-    subtitle: 'Instagram Story · Design',
-    emoji: 'trophy',
-    type: 'image',
-    status: 'pending',
-    comments: [
-      {
-        id: 'c1',
-        author: 'Carla M.',
-        avatar: 'CM',
-        color: '#5BB8E8',
-        text: 'Ficou incrível! Só ajustar a fonte no rodapé.',
-        pin: { x: 30, y: 80 },
-        resolved: false,
-        createdAt: 'há 12 min',
-      },
-      {
-        id: 'c2',
-        author: 'Lucas P.',
-        avatar: 'LP',
-        color: '#F07B54',
-        text: 'Aprovar assim que corrigir o detalhe da fonte.',
-        resolved: false,
-        createdAt: 'há 8 min',
-      },
-    ],
-  },
-  {
-    id: 'a2',
-    name: 'Meme Placar Parcial',
-    subtitle: 'X / Twitter · Meme',
-    emoji: 'laugh',
-    type: 'image',
-    status: 'approved',
-    comments: [
-      {
-        id: 'c3',
-        author: 'Ana R.',
-        avatar: 'AR',
-        color: '#3ECF8E',
-        text: 'Perfeito, aprovado!',
-        resolved: true,
-        createdAt: 'há 25 min',
-      },
-    ],
-  },
-  {
-    id: 'a3',
-    name: 'Reel Melhores Lances',
-    subtitle: 'Instagram Reels · Vídeo',
-    emoji: 'film',
-    type: 'video',
-    status: 'pending',
-    comments: [
-      {
-        id: 'c4',
-        author: 'Thiago S.',
-        avatar: 'TS',
-        color: '#A78BFA',
-        text: 'A trilha sonora precisa de licença antes de publicar.',
-        resolved: false,
-        createdAt: 'há 5 min',
-      },
-    ],
-  },
-  {
-    id: 'a4',
-    name: 'Infográfico Estatísticas',
-    subtitle: 'Todos · Design',
-    emoji: 'barchart',
-    type: 'image',
-    status: 'rejected',
-    comments: [
-      {
-        id: 'c5',
-        author: 'Carla M.',
-        avatar: 'CM',
-        color: '#5BB8E8',
-        text: 'Dados incorretos — placar da semana passada.',
-        resolved: false,
-        createdAt: 'há 1h',
-      },
-    ],
-  },
-]
+import { useApprovalsStore } from '@/store/useApprovalsStore'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type ApprovalStatus = 'pending' | 'approved' | 'rejected'
+type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'changes'
 
 const STATUS_LABEL: Record<ApprovalStatus, string> = {
   pending:  'Pendente',
   approved: 'Aprovado',
   rejected: 'Rejeitado',
+  changes:  'Ajuste solicitado',
 }
 
 const STATUS_COLOR: Record<ApprovalStatus, string> = {
   pending:  'var(--yellow)',
   approved: 'var(--green)',
   rejected: 'var(--red)',
+  changes:  '#F07B54',
 }
 
 const STATUS_BG: Record<ApprovalStatus, string> = {
   pending:  'rgba(245,200,66,0.15)',
   approved: 'rgba(62,207,142,0.15)',
   rejected: 'rgba(248,113,113,0.15)',
+  changes:  'rgba(240,123,84,0.15)',
 }
 
 function getItemIcon(emoji: string) {
@@ -128,148 +44,141 @@ function getItemIcon(emoji: string) {
   }
 }
 
+function getItemIconLarge(emoji: string) {
+  switch (emoji) {
+    case 'trophy':   return <Trophy size={44} />
+    case 'laugh':    return <Laugh size={44} />
+    case 'film':     return <Film size={44} />
+    case 'barchart': return <BarChart2 size={44} />
+    default:         return <ImageIcon size={44} />
+  }
+}
+
 function StatusBadge({ status }: { status: ApprovalStatus }) {
   return (
-    <span
-      style={{
-        background: STATUS_BG[status],
-        color: STATUS_COLOR[status],
-        fontSize: 11,
-        fontWeight: 600,
-        padding: '2px 8px',
-        borderRadius: 99,
-        whiteSpace: 'nowrap',
-      }}
-    >
+    <span style={{
+      background: STATUS_BG[status], color: STATUS_COLOR[status],
+      fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap',
+    }}>
       {STATUS_LABEL[status]}
     </span>
   )
 }
 
-// ─── Left Panel ───────────────────────────────────────────────────────────────
+// ─── Left Panel — list with hover quick actions (Melhoria 5) ──────────────────
 
 function ItemList({
-  items,
-  selectedId,
-  onSelect,
+  items, selectedId, onSelect, onQuickApprove, onQuickReject,
 }: {
   items: ApprovalItem[]
   selectedId: string
   onSelect: (id: string) => void
+  onQuickApprove: (id: string) => void
+  onQuickReject: (id: string) => void
 }) {
+  const [hoverId, setHoverId] = useState<string | null>(null)
+
   return (
-    <div
-      style={{
-        width: 240,
-        flexShrink: 0,
-        borderRight: '1px solid var(--border-subtle)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: '14px 16px',
-          borderBottom: '1px solid var(--border-subtle)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          flexShrink: 0,
-        }}
-      >
+    <div style={{
+      width: 220, flexShrink: 0, borderRight: '1px solid var(--border-subtle)',
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
+      <div style={{
+        padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)',
+        display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
+      }}>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Aprovações</span>
-        <span
-          style={{
-            background: 'var(--s3)',
-            color: 'var(--txt2)',
-            fontSize: 11,
-            fontWeight: 600,
-            padding: '1px 7px',
-            borderRadius: 99,
-          }}
-        >
+        <span style={{ background: 'var(--s3)', color: 'var(--txt2)', fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 99 }}>
           {items.length}
         </span>
       </div>
 
-      {/* List */}
       <div style={{ overflowY: 'auto', flex: 1 }}>
         {items.map((item) => {
           const active = item.id === selectedId
+          const status = item.status as ApprovalStatus
           const pendingComments = item.comments.filter(c => !c.resolved).length
+          const showQuick = hoverId === item.id && status === 'pending'
           return (
-            <button
+            <div
               key={item.id}
+              onMouseEnter={() => setHoverId(item.id)}
+              onMouseLeave={() => setHoverId((h) => (h === item.id ? null : h))}
               onClick={() => onSelect(item.id)}
               style={{
-                width: '100%',
-                textAlign: 'left',
+                position: 'relative',
                 background: active ? 'var(--s2)' : 'transparent',
-                border: 'none',
                 borderBottom: '1px solid var(--border-subtle)',
                 borderLeft: active ? '2px solid var(--blue)' : '2px solid transparent',
-                padding: '12px 16px',
-                cursor: 'pointer',
-                display: 'flex',
-                gap: 10,
-                alignItems: 'flex-start',
-                fontFamily: 'Sora, sans-serif',
+                padding: '12px 16px', cursor: 'pointer',
+                display: 'flex', gap: 10, alignItems: 'flex-start',
                 transition: 'background 0.15s',
               }}
             >
-              {/* Type icon */}
-              <div
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 8,
-                  background: active ? 'var(--s3)' : 'var(--s2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  color: STATUS_COLOR[item.status],
-                }}
-              >
+              <div style={{
+                width: 30, height: 30, borderRadius: 8,
+                background: active ? 'var(--s3)' : 'var(--s2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, color: STATUS_COLOR[status],
+              }}>
                 {getItemIcon(item.emoji)}
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: active ? 'var(--txt)' : 'var(--txt2)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    marginBottom: 3,
-                  }}
-                >
+                <div style={{
+                  fontSize: 12, fontWeight: 600, color: active ? 'var(--txt)' : 'var(--txt2)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 3,
+                }}>
                   {item.name}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--txt3)', marginBottom: 5 }}>
-                  {item.subtitle}
-                </div>
+                <div style={{ fontSize: 10, color: 'var(--txt3)', marginBottom: 5 }}>{item.subtitle}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <StatusBadge status={item.status} />
+                  <StatusBadge status={status} />
                   {pendingComments > 0 && (
-                    <span style={{
-                      fontSize: 10,
-                      color: 'var(--txt3)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 3,
-                    }}>
+                    <span style={{ fontSize: 10, color: 'var(--txt3)', display: 'flex', alignItems: 'center', gap: 3 }}>
                       <MessageSquare size={9} />
                       {pendingComments}
                     </span>
                   )}
                 </div>
               </div>
-            </button>
+
+              {/* Quick actions on hover — pending only (Melhoria 5) */}
+              {showQuick && (
+                <div style={{
+                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  background: 'var(--s2)', border: '1px solid var(--border-mid)',
+                  borderRadius: 8, padding: '4px 6px', boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
+                }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onQuickReject(item.id) }}
+                    title="Rejeitar"
+                    style={{
+                      width: 24, height: 24, borderRadius: 6, cursor: 'pointer',
+                      background: 'rgba(248,113,113,0.10)', color: 'var(--red)',
+                      border: '1px solid rgba(248,113,113,0.25)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onQuickApprove(item.id) }}
+                    title="Aprovar"
+                    style={{
+                      height: 24, padding: '0 8px', borderRadius: 6, cursor: 'pointer',
+                      fontSize: 11, fontWeight: 700,
+                      background: 'rgba(62,207,142,0.12)', color: 'var(--green)',
+                      border: '1px solid rgba(62,207,142,0.25)',
+                      display: 'flex', alignItems: 'center', gap: 3,
+                    }}
+                  >
+                    <CheckCircle2 size={11} /> Aprovar
+                  </button>
+                </div>
+              )}
+            </div>
           )
         })}
       </div>
@@ -277,57 +186,134 @@ function ItemList({
   )
 }
 
-// ─── Center Panel ─────────────────────────────────────────────────────────────
+// ─── Center Panel — media viewer + pins (Melhorias 1 & 2) ─────────────────────
 
-function DetailPanel({
-  item,
-  onApprove,
-  onReject,
+function MediaViewer({
+  item, comments, pendingPin, onImageClick, onPinClick, onClearPin,
 }: {
   item: ApprovalItem
-  onApprove: () => void
-  onReject: () => void
+  comments: Comment[]
+  pendingPin: { x: number; y: number } | null
+  onImageClick: (x: number, y: number) => void
+  onPinClick: (id: string) => void
+  onClearPin: () => void
 }) {
-  const steps = [
-    { label: 'Criação',          done: true },
-    { label: 'Revisão interna',  done: item.status !== 'pending' },
-    { label: 'Aprovação final',  done: item.status === 'approved' },
-  ]
+  const status = item.status as ApprovalStatus
+  const pinned = comments.filter(c => c.pin && !c.resolved)
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = Math.round(((e.clientX - rect.left) / rect.width) * 100)
+    const y = Math.round(((e.clientY - rect.top) / rect.height) * 100)
+    onImageClick(Math.max(0, Math.min(100, x)), Math.max(0, Math.min(100, y)))
+  }
 
   return (
     <div
+      onClick={handleClick}
       style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        borderRight: '1px solid var(--border-subtle)',
+        position: 'relative', width: '100%', flex: 1, minHeight: 0, borderRadius: 12, overflow: 'hidden',
+        background: 'var(--s2)', border: '1px solid var(--border-subtle)',
+        cursor: 'crosshair',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          padding: '14px 20px',
-          borderBottom: '1px solid var(--border-subtle)',
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-        }}
-      >
-        <div
+      {item.mediaUrl && item.type === 'image' && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={item.mediaUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+      )}
+      {item.mediaUrl && item.type === 'video' && (
+        <video src={item.mediaUrl} controls style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+      )}
+      {!item.mediaUrl && (
+        <div style={{
+          width: '100%', height: '100%',
+          background: `linear-gradient(135deg, ${STATUS_BG[status]}, var(--s3))`,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12,
+          color: STATUS_COLOR[status],
+        }}>
+          <div style={{ transform: 'scale(1.6)' }}>{getItemIconLarge(item.emoji)}</div>
+          <span style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 8 }}>
+            Pré-visualização — clique na arte para marcar um ponto
+          </span>
+        </div>
+      )}
+
+      {/* Existing comment pins */}
+      {pinned.map((c, idx) => (
+        <button
+          key={c.id}
+          onClick={(e) => { e.stopPropagation(); onPinClick(c.id) }}
+          title={c.text}
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 8,
-            background: STATUS_BG[item.status],
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: STATUS_COLOR[item.status],
-            flexShrink: 0,
+            position: 'absolute', left: `${c.pin!.x}%`, top: `${c.pin!.y}%`,
+            transform: 'translate(-50%, -50%)',
+            width: 24, height: 24, borderRadius: '50%', zIndex: 10, cursor: 'pointer',
+            background: c.color, color: '#fff', border: '2px solid #fff',
+            fontSize: 11, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           }}
         >
+          {idx + 1}
+        </button>
+      ))}
+
+      {/* Pending (unsent) pin — dashed */}
+      {pendingPin && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onClearPin() }}
+          title="Pin pendente — clique para remover"
+          style={{
+            position: 'absolute', left: `${pendingPin.x}%`, top: `${pendingPin.y}%`,
+            transform: 'translate(-50%, -50%)',
+            width: 24, height: 24, borderRadius: '50%', zIndex: 11, cursor: 'pointer',
+            background: 'rgba(91,184,232,0.25)', color: '#fff',
+            border: '2px dashed #fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <MapPin size={11} />
+        </button>
+      )}
+    </div>
+  )
+}
+
+function DetailPanel({
+  item, comments, pendingPin, onImageClick, onPinClick, onClearPin,
+  onApprove, onReject, onRequestAdjust,
+}: {
+  item: ApprovalItem
+  comments: Comment[]
+  pendingPin: { x: number; y: number } | null
+  onImageClick: (x: number, y: number) => void
+  onPinClick: (id: string) => void
+  onClearPin: () => void
+  onApprove: () => void
+  onReject: () => void
+  onRequestAdjust: () => void
+}) {
+  const status = item.status as ApprovalStatus
+  const channel = item.subtitle.split('·')[0].trim()
+  const format = item.subtitle.split('·')[1]?.trim() ?? '—'
+  const decided = item.status !== 'pending'
+
+  return (
+    <div style={{
+      flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      borderRight: '1px solid var(--border-subtle)',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <div style={{
+          width: 32, height: 32, borderRadius: 8, background: STATUS_BG[status],
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: STATUS_COLOR[status], flexShrink: 0,
+        }}>
           {getItemIcon(item.emoji)}
         </div>
         <div>
@@ -335,243 +321,117 @@ function DetailPanel({
           <div style={{ fontSize: 11, color: 'var(--txt2)' }}>{item.subtitle}</div>
         </div>
         <div style={{ marginLeft: 'auto' }}>
-          <StatusBadge status={item.status} />
+          <StatusBadge status={status} />
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Hero — art fills the space (Melhorias 1 & 2) */}
+      <div style={{ flex: 1, minHeight: 0, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <MediaViewer
+          item={item}
+          comments={comments}
+          pendingPin={pendingPin}
+          onImageClick={onImageClick}
+          onPinClick={onPinClick}
+          onClearPin={onClearPin}
+        />
 
-        {/* Info rows */}
+        {/* Compact metadata line */}
         <div style={{
-          background: 'var(--s2)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 10,
-          overflow: 'hidden',
+          display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+          fontSize: 12, color: 'var(--txt2)', flexShrink: 0,
         }}>
-          {[
-            { label: 'Tipo de conteúdo', value: item.type === 'video' ? 'Vídeo' : 'Imagem' },
-            { label: 'Canal', value: item.subtitle.split('·')[0].trim() },
-            { label: 'Formato', value: item.subtitle.split('·')[1]?.trim() ?? '—' },
-            { label: 'Status atual', value: STATUS_LABEL[item.status] },
-          ].map((row, i, arr) => (
-            <div
-              key={row.label}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '10px 14px',
-                borderBottom: i < arr.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-              }}
-            >
-              <span style={{ fontSize: 12, color: 'var(--txt3)', flex: '0 0 160px' }}>{row.label}</span>
-              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>{row.value}</span>
-            </div>
+          {[item.type === 'video' ? 'Vídeo' : 'Imagem', channel, format, STATUS_LABEL[status]].map((v, i, arr) => (
+            <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontWeight: i === arr.length - 1 ? 700 : 500, color: i === arr.length - 1 ? STATUS_COLOR[status] : 'var(--txt2)' }}>{v}</span>
+              {i < arr.length - 1 && <span style={{ color: 'var(--txt3)' }}>·</span>}
+            </span>
           ))}
         </div>
-
-        {/* Progress tracker */}
-        <div
-          style={{
-            background: 'var(--s2)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 10,
-            padding: '14px 16px',
-          }}
-        >
-          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', marginBottom: 14, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Fluxo de aprovação
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {steps.map((step, i) => (
-              <div key={step.label} style={{ display: 'flex', alignItems: 'center', flex: i < steps.length - 1 ? 1 : undefined }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                  <div
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: '50%',
-                      background: step.done ? 'var(--green)' : 'var(--s3)',
-                      border: `2px solid ${step.done ? 'var(--green)' : 'var(--border-mid)'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {step.done
-                      ? <CheckCheck size={12} style={{ color: '#000' }} />
-                      : <span style={{ fontSize: 11, color: 'var(--txt3)', fontWeight: 700 }}>{i + 1}</span>
-                    }
-                  </div>
-                  <div style={{ fontSize: 10, color: step.done ? 'var(--txt)' : 'var(--txt3)', whiteSpace: 'nowrap' }}>
-                    {step.label}
-                  </div>
-                </div>
-                {i < steps.length - 1 && (
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 2,
-                      background: step.done ? 'var(--green)' : 'var(--border-subtle)',
-                      margin: '0 4px',
-                      marginBottom: 18,
-                      borderRadius: 1,
-                    }}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
-      {/* Action Bar */}
-      <div
-        style={{
-          padding: '12px 20px',
-          borderTop: '1px solid var(--border-subtle)',
-          display: 'flex',
-          gap: 8,
-          flexShrink: 0,
-          background: 'var(--s1)',
-        }}
-      >
+      {/* Action bar — directly under the art (wraps instead of clipping) */}
+      <div style={{
+        padding: '12px 20px', borderTop: '1px solid var(--border-subtle)', flexShrink: 0,
+        background: 'var(--s1)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
+      }}>
         <button
           onClick={onReject}
+          disabled={decided}
+          title="Rejeitar"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'rgba(248,113,113,0.10)',
-            color: 'var(--red)',
-            border: '1px solid rgba(248,113,113,0.25)',
-            borderRadius: 8,
-            padding: '7px 16px',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontFamily: 'Sora, sans-serif',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0,
+            background: 'rgba(248,113,113,0.10)', color: 'var(--red)',
+            border: '1px solid rgba(248,113,113,0.25)', borderRadius: 8,
+            padding: '8px 14px', fontSize: 13, fontWeight: 600,
+            cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
           }}
         >
-          <XCircle size={14} />
-          Rejeitar
+          <XCircle size={14} /> Rejeitar
         </button>
         <button
+          onClick={onRequestAdjust}
+          disabled={decided}
+          title="Pedir ajuste"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'var(--s3)',
-            color: 'var(--txt)',
-            border: '1px solid var(--border-mid)',
-            borderRadius: 8,
-            padding: '7px 16px',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            fontFamily: 'Sora, sans-serif',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap',
+            background: 'var(--s3)', color: 'var(--txt)', border: '1px solid var(--border-mid)',
+            borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600,
+            cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
           }}
         >
-          <RotateCcw size={14} />
-          Solicitar revisão
+          <RotateCcw size={14} /> Pedir ajuste
         </button>
         <button
           onClick={onApprove}
+          disabled={decided}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: 'var(--green)',
-            color: '#000',
-            border: 'none',
-            borderRadius: 8,
-            padding: '7px 18px',
-            fontSize: 13,
-            fontWeight: 700,
-            cursor: 'pointer',
-            fontFamily: 'Sora, sans-serif',
-            marginLeft: 'auto',
+            flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            background: 'var(--green)', color: '#000', border: 'none', borderRadius: 8,
+            padding: '8px 16px', fontSize: 13, fontWeight: 700,
+            cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
           }}
         >
-          <CheckCircle2 size={14} />
-          Aprovar
+          <CheckCircle2 size={14} /> Aprovar
         </button>
       </div>
     </div>
   )
 }
 
-// ─── Right Panel ──────────────────────────────────────────────────────────────
+// ─── Right Panel — comments + unified input & actions (Melhoria 3) ────────────
 
-function CommentPanel({ item }: { item: ApprovalItem }) {
-  const [commentText, setCommentText] = useState('')
-  const [comments, setComments] = useState<Comment[]>(item.comments)
-
-  // Reset when item changes
-  const [lastId, setLastId] = useState(item.id)
-  if (item.id !== lastId) {
-    setLastId(item.id)
-    setComments(item.comments)
-  }
-
-  function handleComment() {
-    const text = commentText.trim()
-    if (!text) return
-    const newComment: Comment = {
-      id: `new-${Date.now()}`,
-      author: 'Você',
-      avatar: 'VC',
-      color: 'var(--blue)',
-      text,
-      resolved: false,
-      createdAt: 'agora',
-    }
-    setComments((prev) => [...prev, newComment])
-    setCommentText('')
-    toast.success('Comentário adicionado')
-  }
-
-  function handleResolve(id: string) {
-    setComments((prev) => prev.map((c) => (c.id === id ? { ...c, resolved: true } : c)))
-  }
-
+function CommentPanel({
+  comments, commentText, pendingPin, flashId, inputRef, commentRefs,
+  onChangeText, onSubmitComment, onResolve, onClearPin,
+}: {
+  comments: Comment[]
+  commentText: string
+  pendingPin: { x: number; y: number } | null
+  flashId: string | null
+  inputRef: React.RefObject<HTMLTextAreaElement | null>
+  commentRefs: React.RefObject<Record<string, HTMLDivElement | null>>
+  onChangeText: (v: string) => void
+  onSubmitComment: () => void
+  onResolve: (id: string) => void
+  onClearPin: () => void
+}) {
   const open = comments.filter(c => !c.resolved)
-  const resolved = comments.filter(c => c.resolved)
 
   return (
-    <div
-      style={{
-        width: 280,
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
+    <div style={{ width: 280, flexShrink: 0, borderLeft: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Header */}
-      <div
-        style={{
-          padding: '14px 16px',
-          borderBottom: '1px solid var(--border-subtle)',
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
+      <div style={{
+        padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0,
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
         <MessageSquare size={14} style={{ color: 'var(--txt2)' }} />
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Comentários</span>
-        <span
-          style={{
-            background: open.length > 0 ? 'rgba(245,200,66,.18)' : 'var(--s3)',
-            color: open.length > 0 ? 'var(--yellow)' : 'var(--txt2)',
-            fontSize: 11,
-            fontWeight: 600,
-            padding: '1px 7px',
-            borderRadius: 99,
-          }}
-        >
+        <span style={{
+          background: open.length > 0 ? 'rgba(245,200,66,.18)' : 'var(--s3)',
+          color: open.length > 0 ? 'var(--yellow)' : 'var(--txt2)',
+          fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 99,
+        }}>
           {open.length} abertos
         </span>
       </div>
@@ -579,141 +439,213 @@ function CommentPanel({ item }: { item: ApprovalItem }) {
       {/* Comment list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 0' }}>
         <AnimatePresence>
-          {comments.map((c) => (
-            <motion.div
-              key={c.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, height: 0 }}
-              style={{
-                padding: '10px 16px',
-                borderBottom: '1px solid var(--border-subtle)',
-                opacity: c.resolved ? 0.45 : 1,
-              }}
-            >
-              <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                <div
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: '50%',
-                    background: c.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 9,
-                    fontWeight: 700,
-                    color: '#000',
-                    flexShrink: 0,
-                  }}
-                >
-                  {c.avatar}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>{c.author}</span>
-                    <span style={{ fontSize: 10, color: 'var(--txt3)' }}>{c.createdAt}</span>
+          {comments.map((c) => {
+            const pinIdx = comments.filter(x => x.pin && !x.resolved).findIndex(x => x.id === c.id)
+            return (
+              <motion.div
+                key={c.id}
+                ref={(el) => { if (commentRefs.current) commentRefs.current[c.id] = el }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+                style={{
+                  padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)',
+                  opacity: c.resolved ? 0.45 : 1,
+                  background: flashId === c.id ? 'rgba(91,184,232,0.16)' : 'transparent',
+                  transition: 'background 0.4s',
+                }}
+              >
+                <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                  <div style={{
+                    width: 26, height: 26, borderRadius: '50%', background: c.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, fontWeight: 700, color: '#000', flexShrink: 0,
+                  }}>
+                    {c.avatar}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>{c.author}</span>
+                      <span style={{ fontSize: 10, color: 'var(--txt3)' }}>{c.createdAt}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <p style={{ fontSize: 12, color: 'var(--txt2)', lineHeight: 1.5, margin: '0 0 8px 0' }}>
-                {c.text}
-              </p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {c.pin && (
-                  <span style={{ fontSize: 10, color: 'var(--txt3)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <MapPin size={9} />
-                    Pin na imagem
-                  </span>
-                )}
-                {!c.resolved ? (
-                  <button
-                    onClick={() => handleResolve(c.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                      background: 'transparent',
-                      border: '1px solid var(--border-mid)',
-                      borderRadius: 4,
-                      color: 'var(--txt2)',
-                      fontSize: 10,
-                      padding: '2px 8px',
-                      cursor: 'pointer',
-                      fontFamily: 'Sora, sans-serif',
-                      marginLeft: 'auto',
-                    }}
-                  >
-                    <CheckCheck size={9} />
-                    Resolver
-                  </button>
-                ) : (
-                  <span style={{ fontSize: 10, color: 'var(--green)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <CheckCircle2 size={9} />
-                    Resolvido
-                  </span>
-                )}
-              </div>
-            </motion.div>
-          ))}
+                <p style={{ fontSize: 12, color: 'var(--txt2)', lineHeight: 1.5, margin: '0 0 8px 0' }}>{c.text}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {c.pin && !c.resolved && (
+                    <span style={{
+                      fontSize: 10, color: '#fff', background: c.color,
+                      borderRadius: 99, padding: '1px 7px',
+                      display: 'flex', alignItems: 'center', gap: 3, fontWeight: 700,
+                    }}>
+                      <MapPin size={9} /> #{pinIdx + 1}
+                    </span>
+                  )}
+                  {!c.resolved ? (
+                    <button
+                      onClick={() => onResolve(c.id)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        background: 'transparent', border: '1px solid var(--border-mid)',
+                        borderRadius: 4, color: 'var(--txt2)', fontSize: 10, padding: '2px 8px',
+                        cursor: 'pointer', marginLeft: 'auto',
+                      }}
+                    >
+                      <CheckCheck size={9} /> Resolver
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: 10, color: 'var(--green)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
+                      <CheckCircle2 size={9} /> Resolvido
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+            )
+          })}
         </AnimatePresence>
       </div>
 
-      {/* Input */}
-      <div
+      {/* Unified footer — input + actions (Melhoria 3) */}
+      <div style={{
+        borderTop: '1px solid var(--border-subtle)', flexShrink: 0, background: 'var(--s1)',
+        padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 10,
+      }}>
+        {/* Pin indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {pendingPin ? (
+            <button
+              onClick={onClearPin}
+              title="Remover pin"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
+                fontSize: 10, fontWeight: 700, color: 'var(--blue)',
+                background: 'rgba(91,184,232,0.12)', border: '1px solid rgba(91,184,232,0.3)',
+                borderRadius: 99, padding: '2px 8px',
+              }}
+            >
+              <MapPin size={10} /> {pendingPin.x}%, {pendingPin.y}% <X size={9} />
+            </button>
+          ) : (
+            <span style={{ fontSize: 10, color: 'var(--txt3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              <MapPin size={10} /> Sem pin — clique na arte para marcar
+            </span>
+          )}
+        </div>
+
+        {/* Input row */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+          <textarea
+            ref={inputRef}
+            value={commentText}
+            onChange={(e) => onChangeText(e.target.value)}
+            placeholder="Adicionar comentário…"
+            rows={2}
+            style={{
+              flex: 1, background: 'var(--s3)', border: '1px solid var(--border-mid)',
+              borderRadius: 8, padding: '8px 10px', fontSize: 12, color: 'var(--txt)',
+              resize: 'none', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSubmitComment() }
+            }}
+          />
+          <button
+            onClick={onSubmitComment}
+            title="Enviar (Enter)"
+            style={{
+              width: 36, height: 36, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
+              background: 'var(--blue)', color: '#000', border: 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <CornerDownLeft size={15} />
+          </button>
+        </div>
+        <div style={{ fontSize: 9, color: 'var(--txt3)', textAlign: 'center', letterSpacing: '0.03em' }}>
+          Atalhos: A aprovar · R pedir ajuste · ↑↓ navegar
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Reason modal — required text (Melhoria 4 / quick reject) ─────────────────
+
+function ReasonModal({
+  mode, itemName, onClose, onConfirm,
+}: {
+  mode: 'adjust' | 'reject'
+  itemName: string
+  onClose: () => void
+  onConfirm: (text: string) => void
+}) {
+  const [text, setText] = useState('')
+  const cfg = mode === 'adjust'
+    ? { title: 'Pedir ajuste', label: 'Descreva o que precisa mudar', color: '#F07B54', cta: 'Enviar ajuste' }
+    : { title: 'Rejeitar conteúdo', label: 'Motivo da rejeição', color: 'var(--red)', cta: 'Rejeitar' }
+  const valid = text.trim().length > 0
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+      }}
+    >
+      <motion.div
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.96, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
         style={{
-          padding: '12px 16px',
-          borderTop: '1px solid var(--border-subtle)',
-          flexShrink: 0,
-          background: 'var(--s1)',
+          width: 440, maxWidth: '100%', background: 'var(--s1)',
+          border: '1px solid var(--border-mid)', borderRadius: 14, padding: 20,
+          boxShadow: '0 24px 60px rgba(0,0,0,0.5)',
         }}
       >
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{cfg.title}</div>
+        <div style={{ fontSize: 12, color: 'var(--txt3)', marginBottom: 14 }}>{itemName}</div>
+
+        <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 6 }}>
+          {cfg.label} <span style={{ color: cfg.color }}>*</span>
+        </label>
         <textarea
-          value={commentText}
-          onChange={(e) => setCommentText(e.target.value)}
-          placeholder="Adicionar comentário… (Ctrl+Enter para enviar)"
-          rows={3}
+          autoFocus
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={4}
+          placeholder="Obrigatório — sem texto não dá pra enviar."
           style={{
-            width: '100%',
-            background: 'var(--s3)',
-            border: '1px solid var(--border-mid)',
-            borderRadius: 8,
-            padding: '8px 10px',
-            fontSize: 12,
-            color: 'var(--txt)',
-            fontFamily: 'Sora, sans-serif',
-            resize: 'none',
-            outline: 'none',
-            marginBottom: 8,
-            boxSizing: 'border-box',
+            width: '100%', background: 'var(--s3)', border: '1px solid var(--border-mid)',
+            borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--txt)',
+            resize: 'none', outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit',
           }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleComment()
-          }}
+          onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && valid) onConfirm(text.trim()) }}
         />
-        <button
-          onClick={handleComment}
-          style={{
-            width: '100%',
-            background: 'var(--blue)',
-            color: '#000',
-            border: 'none',
-            borderRadius: 7,
-            padding: '7px 0',
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: 'pointer',
-            fontFamily: 'Sora, sans-serif',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-          }}
-        >
-          <MessageSquare size={12} />
-          Comentar
-        </button>
-      </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16 }}>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '8px 16px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              background: 'transparent', color: 'var(--txt2)', border: '1px solid var(--border-mid)',
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => valid && onConfirm(text.trim())}
+            disabled={!valid}
+            style={{
+              padding: '8px 18px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+              cursor: valid ? 'pointer' : 'not-allowed', opacity: valid ? 1 : 0.5,
+              background: cfg.color, color: '#fff', border: 'none',
+            }}
+          >
+            {cfg.cta}
+          </button>
+        </div>
+      </motion.div>
     </div>
   )
 }
@@ -721,37 +653,155 @@ function CommentPanel({ item }: { item: ApprovalItem }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ApprovalsPage() {
-  const [items, setItems] = useState<ApprovalItem[]>(INITIAL_ITEMS)
-  const [selectedId, setSelectedId] = useState(INITIAL_ITEMS[0].id)
+  const items = useApprovalsStore((s) => s.items)
+  const setStatus = useApprovalsStore((s) => s.setStatus)
+  const addCommentToItem = useApprovalsStore((s) => s.addComment)
+  const resolveCommentInItem = useApprovalsStore((s) => s.resolveComment)
+
+  const [selectedId, setSelectedId] = useState<string>('')
+  const [commentText, setCommentText] = useState('')
+  const [pendingPin, setPendingPin] = useState<{ x: number; y: number } | null>(null)
+  const [flashId, setFlashId] = useState<string | null>(null)
+  const [reasonModal, setReasonModal] = useState<{ mode: 'adjust' | 'reject'; itemId: string } | null>(null)
+
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
+  const commentRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   const selected = items.find((i) => i.id === selectedId) ?? items[0]
 
-  function updateStatus(id: string, status: ApprovalStatus) {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)))
+  const updateStatus = useCallback((id: string, status: ApprovalStatus) => {
+    setStatus(id, status)
+  }, [setStatus])
+
+  // Switching items clears the transient pin/draft
+  const switchItem = (id: string) => {
+    setSelectedId(id)
+    setPendingPin(null)
+    setCommentText('')
   }
 
-  function handleApprove() {
-    updateStatus(selected.id, 'approved')
-    toast.success(`"${selected.name}" aprovado!`)
+  const submitComment = useCallback(() => {
+    const text = commentText.trim()
+    if (!text || !selected) return
+    const c: Comment = {
+      id: `new-${Date.now()}`, author: 'Você', avatar: 'VC', color: 'var(--blue)',
+      text, pin: pendingPin ?? undefined, resolved: false, createdAt: 'agora',
+    }
+    addCommentToItem(selected.id, c)
+    setCommentText('')
+    setPendingPin(null)
+    toast.success(pendingPin ? 'Comentário com pin adicionado' : 'Comentário adicionado')
+  }, [commentText, pendingPin, selected, addCommentToItem])
+
+  const resolveComment = (id: string) => { if (selected) resolveCommentInItem(selected.id, id) }
+
+  const handleImageClick = (x: number, y: number) => {
+    setPendingPin({ x, y })
+    setTimeout(() => inputRef.current?.focus(), 0)
   }
 
-  function handleReject() {
-    updateStatus(selected.id, 'rejected')
-    toast.error(`"${selected.name}" rejeitado.`)
+  const scrollToComment = (id: string) => {
+    commentRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setFlashId(id)
+    setTimeout(() => setFlashId((f) => (f === id ? null : f)), 1200)
   }
+
+  const approve = useCallback((id: string) => {
+    const it = items.find((i) => i.id === id)
+    updateStatus(id, 'approved')
+    toast.success(`✓ Aprovado — ${it?.name ?? ''}`)
+  }, [items, updateStatus])
+
+  const confirmReason = (text: string) => {
+    if (!reasonModal) return
+    const { mode, itemId } = reasonModal
+    const it = items.find((i) => i.id === itemId)
+    const note: Comment = {
+      id: `sys-${Date.now()}`, author: 'Você', avatar: 'VC',
+      color: mode === 'adjust' ? '#F07B54' : 'var(--red)',
+      text: `${mode === 'adjust' ? 'Ajuste solicitado' : 'Rejeitado'}: ${text}`,
+      resolved: false, createdAt: 'agora',
+    }
+    addCommentToItem(itemId, note)
+    if (mode === 'adjust') {
+      updateStatus(itemId, 'changes')
+      toast.message(`Ajuste solicitado — ${it?.name ?? ''}`, { description: 'O designer foi notificado.' })
+    } else {
+      updateStatus(itemId, 'rejected')
+      toast.error(`Rejeitado — ${it?.name ?? ''}`)
+    }
+    setReasonModal(null)
+  }
+
+  // Keyboard shortcuts (Bonus)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement
+      const typing = el.tagName === 'INPUT' || el.tagName === 'TEXTAREA'
+
+      if (e.key === 'Escape') {
+        if (reasonModal) setReasonModal(null)
+        else if (pendingPin) setPendingPin(null)
+        return
+      }
+      if (typing || reasonModal) return
+
+      const idx = items.findIndex((i) => i.id === selectedId)
+      if (e.key === 'ArrowDown') { e.preventDefault(); switchItem(items[Math.min(idx + 1, items.length - 1)].id) }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); switchItem(items[Math.max(idx - 1, 0)].id) }
+      else if (e.key.toLowerCase() === 'a') { if (selected.status === 'pending') approve(selected.id) }
+      else if (e.key.toLowerCase() === 'r') { if (selected.status === 'pending') setReasonModal({ mode: 'adjust', itemId: selected.id }) }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [items, selectedId, reasonModal, pendingPin, selected, approve])
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        height: '100%',
-        overflow: 'hidden',
-        background: 'var(--bg)',
-      }}
-    >
-      <ItemList items={items} selectedId={selectedId} onSelect={setSelectedId} />
-      <DetailPanel item={selected} onApprove={handleApprove} onReject={handleReject} />
-      <CommentPanel item={selected} />
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', background: 'var(--bg)' }}>
+      <ItemList
+        items={items}
+        selectedId={selectedId}
+        onSelect={switchItem}
+        onQuickApprove={approve}
+        onQuickReject={(id) => setReasonModal({ mode: 'reject', itemId: id })}
+      />
+
+      <DetailPanel
+        item={selected}
+        comments={selected.comments}
+        pendingPin={pendingPin}
+        onImageClick={handleImageClick}
+        onPinClick={scrollToComment}
+        onClearPin={() => setPendingPin(null)}
+        onApprove={() => approve(selected.id)}
+        onReject={() => setReasonModal({ mode: 'reject', itemId: selected.id })}
+        onRequestAdjust={() => setReasonModal({ mode: 'adjust', itemId: selected.id })}
+      />
+
+      <CommentPanel
+        comments={selected.comments}
+        commentText={commentText}
+        pendingPin={pendingPin}
+        flashId={flashId}
+        inputRef={inputRef}
+        commentRefs={commentRefs}
+        onChangeText={setCommentText}
+        onSubmitComment={submitComment}
+        onResolve={resolveComment}
+        onClearPin={() => setPendingPin(null)}
+      />
+
+      <AnimatePresence>
+        {reasonModal && (
+          <ReasonModal
+            key={reasonModal.itemId + reasonModal.mode}
+            mode={reasonModal.mode}
+            itemName={items.find((i) => i.id === reasonModal.itemId)?.name ?? ''}
+            onClose={() => setReasonModal(null)}
+            onConfirm={confirmReason}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

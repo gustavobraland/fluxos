@@ -2,15 +2,17 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { User, Shield, Sliders, Building2, Camera, Sun, Moon, Check, Eye, EyeOff } from 'lucide-react'
+import { User, Shield, Sliders, Building2, Camera, Sun, Moon, Check, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
+import { useWorkspaceStore, type BrandVoice } from '@/store/useWorkspaceStore'
 
-type Tab = 'profile' | 'security' | 'preferences' | 'workspace'
+type Tab = 'profile' | 'security' | 'preferences' | 'workspace' | 'brandvoice'
 
 const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'profile',     label: 'Perfil',        icon: User },
   { id: 'security',   label: 'Segurança',     icon: Shield },
   { id: 'preferences',label: 'Preferências',  icon: Sliders },
+  { id: 'brandvoice', label: 'Brand Voice',   icon: Sparkles },
   { id: 'workspace',  label: 'Workspace',     icon: Building2 },
 ]
 
@@ -497,6 +499,117 @@ function WorkspaceTab() {
   )
 }
 
+function BrandVoiceTab() {
+  const { brandVoice, setBrandVoice } = useWorkspaceStore()
+  const [hashtagsText, setHashtagsText] = useState(brandVoice.hashtags.join(', '))
+  const [saved, setSaved] = useState(false)
+
+  function handleSave() {
+    const hashtags = hashtagsText
+      .split(',')
+      .map(h => h.trim().replace(/^#/, ''))
+      .filter(Boolean)
+    setBrandVoice({ hashtags })
+    setSaved(true)
+    toast.success('Brand voice salva')
+    setTimeout(() => setSaved(false), 3000)
+  }
+
+  function ToggleRow({ label, sub, value, onChange }: { label: string; sub?: string; value: boolean; onChange: (v: boolean) => void }) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{label}</div>
+          {sub && <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 2 }}>{sub}</div>}
+        </div>
+        <button
+          onClick={() => onChange(!value)}
+          style={{
+            width: 44, height: 24, borderRadius: 12,
+            background: value ? 'var(--green)' : 'var(--s3)',
+            border: 'none', cursor: 'pointer', position: 'relative', flexShrink: 0,
+            transition: 'background 0.2s',
+          }}
+        >
+          <div style={{
+            position: 'absolute', top: 3,
+            left: value ? 23 : 3,
+            width: 18, height: 18, borderRadius: '50%', background: '#fff',
+            boxShadow: '0 1px 4px rgba(0,0,0,.3)', transition: 'left 0.2s',
+          }} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div style={{
+        padding: 20, background: 'var(--s2)', borderRadius: 12,
+        border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 16,
+      }}>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>
+            Voz da marca
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--txt3)' }}>
+            Usada pela IA ao refinar as copies no Multipost.
+          </div>
+        </div>
+
+        <Field
+          label="Tom de voz"
+          value={brandVoice.tone}
+          onChange={(v) => setBrandVoice({ tone: v })}
+          placeholder="Ex: Energético, direto, apaixonado por esporte"
+        />
+        <Field
+          label="Evitar"
+          value={brandVoice.avoid}
+          onChange={(v) => setBrandVoice({ avoid: v })}
+          placeholder="Ex: Linguagem corporativa, clichês"
+        />
+        <Field
+          label="Hashtags padrão"
+          value={hashtagsText}
+          onChange={setHashtagsText}
+          placeholder="Ex: braland, futebol, brasileirao"
+          hint="Separe por vírgulas. O # é opcional."
+        />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)' }}>Idioma</label>
+          <select
+            value={brandVoice.language}
+            onChange={(e) => setBrandVoice({ language: e.target.value as BrandVoice['language'] })}
+            style={{
+              width: '100%', height: 38, padding: '0 12px', borderRadius: 8,
+              fontSize: 13, background: 'var(--s3)', border: '1px solid var(--border-subtle)',
+              color: 'var(--txt)', fontFamily: 'Sora, sans-serif', outline: 'none',
+            }}
+          >
+            <option value="pt-BR">Português (Brasil)</option>
+            <option value="en">Inglês</option>
+            <option value="es">Espanhol</option>
+            <option value="hybrid">Híbrido (PT + EN)</option>
+          </select>
+        </div>
+
+        <ToggleRow
+          label="Emojis"
+          sub="Permitir que a IA use emojis nas copies"
+          value={brandVoice.emojis}
+          onChange={(v) => setBrandVoice({ emojis: v })}
+        />
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <SaveButton onClick={handleSave} saved={saved} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -505,6 +618,7 @@ export default function SettingsPage() {
     profile:     <ProfileTab />,
     security:    <SecurityTab />,
     preferences: <PreferencesTab />,
+    brandvoice:  <BrandVoiceTab />,
     workspace:   <WorkspaceTab />,
   }[tab]
 

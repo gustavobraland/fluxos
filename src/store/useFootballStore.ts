@@ -5,68 +5,7 @@ import {
   mapAPIFixture,
   shouldAutoPromote,
   generateGoalCaption,
-  TEAMS,
-  COMPETITIONS,
-  calculatePriority,
-  getRivalryScore,
-  getAIRecommendation,
-  generateAISignals,
 } from '@/lib/football'
-import type { CachedFixture } from '@/lib/fixtures-cache'
-
-// ─── CachedFixture → LiveMatch mapper ────────────────────────────────────────
-// The Redis cache stores minimal CachedFixture objects; this converts them to
-// LiveMatch so the rest of the codebase works unchanged.
-
-function cachedToLiveMatch(f: CachedFixture): LiveMatch {
-  // Resolve full team objects from registry (fallback to minimal if unknown)
-  const homeTeam = TEAMS[f.homeTeam.id] ?? {
-    id: f.homeTeam.id, name: f.homeTeam.name, shortName: f.homeTeam.shortName,
-    emoji: f.homeTeam.emoji, country: 'INT', tier: 3 as const, basePriority: 50,
-  }
-  const awayTeam = TEAMS[f.awayTeam.id] ?? {
-    id: f.awayTeam.id, name: f.awayTeam.name, shortName: f.awayTeam.shortName,
-    emoji: f.awayTeam.emoji, country: 'INT', tier: 3 as const, basePriority: 50,
-  }
-  const competition = COMPETITIONS[f.competition.id] ?? {
-    id: f.competition.id, name: f.competition.name, shortName: f.competition.shortName,
-    emoji: f.competition.emoji, country: 'INT', tier: 2 as const, basePriority: 60,
-  }
-
-  const isBrazilNT = !!(homeTeam.isBrazilNationalTeam || awayTeam.isBrazilNationalTeam)
-  const isWorldCup = !!(competition.isWorldCup)
-  const isWCQ = !!(competition.isWorldCupQualifier)
-  const rivalryScore = getRivalryScore(homeTeam.id, awayTeam.id)
-  const trendScore = isBrazilNT ? 95 : isWorldCup ? 90 : rivalryScore >= 90 ? 80 : 60
-  const priorityScore = calculatePriority(homeTeam, awayTeam, competition, f.status, trendScore)
-
-  const partial: LiveMatch = {
-    id: f.id,
-    homeTeam, awayTeam, competition,
-    status: f.status,
-    score: { ...f.score },
-    minute: f.minute,
-    events: [],   // events are delivered via SSE GoalEvents, not stored in cache
-    priorityScore, trendScore,
-    audienceScore: Math.min(100, Math.round(priorityScore * 0.95)),
-    rivalryScore,
-    aiRecommendation: '',
-    aiSignals: [],
-    inWarRoom: false,
-    kickoffLabel: f.kickoffLabel,
-    isBrazilNationalTeam: isBrazilNT,
-    isWorldCup,
-    isWorldCupQualifier: isWCQ,
-  }
-  partial.aiRecommendation = getAIRecommendation(partial)
-  partial.aiSignals = generateAISignals(partial)
-  return partial
-}
-
-function isCachedFixture(item: unknown): item is CachedFixture {
-  const f = item as Record<string, unknown>
-  return typeof f?.kickoffTs === 'number' && typeof f?.updatedAt === 'number'
-}
 
 // ─── Module-level ticker (survives StrictMode double-mount) ───────────────────
 
@@ -97,28 +36,10 @@ interface FootballState {
   removeQueueItem: (id: string) => void
 }
 
-// ─── Fetch helpers ────────────────────────────────────────────────────────────
+// ─── Fetch helper ─────────────────────────────────────────────────────────────
 
-/**
- * Primary: read from Redis-backed cache (server-side cron populates this).
- * Returns normalized CachedFixture[] that can be mapped to LiveMatch.
- */
-async function fetchFromCache(): Promise<{ fixtures: unknown[]; connected: boolean; error: string | null }> {
-  try {
-    const res = await fetch('/api/sports/fixtures', { cache: 'no-store' })
-    if (!res.ok) return { fixtures: [], connected: false, error: 'CACHE_ERROR' }
-    const fixtures = await res.json() as unknown[]
-    return { fixtures, connected: true, error: null }
-  } catch {
-    return { fixtures: [], connected: false, error: 'NETWORK_ERROR' }
-  }
-}
-
-/**
- * Fallback: read directly from API-Football via existing route.
- * Used only when cache returns 0 fixtures (e.g. first deploy before cron runs).
- */
-async function fetchLiveFallback(): Promise<{ fixtures: unknown[]; connected: boolean; error: string | null }> {
+/** Read live + upcoming fixtures directly from API-Football via our server routes. */
+async function fetchFixtures(): Promise<{ fixtures: unknown[]; connected: boolean; error: string | null }> {
   try {
     const [liveRes, upcomingRes] = await Promise.all([
       fetch('/api/football/live', { cache: 'no-store' }),
@@ -150,28 +71,20 @@ export const useFootballStore = create<FootballState>((set, get) => ({
     if (_tickerId !== null) return
     set({ loading: true, initialized: true })
 
-    // Poll cache every 5 min — data is kept fresh server-side by Vercel Cron.
-    // Much cheaper than the old 60s browser polling: 1 Redis read vs 2 API-Football calls.
-    const pollInterval = 5 * 60_000
+    // Refresh live + upcoming fixtures every 60s from API-Football.
+    const pollInterval = 60_000
 
     const tick = async () => {
       try {
-        // Try Redis cache first; fall back to direct API if cache is empty
-        let data = await fetchFromCache()
-        if (data.connected && data.fixtures.length === 0) {
-          data = await fetchLiveFallback()
-        }
+        const data = await fetchFixtures()
 
         if (!data.connected) {
           set({ apiConnected: false, loading: false, error: data.error })
           return
         }
 
-        // Route through the appropriate mapper:
-        // - CachedFixture (from /api/sports/fixtures) → cachedToLiveMatch
-        // - Raw API-Football response (from fallback) → mapAPIFixture
         const allMatches = (data.fixtures ?? [])
-          .map(item => isCachedFixture(item) ? cachedToLiveMatch(item) : mapAPIFixture(item))
+          .map(item => mapAPIFixture(item))
           .filter((m): m is LiveMatch => m !== null)
 
         // Dedup by fixture ID

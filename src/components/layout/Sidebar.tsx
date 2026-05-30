@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays,
   Send, FolderOpen, CheckSquare, BarChart3, Plug, ChevronRight,
-  Settings, HelpCircle, ClipboardList,
+  Settings, HelpCircle, ClipboardList, Sparkles,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { NAV_ITEMS } from '@/lib/constants'

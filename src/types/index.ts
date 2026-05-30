@@ -3,7 +3,7 @@ export type Theme = 'dark' | 'light'
 export type ViewId =
   | 'dashboard' | 'timeline' | 'warroom' | 'pipeline'
   | 'calendar'  | 'multipost'| 'assets'  | 'approvals'
-  | 'analytics' | 'integrations' | 'reports'
+  | 'analytics' | 'integrations' | 'reports' | 'prompts'
 
 export type PlatformId =
   | 'instagram' | 'twitter' | 'tiktok' | 'linkedin'
@@ -98,7 +98,8 @@ export interface ApprovalItem {
   subtitle: string
   emoji: string
   type: 'image' | 'video'
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'changes'
+  mediaUrl?: string
   comments: Comment[]
 }
 

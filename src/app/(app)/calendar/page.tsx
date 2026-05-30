@@ -1,13 +1,37 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Plus, Trophy, FileText, Clock, TrendingUp, CalendarDays, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useShallow } from 'zustand/shallow'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
-import type { CalendarEvent } from '@/types'
+import { useCalendarStore } from '@/store/useCalendarStore'
+import { TeamLogo } from '@/components/timeline/TeamLogo'
 
 type ViewMode = 'month' | 'week'
+
+// Display shape merging the legacy mock events with the live store events.
+interface DisplayEvent {
+  id: string
+  day: number
+  month: number
+  year?: number
+  time?: string
+  type: string
+  title: string
+  subtitle?: string
+  result?: 'win' | 'draw' | 'loss' | null
+  leagueLogo?: string
+  homeLogo?: string
+  awayLogo?: string
+}
+
+const RESULT_META: Record<'win' | 'draw' | 'loss', { color: string; label: string }> = {
+  win:  { color: 'var(--green)',  label: 'Vitória' },
+  draw: { color: 'var(--txt2)',   label: 'Empate'  },
+  loss: { color: 'var(--red)',    label: 'Derrota' },
+}
 
 const DAYS_HEADER = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 
@@ -27,7 +51,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   campaign: FileText,
 }
 
-const mockEvents: CalendarEvent[] = [
+const mockEvents: DisplayEvent[] = [
   { id: '1',  day: 26, month: 5, time: '16:00', type: 'match',    title: 'Flamengo x Botafogo' },
   { id: '3',  day: 26, month: 5, time: '20:00', type: 'content',  title: 'Post recap rodada 8' },
   { id: '4',  day: 27, month: 5, time: '10:00', type: 'content',  title: 'Carrossel tabela Brasileirão' },
@@ -69,12 +93,32 @@ export default function CalendarPage() {
     'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
   ]
 
+  // Live events from the War Room / Multipost sync
+  const storeEvents = useCalendarStore(useShallow(s => s.events))
+  const storeDisplay = useMemo<DisplayEvent[]>(() =>
+    storeEvents.map(e => ({
+      id: e.id,
+      day: Number(e.date.slice(8, 10)),
+      month: Number(e.date.slice(5, 7)),
+      year: Number(e.date.slice(0, 4)),
+      time: e.time,
+      type: e.type,
+      title: e.title,
+      subtitle: e.subtitle,
+      result: e.result,
+      leagueLogo: e.leagueLogo,
+      homeLogo: e.homeLogo,
+      awayLogo: e.awayLogo,
+    })), [storeEvents])
+
   const daysInMonth = getDaysInMonth(currentYear, currentMonth)
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
   const TODAY = 27 // 2026-05-27
 
-  const eventsForDay = (day: number) =>
-    mockEvents.filter((e) => e.day === day && e.month === currentMonth)
+  const eventsForDay = (day: number): DisplayEvent[] => [
+    ...mockEvents.filter((e) => e.day === day && e.month === currentMonth),
+    ...storeDisplay.filter((e) => e.day === day && e.month === currentMonth && e.year === currentYear),
+  ]
 
   const selectedEvents = selectedDay ? eventsForDay(selectedDay) : []
 
@@ -264,7 +308,7 @@ function MonthView({
   firstDay: number
   today: number
   currentMonth: number
-  eventsForDay: (d: number) => CalendarEvent[]
+  eventsForDay: (d: number) => DisplayEvent[]
   selectedDay: number | null
   onSelectDay: (d: number) => void
 }) {
@@ -328,7 +372,7 @@ function MonthView({
   )
 }
 
-function WeekView({ weekDays, eventsForDay, today }: { weekDays: number[]; eventsForDay: (d: number) => CalendarEvent[]; today: number }) {
+function WeekView({ weekDays, eventsForDay, today }: { weekDays: number[]; eventsForDay: (d: number) => DisplayEvent[]; today: number }) {
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '50px repeat(7, 1fr)', marginBottom: 4, position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 2, paddingBottom: 8 }}>
@@ -364,7 +408,7 @@ function WeekView({ weekDays, eventsForDay, today }: { weekDays: number[]; event
   )
 }
 
-function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | null; events: CalendarEvent[]; monthName: string }) {
+function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | null; events: DisplayEvent[]; monthName: string }) {
   return (
     <div style={{ background: 'var(--s2)', border: '1px solid var(--border-subtle)', borderRadius: 14, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
       <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
@@ -397,16 +441,41 @@ function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | n
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {events.map((ev) => {
                 const Icon = TYPE_ICONS[ev.type] || FileText
-                const color = TYPE_COLORS[ev.type]
+                const color = TYPE_COLORS[ev.type] || 'var(--txt2)'
+                const isMatch = ev.type === 'match'
+                const res = ev.result ? RESULT_META[ev.result] : null
                 return (
                   <div key={ev.id} style={{ background: 'var(--s3)', borderRadius: 10, padding: '10px 12px', borderLeft: `3px solid ${color}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <Icon size={12} style={{ color, flexShrink: 0 }} />
+                      {isMatch && ev.leagueLogo ? (
+                        <TeamLogo src={ev.leagueLogo} alt={ev.subtitle || 'liga'} size={14} />
+                      ) : (
+                        <Icon size={12} style={{ color, flexShrink: 0 }} />
+                      )}
                       <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace', color: 'var(--txt2)' }}>{ev.time}</span>
+                      {res && (
+                        <span style={{
+                          marginLeft: 'auto', fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
+                          letterSpacing: '0.04em', borderRadius: 99, padding: '1px 7px',
+                          color: res.color, background: `${res.color}22`, border: `1px solid ${res.color}55`,
+                        }}>
+                          {res.label}
+                        </span>
+                      )}
                     </div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.4 }}>{ev.title}</div>
+
+                    {isMatch && (ev.homeLogo || ev.awayLogo) ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, lineHeight: 1.4 }}>
+                        <TeamLogo src={ev.homeLogo || ''} alt="" size={16} />
+                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>{ev.title}</span>
+                        <TeamLogo src={ev.awayLogo || ''} alt="" size={16} />
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', lineHeight: 1.4 }}>{ev.title}</div>
+                    )}
+
                     <div style={{ marginTop: 6, display: 'inline-block', fontSize: 10, padding: '2px 8px', borderRadius: 20, background: `${color}22`, color, textTransform: 'capitalize' }}>
-                      {ev.type}
+                      {ev.subtitle || ev.type}
                     </div>
                   </div>
                 )
