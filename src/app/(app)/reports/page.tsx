@@ -1,8 +1,13 @@
 'use client'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ClipboardList, Plus, Trash2, CalendarDays, User, FileText } from 'lucide-react'
+import { ClipboardList, Plus, Trash2, CalendarDays, User, FileText, Sparkles } from 'lucide-react'
 import { useReportStore } from '@/store/useReportStore'
+import { usePipelineStore } from '@/store/usePipelineStore'
+import { useApprovalsStore } from '@/store/useApprovalsStore'
+import { usePromptsStore } from '@/store/usePromptsStore'
+import { useCalendarStore } from '@/store/useCalendarStore'
+import { buildDailyReport } from '@/lib/insights'
 import { useTranslation } from '@/hooks/useTranslation'
 import { toast } from 'sonner'
 
@@ -23,10 +28,19 @@ const TODAY = new Date().toISOString().slice(0, 10)
 
 export default function ReportsPage() {
   const { reports, addReport, deleteReport } = useReportStore()
+  const tasks = usePipelineStore((s) => s.tasks)
+  const approvals = useApprovalsStore((s) => s.items)
+  const prompts = usePromptsStore((s) => s.prompts)
+  const events = useCalendarStore((s) => s.events)
   const { t, locale } = useTranslation()
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  const generateSummary = () => {
+    setContent(buildDailyReport({ tasks, approvals, prompts, events }))
+    toast.success('Resumo do dia gerado a partir da atividade real')
+  }
 
   const handleSave = async () => {
     if (!content.trim()) { toast.error(t('reports.toast.contentRequired')); return }
@@ -108,11 +122,25 @@ export default function ReportsPage() {
           </div>
 
           {/* Textarea */}
-          <label
-            style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt3)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}
-          >
-            {t('reports.contentLabel')}
-          </label>
+          <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
+            <label
+              style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt3)', letterSpacing: '0.08em', textTransform: 'uppercase', display: 'block' }}
+            >
+              {t('reports.contentLabel')}
+            </label>
+            <button
+              onClick={generateSummary}
+              className="flex items-center transition-all"
+              style={{
+                height: 24, padding: '0 10px', gap: 5, borderRadius: 7,
+                fontSize: 11, fontWeight: 600,
+                background: 'rgba(167,139,250,.12)', color: '#A78BFA',
+                border: '1px solid rgba(167,139,250,.3)', cursor: 'pointer',
+              }}
+            >
+              <Sparkles size={11} /> Gerar resumo do dia
+            </button>
+          </div>
           <textarea
             value={content}
             onChange={e => setContent(e.target.value)}

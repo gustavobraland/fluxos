@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { BarChart3, Lock } from 'lucide-react'
+import { BarChart3, Lock, Workflow, CheckSquare, Sparkles, Trophy } from 'lucide-react'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
+import { usePipelineStore } from '@/store/usePipelineStore'
+import { useApprovalsStore } from '@/store/useApprovalsStore'
+import { usePromptsStore } from '@/store/usePromptsStore'
+import { useCalendarStore } from '@/store/useCalendarStore'
+import { computeInsights } from '@/lib/insights'
 import { PlatformIcon, IntegrationIcon } from '@/components/ui/PlatformIcon'
 
 const SOCIAL_IDS = ['instagram', 'twitter', 'tiktok', 'youtube', 'facebook', 'linkedin']
@@ -17,6 +22,15 @@ const DATE_RANGES = [
 export default function AnalyticsPage() {
   const router = useRouter()
   const { integrations, connectInt, connecting } = useIntegrationsStore()
+  const tasks = usePipelineStore((s) => s.tasks)
+  const approvals = useApprovalsStore((s) => s.items)
+  const prompts = usePromptsStore((s) => s.prompts)
+  const events = useCalendarStore((s) => s.events)
+
+  const ins = useMemo(
+    () => computeInsights({ tasks, approvals, prompts, events }),
+    [tasks, approvals, prompts, events]
+  )
 
   const [platformFilter, setPlatformFilter] = useState<string>('all')
   const [dateRange, setDateRange] = useState('30d')
@@ -164,6 +178,87 @@ export default function AnalyticsPage() {
         alignItems: 'center',
         gap: 40,
       }}>
+
+        {/* ── Produção interna — dados reais do app ── */}
+        <div style={{ width: '100%', maxWidth: 960 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', margin: 0 }}>Produção interna</h2>
+            <span style={{ fontSize: 11, color: 'var(--txt3)' }}>dados reais do Flux OS</span>
+          </div>
+
+          {/* Stat cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
+            {[
+              { icon: <Workflow size={14} />, label: 'No pipeline', value: ins.pipelineTotal, sub: `${ins.createdToday} criados hoje`, color: 'var(--blue)' },
+              { icon: <CheckSquare size={14} />, label: 'Aprovações pendentes', value: ins.approvals.pending, sub: `${ins.approvals.approved} aprovadas`, color: 'var(--yellow)' },
+              { icon: <Sparkles size={14} />, label: 'Prompts usados', value: ins.prompts.uses, sub: `${ins.prompts.total} salvos`, color: '#A78BFA' },
+              { icon: <Trophy size={14} />, label: 'Jogos no calendário', value: ins.matches.total, sub: `${ins.matches.upcoming} por vir`, color: 'var(--green)' },
+            ].map((c) => (
+              <div key={c.label} style={{ background: 'var(--s1)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: c.color, marginBottom: 8 }}>{c.icon}</div>
+                <div style={{ fontSize: 26, fontWeight: 800, fontFamily: 'JetBrains Mono, monospace', color: 'var(--txt)', lineHeight: 1 }}>{c.value}</div>
+                <div style={{ fontSize: 11, color: 'var(--txt2)', marginTop: 4 }}>{c.label}</div>
+                <div style={{ fontSize: 10, color: 'var(--txt3)', marginTop: 2 }}>{c.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* 7-day created + top prompts */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 10 }}>
+            {/* 7-day bar chart */}
+            <div style={{ background: 'var(--s1)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '14px 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
+                Tasks criadas — últimos 7 dias
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 110 }}>
+                {ins.last7.map((d) => {
+                  const max = Math.max(...ins.last7.map(x => x.count), 1)
+                  const h = Math.round((d.count / max) * 88)
+                  return (
+                    <div key={d.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace', color: 'var(--txt3)' }}>{d.count || ''}</span>
+                      <div style={{
+                        width: '70%', height: Math.max(h, 3), borderRadius: 6,
+                        background: d.count ? 'var(--blue)' : 'var(--s3)', transition: 'height .2s',
+                      }} />
+                      <span style={{ fontSize: 9, color: 'var(--txt3)' }}>{d.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Top prompts */}
+            <div style={{ background: 'var(--s1)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '14px 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
+                Prompts mais usados
+              </div>
+              {ins.prompts.top.length === 0 ? (
+                <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '8px 0' }}>Nenhum prompt usado ainda.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {ins.prompts.top.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 11, color: 'var(--txt)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.title}</span>
+                      <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace', fontWeight: 700, color: '#A78BFA', background: 'rgba(167,139,250,.12)', borderRadius: 99, padding: '1px 8px', flexShrink: 0 }}>
+                        {p.usageCount}x
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Divider into external metrics */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 32 }}>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+            <span style={{ fontSize: 10, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Métricas de plataforma (requer conexão)
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
+          </div>
+        </div>
 
         {/* Hero empty state */}
         <div style={{

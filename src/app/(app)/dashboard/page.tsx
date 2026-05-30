@@ -4,6 +4,7 @@ import { usePipelineStore } from '@/store/usePipelineStore'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
 import { PIPELINE_COLUMNS } from '@/lib/constants'
 import { Plus, Zap, Radio, BarChart3 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/hooks/useTranslation'
 
 const mono = 'JetBrains Mono, monospace'
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   const { tasks } = usePipelineStore()
   const { integrations } = useIntegrationsStore()
   const { t, locale } = useTranslation()
+  const router = useRouter()
 
   const today = new Date().toLocaleDateString(locale === 'zh-CN' ? 'zh-CN' : 'pt-BR', {
     weekday: 'short', day: '2-digit', month: 'short', year: 'numeric',
@@ -116,10 +118,10 @@ export default function DashboardPage() {
         <span style={{ fontSize: 11, color: 'var(--txt2)', fontFamily: mono }}>{today}</span>
         <div style={{ flex: 1 }} />
         {[
-          { icon: <Plus size={10} />, label: t('dashboard.newTask'), color: 'var(--txt)', border: 'var(--border-subtle)' },
-          { icon: <Zap size={10} />,  label: t('dashboard.multipost'), color: 'var(--txt)', border: 'var(--border-subtle)' },
+          { icon: <Plus size={10} />, label: t('dashboard.newTask'), color: 'var(--txt)', border: 'var(--border-subtle)', to: '/pipeline' },
+          { icon: <Zap size={10} />,  label: t('dashboard.multipost'), color: 'var(--txt)', border: 'var(--border-subtle)', to: '/multipost' },
         ].map(b => (
-          <button key={b.label} style={{
+          <button key={b.label} onClick={() => router.push(b.to)} style={{
             height: 26,
             padding: '0 10px',
             fontSize: 10,
@@ -136,7 +138,7 @@ export default function DashboardPage() {
             {b.icon} {b.label}
           </button>
         ))}
-        <button style={{
+        <button onClick={() => router.push('/warroom')} style={{
           height: 26,
           padding: '0 10px',
           fontSize: 10,
@@ -301,12 +303,12 @@ export default function DashboardPage() {
             <div style={sectionLabel}>{t('dashboard.quickActions')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {[
-                { icon: <Zap size={10} />,       label: t('dashboard.multipostNow'), color: 'var(--coral)' },
-                { icon: <Plus size={10} />,       label: t('dashboard.newTask'),      color: 'var(--txt)'   },
-                { icon: <Radio size={10} />,      label: t('dashboard.warRoom'),      color: 'var(--coral)' },
-                { icon: <BarChart3 size={10} />,  label: t('dashboard.analytics'),    color: 'var(--blue)'  },
+                { icon: <Zap size={10} />,       label: t('dashboard.multipostNow'), color: 'var(--coral)', to: '/multipost' },
+                { icon: <Plus size={10} />,       label: t('dashboard.newTask'),      color: 'var(--txt)',   to: '/pipeline'  },
+                { icon: <Radio size={10} />,      label: t('dashboard.warRoom'),      color: 'var(--coral)', to: '/warroom'   },
+                { icon: <BarChart3 size={10} />,  label: t('dashboard.analytics'),    color: 'var(--blue)',  to: '/analytics' },
               ].map(b => (
-                <button key={b.label} style={{
+                <button key={b.label} onClick={() => router.push(b.to)} style={{
                   height: 28,
                   width: '100%',
                   borderRadius: 7,
