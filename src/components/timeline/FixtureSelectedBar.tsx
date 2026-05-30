@@ -24,7 +24,7 @@ export function FixtureSelectedBar({
       transition={{ type: 'spring', stiffness: 380, damping: 32 }}
       style={{
         position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 20,
-        background: 'var(--s2)', borderTop: '1px solid rgba(91,184,232,0.35)',
+        background: 'var(--s2)', borderTop: '1px solid rgba(37,99,235,0.35)',
         boxShadow: '0 -6px 24px rgba(0,0,0,0.28)',
         padding: '12px 16px',
         display: 'flex', alignItems: 'center', gap: 14,

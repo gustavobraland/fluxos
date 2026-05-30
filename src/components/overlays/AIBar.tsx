@@ -67,7 +67,7 @@ export function AIBar() {
                   style={{
                     background: activeChip === chip ? 'var(--grad-soft)' : 'var(--s2)',
                     color: activeChip === chip ? 'var(--blue)' : 'var(--txt2)',
-                    border: `1px solid ${activeChip === chip ? 'rgba(91,184,232,.3)' : 'transparent'}`,
+                    border: `1px solid ${activeChip === chip ? 'rgba(37,99,235,.3)' : 'transparent'}`,
                   }}
                 >
                   {chip}

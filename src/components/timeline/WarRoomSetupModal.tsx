@@ -129,8 +129,8 @@ export function WarRoomSetupModal({
                 style={{
                   display: 'flex', alignItems: 'center', gap: 11, textAlign: 'left',
                   padding: '10px 12px', borderRadius: 9, width: '100%',
-                  background: on ? 'rgba(91,184,232,0.08)' : 'var(--s2)',
-                  border: `1px solid ${on ? 'rgba(91,184,232,0.4)' : 'var(--border-subtle)'}`,
+                  background: on ? 'rgba(37,99,235,0.08)' : 'var(--s2)',
+                  border: `1px solid ${on ? 'rgba(37,99,235,0.4)' : 'var(--border-subtle)'}`,
                   cursor: 'pointer', transition: 'all 0.15s',
                 }}
               >

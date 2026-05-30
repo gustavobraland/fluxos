@@ -11,7 +11,7 @@ export function PresenceAvatars() {
       <div
         className="relative w-[22px] h-[22px] rounded-full flex items-center justify-center select-none"
         style={{
-          background: 'linear-gradient(135deg,#5BB8E8,#A78BFA)',
+          background: 'linear-gradient(135deg,#2563EB,#A78BFA)',
           fontSize: '7.5px',
           fontWeight: 700,
           color: '#fff',

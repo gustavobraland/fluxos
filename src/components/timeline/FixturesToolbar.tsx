@@ -49,7 +49,7 @@ export function FixturesToolbar({
               style={{
                 height: 30, padding: '0 12px', borderRadius: 99,
                 background: active ? 'var(--s3)' : 'transparent',
-                border: `1px solid ${active ? 'rgba(91,184,232,0.4)' : 'var(--border-subtle)'}`,
+                border: `1px solid ${active ? 'rgba(37,99,235,0.4)' : 'var(--border-subtle)'}`,
                 color: active ? 'var(--txt)' : 'var(--txt3)',
                 cursor: 'pointer', fontSize: 11, fontWeight: active ? 700 : 500,
                 transition: 'all 0.15s',
@@ -94,7 +94,7 @@ export function FixturesToolbar({
           disabled={loading}
           style={{
             height: 30, padding: '0 12px', borderRadius: 8,
-            background: 'rgba(91,184,232,0.12)', border: '1px solid rgba(91,184,232,0.3)',
+            background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)',
             color: 'var(--blue)', cursor: loading ? 'default' : 'pointer',
             fontSize: 11, fontWeight: 600, opacity: loading ? 0.6 : 1,
             display: 'flex', alignItems: 'center', gap: 6,

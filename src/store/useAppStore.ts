@@ -26,7 +26,7 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  theme: 'dark',
+  theme: 'light',
   activeView: 'pipeline',
   cmdOpen: false,
   aiBarOpen: false,

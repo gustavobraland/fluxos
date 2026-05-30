@@ -5,8 +5,8 @@ import { useAppStore } from '@/store/useAppStore'
 
 const NOTIFS = [
   { id: '1', icon: CheckSquare, color: '#3ECF8E', title: 'Post aprovado', desc: 'Highlights rodada 8 foi aprovado por Carlos', time: '2min' },
-  { id: '2', icon: Zap, color: '#F07B54', title: 'War Room ativo', desc: 'Flamengo x Botafogo — Minuto 34', time: '5min' },
-  { id: '3', icon: Send, color: '#5BB8E8', title: 'Post publicado', desc: 'Carrossel de odds publicado no Instagram', time: '12min' },
+  { id: '2', icon: Zap, color: '#E0201A', title: 'War Room ativo', desc: 'Flamengo x Botafogo — Minuto 34', time: '5min' },
+  { id: '3', icon: Send, color: '#2563EB', title: 'Post publicado', desc: 'Carrossel de odds publicado no Instagram', time: '12min' },
   { id: '4', icon: Bell, color: '#F5C842', title: 'Revisão pendente', desc: 'Motion reel Copa do Brasil aguarda revisão', time: '1h' },
 ]
 

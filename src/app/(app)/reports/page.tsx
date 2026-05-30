@@ -107,7 +107,7 @@ export default function ReportsPage() {
               className="flex items-center justify-center text-white text-[10px] font-bold shrink-0"
               style={{
                 width: 22, height: 22, borderRadius: '50%',
-                background: 'linear-gradient(135deg,#5BB8E8,#A78BFA)',
+                background: 'linear-gradient(135deg,#2563EB,#A78BFA)',
               }}
             >
               G
@@ -347,7 +347,7 @@ export default function ReportsPage() {
                   className="flex items-center justify-center text-white text-[10px] font-bold shrink-0"
                   style={{
                     width: 28, height: 28, borderRadius: '50%',
-                    background: 'linear-gradient(135deg,#5BB8E8,#A78BFA)',
+                    background: 'linear-gradient(135deg,#2563EB,#A78BFA)',
                   }}
                 >
                   {selected.author.slice(0, 1).toUpperCase()}

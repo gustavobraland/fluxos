@@ -45,11 +45,11 @@ export function FixtureCard({
       style={{
         position: 'relative',
         background: selected ? 'var(--s2)' : 'var(--s1)',
-        border: `1px solid ${selected ? 'rgba(91,184,232,0.4)' : live ? 'rgba(62,207,142,0.35)' : 'var(--border-subtle)'}`,
+        border: `1px solid ${selected ? 'rgba(37,99,235,0.4)' : live ? 'rgba(62,207,142,0.35)' : 'var(--border-subtle)'}`,
         borderRadius: 12,
         overflow: 'hidden',
         cursor: 'pointer',
-        boxShadow: selected ? '0 4px 20px rgba(91,184,232,0.12)' : undefined,
+        boxShadow: selected ? '0 4px 20px rgba(37,99,235,0.12)' : undefined,
       }}
     >
       {/* Top accent band (selected or live) */}

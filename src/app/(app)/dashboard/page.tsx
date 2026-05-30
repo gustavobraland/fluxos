@@ -143,7 +143,7 @@ export default function DashboardPage() {
           padding: '0 10px',
           fontSize: 10,
           borderRadius: 6,
-          border: '1px solid rgba(240,123,84,.4)',
+          border: '1px solid rgba(224,32,26,.4)',
           background: 'transparent',
           color: 'var(--coral)',
           cursor: 'pointer',

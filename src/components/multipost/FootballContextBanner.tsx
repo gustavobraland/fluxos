@@ -22,15 +22,15 @@ export function FootballContextBanner() {
         alignItems: 'center',
         gap: 8,
         padding: '7px 14px',
-        background: 'rgba(240,123,84,.08)',
-        border: '1px solid rgba(240,123,84,.22)',
+        background: 'rgba(224,32,26,.08)',
+        border: '1px solid rgba(224,32,26,.22)',
         borderRadius: 8,
         marginBottom: 8,
       }}
     >
       <span style={{ fontSize: 14, flexShrink: 0 }}>📡</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#F07B54' }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#E0201A' }}>
           {activeQueueItem.triggeredBy}
         </span>
         {scoreStr && (
@@ -49,9 +49,9 @@ export function FootballContextBanner() {
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           width: 20, height: 20, borderRadius: '50%',
-          background: 'rgba(240,123,84,.15)',
-          border: '1px solid rgba(240,123,84,.25)',
-          color: '#F07B54', cursor: 'pointer', flexShrink: 0,
+          background: 'rgba(224,32,26,.15)',
+          border: '1px solid rgba(224,32,26,.25)',
+          color: '#E0201A', cursor: 'pointer', flexShrink: 0,
         }}
         title="Dispensar origem"
       >

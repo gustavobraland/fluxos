@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
+import { FluxLogo } from '@/components/layout/FluxLogo'
 
 function GoogleIcon({ size = 15 }: { size?: number }) {
   return (
@@ -68,12 +69,12 @@ export default function LoginPage() {
       className="min-h-screen flex items-center justify-center p-4"
       style={{ background: 'var(--bg)' }}
     >
-      {/* Background gradient blobs */}
+      {/* Background brand blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #5BB8E8 0%, transparent 70%)' }} />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-10"
-          style={{ background: 'radial-gradient(circle, #F07B54 0%, transparent 70%)' }} />
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full opacity-[0.06]"
+          style={{ background: 'radial-gradient(circle, #E0201A 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full opacity-[0.05]"
+          style={{ background: 'radial-gradient(circle, #E0201A 0%, transparent 70%)' }} />
       </div>
 
       <motion.div
@@ -84,20 +85,14 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="flex flex-col items-center mb-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.webp"
-            alt="Flux OS"
-            width={56}
-            height={56}
-            className="rounded-2xl mb-3"
-            style={{ boxShadow: '0 8px 32px rgba(91,184,232,.3)' }}
-          />
-          <div className="flex items-end gap-1">
-            <span className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--txt)' }}>Flux</span>
-            <span className="text-[11px] uppercase tracking-[2px] mb-[3px]" style={{ color: 'var(--txt3)' }}>OS</span>
+          <div className="mb-3">
+            <FluxLogo size="lg" />
           </div>
-          <p className="text-[13px] mt-1" style={{ color: 'var(--txt2)' }}>{t('login.subtitle')}</p>
+          <div className="flex items-baseline gap-1">
+            <span style={{ fontFamily: "'Arial Black', 'Helvetica Neue', Arial, sans-serif", fontWeight: 900, fontSize: 26, letterSpacing: '-0.5px', textTransform: 'uppercase', color: 'var(--txt)' }}>FLUX</span>
+            <span style={{ fontFamily: "'Arial Black', 'Helvetica Neue', Arial, sans-serif", fontWeight: 900, fontSize: 16, letterSpacing: '-0.3px', textTransform: 'uppercase', color: '#E0201A' }}>OS</span>
+          </div>
+          <p className="text-[13px] mt-2" style={{ color: 'var(--txt2)' }}>{t('login.subtitle')}</p>
         </div>
 
         {/* Card */}

@@ -18,7 +18,7 @@ const TASK_TYPES: TaskType[] = ['Copy', 'Design', 'Motion', 'Copy + Design', 'Es
 const PRIORITY_OPTIONS = [
   { value: 'low',    label: 'Baixa',  color: '#5B5B7A' },
   { value: 'medium', label: 'Média',  color: '#F5C842' },
-  { value: 'high',   label: 'Alta',   color: '#F07B54' },
+  { value: 'high',   label: 'Alta',   color: '#E0201A' },
 ] as const
 
 type PriorityLevel = 'low' | 'medium' | 'high'

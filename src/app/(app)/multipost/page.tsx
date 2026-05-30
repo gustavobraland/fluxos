@@ -285,8 +285,8 @@ export default function MultipostPage() {
                       padding: '0 12px',
                       gap: 6,
                       borderRadius: 8,
-                      border: `1px solid ${isSelected ? 'rgba(91,184,232,.45)' : 'var(--border-subtle)'}`,
-                      background: isSelected ? 'rgba(91,184,232,.12)' : 'var(--s2)',
+                      border: `1px solid ${isSelected ? 'rgba(37,99,235,.45)' : 'var(--border-subtle)'}`,
+                      background: isSelected ? 'rgba(37,99,235,.12)' : 'var(--s2)',
                       color: isSelected ? 'var(--txt)' : 'var(--txt2)',
                       cursor: 'pointer',
                     }}
@@ -471,7 +471,7 @@ export default function MultipostPage() {
                 fontWeight: 500,
                 background: 'transparent',
                 color: 'var(--blue)',
-                border: '1px solid rgba(91,184,232,.3)',
+                border: '1px solid rgba(37,99,235,.3)',
                 cursor: 'pointer',
               }}
             >
@@ -533,8 +533,8 @@ export default function MultipostPage() {
                     borderRadius: 7,
                     fontSize: 11,
                     fontWeight: 600,
-                    border: `1px solid ${active ? 'rgba(91,184,232,.45)' : 'var(--border-subtle)'}`,
-                    background: active ? 'rgba(91,184,232,.12)' : 'var(--s2)',
+                    border: `1px solid ${active ? 'rgba(37,99,235,.45)' : 'var(--border-subtle)'}`,
+                    background: active ? 'rgba(37,99,235,.12)' : 'var(--s2)',
                     color: active ? 'var(--txt)' : 'var(--txt2)',
                     cursor: 'pointer',
                   }}

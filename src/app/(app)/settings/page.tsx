@@ -52,7 +52,7 @@ function Field({
             outline: 'none',
             boxSizing: 'border-box',
           }}
-          onFocus={e => { e.currentTarget.style.borderColor = 'rgba(91,184,232,.4)' }}
+          onFocus={e => { e.currentTarget.style.borderColor = 'rgba(37,99,235,.4)' }}
           onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-subtle)' }}
         />
         {isPassword && (
@@ -161,7 +161,7 @@ function ProfileTab() {
               width: 64,
               height: 64,
               borderRadius: '50%',
-              background: 'linear-gradient(135deg,#5BB8E8,#A78BFA)',
+              background: 'linear-gradient(135deg,#2563EB,#A78BFA)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -396,7 +396,7 @@ function PreferencesTab() {
             >
               {t === 'dark'
                 ? <Moon size={18} style={{ color: '#A78BFA' }} />
-                : <Sun size={18} style={{ color: '#F5A040' }} />
+                : <Sun size={18} style={{ color: '#D97706' }} />
               }
               <span style={{ fontSize: 11, fontWeight: 600, color: t === 'dark' ? '#fff' : '#111' }}>
                 {t === 'dark' ? 'Escuro' : 'Claro'}

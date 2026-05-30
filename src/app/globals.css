@@ -6,101 +6,106 @@
 @custom-variant dark (&:is([data-theme="dark"] *));
 
 :root {
-  /* Backgrounds */
-  --bg:    #0C0C0F;
-  --s1:    #111116;
-  --s2:    #17171E;
-  --s3:    #1E1E28;
-  --s4:    #252532;
-  --b1:    #1E1E2A;
-  --b2:    #2A2A3C;
-  --b3:    #363650;
+  /* ── LIGHT (default) ── Backgrounds */
+  --bg:    #FFFFFF;
+  --s1:    #F8F8F8;
+  --s2:    #F2F2F2;
+  --s3:    #EBEBEB;
+  --s4:    #E0E0E0;
+  --b1:    #E8E8E8;
+  --b2:    #D8D8D8;
+  --b3:    #C8C8C8;
 
-  /* Brand */
-  --blue:   #5BB8E8;
-  --coral:  #F07B54;
-  --orange: #F5A040;
-  --grad:      linear-gradient(135deg, #5BB8E8 0%, #F07B54 55%, #F5A040 100%);
-  --grad-soft: linear-gradient(135deg, rgba(91,184,232,.12) 0%, rgba(240,123,84,.12) 55%, rgba(245,160,64,.12) 100%);
+  /* Brand — red is the new primary; coral/orange remapped to palette successors */
+  --blue:   #2563EB;
+  --coral:  #E0201A;
+  --orange: #D97706;
+  --red:    #E0201A;     /* brand red */
+  --red-s:  rgba(224,32,26,0.1);
+  /* Gradient removed — kept as solid red so existing var(--grad) usages stay on-brand */
+  --grad:      #E0201A;
+  --grad-soft: rgba(224,32,26,0.1);
 
   /* Semantic */
-  --green:  #3ECF8E;
-  --red:    #F87171;
-  --yellow: #F5C842;
+  --green:  #16A34A;
+  --yellow: #D97706;
 
   /* Text */
-  --txt:  #EEEEF5;
-  --txt2: #8B8BA8;
-  --txt3: #3D3D58;
+  --txt:  #111111;
+  --txt2: #666666;
+  --txt3: #AAAAAA;
 
   /* Borders */
-  --border-subtle: rgba(255,255,255,0.06);
-  --border-mid:    rgba(255,255,255,0.10);
+  --border-subtle: rgba(0,0,0,0.08);
+  --border-mid:    rgba(0,0,0,0.14);
 
   /* Layout */
   --sidebar-w:    220px;
   --topbar-h:     52px;
   --statusbar-h:  26px;
 
-  /* Topbar glass — theme-aware */
-  --topbar-bg:     rgba(14, 14, 20, 0.82);
-  --topbar-border: rgba(255, 255, 255, 0.06);
-
-  /* shadcn compat */
-  --background: #0C0C0F;
-  --foreground: #EEEEF5;
-  --card: #17171E;
-  --card-foreground: #EEEEF5;
-  --popover: #17171E;
-  --popover-foreground: #EEEEF5;
-  --primary: #5BB8E8;
-  --primary-foreground: #0C0C0F;
-  --secondary: #1E1E28;
-  --secondary-foreground: #EEEEF5;
-  --muted: #1E1E28;
-  --muted-foreground: #8B8BA8;
-  --accent: #2A2A3C;
-  --accent-foreground: #EEEEF5;
-  --destructive: #F87171;
-  --border: rgba(255,255,255,0.08);
-  --input: rgba(255,255,255,0.06);
-  --ring: rgba(91,184,232,0.4);
-  --radius: 0.5rem;
-}
-
-[data-theme="light"] {
-  --bg:    #F4F4F7;
-  --s1:    #FFFFFF;
-  --s2:    #F0F0F5;
-  --s3:    #E8E8F0;
-  --s4:    #DDDDE8;
-  --b1:    #E2E2EC;
-  --b2:    #CDCDE0;
-  --b3:    #B8B8D0;
-  --txt:   #18181F;
-  --txt2:  #5A5A78;
-  --txt3:  #9898B0;
-  --border-subtle: rgba(0,0,0,0.06);
-  --border-mid:    rgba(0,0,0,0.10);
-
-  /* Topbar glass — light override */
+  /* Topbar glass */
   --topbar-bg:     rgba(255, 255, 255, 0.90);
   --topbar-border: rgba(0, 0, 0, 0.08);
 
-  --background: #F4F4F7;
-  --foreground: #18181F;
-  --card: #FFFFFF;
-  --card-foreground: #18181F;
+  /* shadcn compat */
+  --background: #FFFFFF;
+  --foreground: #111111;
+  --card: #F8F8F8;
+  --card-foreground: #111111;
   --popover: #FFFFFF;
-  --popover-foreground: #18181F;
-  --secondary: #E8E8F0;
-  --secondary-foreground: #18181F;
-  --muted: #E8E8F0;
-  --muted-foreground: #5A5A78;
-  --accent: #DDDDE8;
-  --accent-foreground: #18181F;
+  --popover-foreground: #111111;
+  --primary: #E0201A;
+  --primary-foreground: #FFFFFF;
+  --secondary: #EBEBEB;
+  --secondary-foreground: #111111;
+  --muted: #EBEBEB;
+  --muted-foreground: #666666;
+  --accent: #E0E0E0;
+  --accent-foreground: #111111;
+  --destructive: #E0201A;
   --border: rgba(0,0,0,0.08);
   --input: rgba(0,0,0,0.06);
+  --ring: rgba(224,32,26,0.4);
+  --radius: 0.5rem;
+}
+
+[data-theme="dark"] {
+  /* ── DARK ── Backgrounds */
+  --bg:    #0A0A0A;
+  --s1:    #111111;
+  --s2:    #1A1A1A;
+  --s3:    #222222;
+  --s4:    #2A2A2A;
+  --b1:    #1E1E1E;
+  --b2:    #2A2A2A;
+  --b3:    #363636;
+  --txt:   #FFFFFF;
+  --txt2:  #888888;
+  --txt3:  #444444;
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-mid:    rgba(255,255,255,0.12);
+  --red-s:  rgba(224,32,26,0.16);
+  --grad-soft: rgba(224,32,26,0.16);
+
+  /* Topbar glass — dark */
+  --topbar-bg:     rgba(10, 10, 10, 0.82);
+  --topbar-border: rgba(255, 255, 255, 0.08);
+
+  --background: #0A0A0A;
+  --foreground: #FFFFFF;
+  --card: #1A1A1A;
+  --card-foreground: #FFFFFF;
+  --popover: #1A1A1A;
+  --popover-foreground: #FFFFFF;
+  --secondary: #222222;
+  --secondary-foreground: #FFFFFF;
+  --muted: #222222;
+  --muted-foreground: #888888;
+  --accent: #2A2A2A;
+  --accent-foreground: #FFFFFF;
+  --border: rgba(255,255,255,0.08);
+  --input: rgba(255,255,255,0.06);
 }
 
 @theme inline {
@@ -143,7 +148,7 @@
   --color-ring:             var(--ring);
 
   /* Fonts */
-  --font-sans: 'Sora', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 
   /* Animations */
@@ -198,7 +203,7 @@
   }
 
   html {
-    font-family: 'Sora', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     background-color: var(--bg);
     color: var(--txt);
     -webkit-font-smoothing: antialiased;
@@ -229,19 +234,17 @@
 
 /* ─── Utilities ─── */
 @layer utilities {
+  /* Gradient removed — brand is solid red now. Kept as classes for compatibility. */
   .grad-text {
-    background: var(--grad);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: var(--red);
   }
 
   .grad-bg {
-    background: var(--grad);
+    background: var(--red);
   }
 
   .grad-soft-bg {
-    background: var(--grad-soft);
+    background: var(--red-s);
   }
 
   .border-subtle {

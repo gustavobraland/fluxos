@@ -13,8 +13,8 @@ const INITIAL_ITEMS: ApprovalItem[] = [
     type: 'image',
     status: 'pending',
     comments: [
-      { id: 'c1', author: 'Carla M.', avatar: 'CM', color: '#5BB8E8', text: 'Ficou incrível! Só ajustar a fonte no rodapé.', pin: { x: 30, y: 80 }, resolved: false, createdAt: 'há 12 min' },
-      { id: 'c2', author: 'Lucas P.', avatar: 'LP', color: '#F07B54', text: 'Aprovar assim que corrigir o detalhe da fonte.', pin: { x: 68, y: 40 }, resolved: false, createdAt: 'há 8 min' },
+      { id: 'c1', author: 'Carla M.', avatar: 'CM', color: '#2563EB', text: 'Ficou incrível! Só ajustar a fonte no rodapé.', pin: { x: 30, y: 80 }, resolved: false, createdAt: 'há 12 min' },
+      { id: 'c2', author: 'Lucas P.', avatar: 'LP', color: '#E0201A', text: 'Aprovar assim que corrigir o detalhe da fonte.', pin: { x: 68, y: 40 }, resolved: false, createdAt: 'há 8 min' },
     ],
   },
   {
@@ -47,7 +47,7 @@ const INITIAL_ITEMS: ApprovalItem[] = [
     type: 'image',
     status: 'rejected',
     comments: [
-      { id: 'c5', author: 'Carla M.', avatar: 'CM', color: '#5BB8E8', text: 'Dados incorretos — placar da semana passada.', pin: { x: 50, y: 55 }, resolved: false, createdAt: 'há 1h' },
+      { id: 'c5', author: 'Carla M.', avatar: 'CM', color: '#2563EB', text: 'Dados incorretos — placar da semana passada.', pin: { x: 50, y: 55 }, resolved: false, createdAt: 'há 1h' },
     ],
   },
 ]

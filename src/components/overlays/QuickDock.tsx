@@ -79,7 +79,7 @@ export function QuickDock() {
           onMouseEnter={() => setHoveredIdx(99)}
           onMouseLeave={() => setHoveredIdx(null)}
           className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-lg"
-          style={{ background: 'var(--grad)', boxShadow: '0 8px 24px rgba(91,184,232,.3)' }}
+          style={{ background: 'var(--grad)', boxShadow: '0 8px 24px rgba(37,99,235,.3)' }}
         >
           <Plus size={18} strokeWidth={2.5} />
         </motion.button>

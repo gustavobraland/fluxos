@@ -269,12 +269,12 @@ export function getAIRecommendation(match: LiveMatch): string {
 
 const SIGNAL_TEMPLATES = {
   trending_brazil: { icon: '🇧🇷', title: 'Brasil trending globalmente',   subtitle: 'Deploy máxima cobertura agora',  color: '#3ECF8E', urgency: 'urgent' as const, baseConf: 96 },
-  goal_window:     { icon: '⚽', title: 'Janela pós-gol ativa',           subtitle: 'CTR +340% nos próximos 6 min',   color: '#F07B54', urgency: 'urgent' as const, baseConf: 94 },
-  audience_spike:  { icon: '📈', title: 'Pico de audiência detectado',    subtitle: 'Tráfego social acima da média',  color: '#5BB8E8', urgency: 'go'     as const, baseConf: 87 },
+  goal_window:     { icon: '⚽', title: 'Janela pós-gol ativa',           subtitle: 'CTR +340% nos próximos 6 min',   color: '#E0201A', urgency: 'urgent' as const, baseConf: 94 },
+  audience_spike:  { icon: '📈', title: 'Pico de audiência detectado',    subtitle: 'Tráfego social acima da média',  color: '#2563EB', urgency: 'go'     as const, baseConf: 87 },
   meme_window:     { icon: '😂', title: 'Janela de viralização',          subtitle: 'Alta probabilidade de viral',    color: '#A78BFA', urgency: 'go'     as const, baseConf: 82 },
-  rivalry_heat:    { icon: '🔥', title: 'Rivalidade em máxima tensão',    subtitle: 'Deploy conteúdo de clássico',    color: '#F5A040', urgency: 'watch'  as const, baseConf: 79 },
+  rivalry_heat:    { icon: '🔥', title: 'Rivalidade em máxima tensão',    subtitle: 'Deploy conteúdo de clássico',    color: '#D97706', urgency: 'watch'  as const, baseConf: 79 },
   best_timing:     { icon: '🎯', title: 'Melhor slot de publicação',      subtitle: 'Baseado no histórico de CTR',    color: '#3ECF8E', urgency: 'watch'  as const, baseConf: 74 },
-  twitter_spike:   { icon: '𝕏',  title: 'Velocidade no X acelerando',    subtitle: 'Volume de menções 3× esperado',  color: '#5BB8E8', urgency: 'go'     as const, baseConf: 81 },
+  twitter_spike:   { icon: '𝕏',  title: 'Velocidade no X acelerando',    subtitle: 'Volume de menções 3× esperado',  color: '#2563EB', urgency: 'go'     as const, baseConf: 81 },
 }
 
 export function generateAISignals(match: LiveMatch): AISignal[] {

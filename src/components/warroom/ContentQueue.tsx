@@ -9,7 +9,7 @@ const STATUS_META: Record<QueueStatus, { label: string; color: string; bg: strin
   generating: { label: 'Gerando',   color: 'var(--txt3)',  bg: 'var(--s3)' },
   ready:      { label: 'Pronto',    color: 'var(--green)', bg: 'rgba(62,207,142,0.12)' },
   review:     { label: 'Review',    color: 'var(--yellow)', bg: 'rgba(245,200,66,0.12)' },
-  deploy:     { label: 'Deploy',    color: 'var(--blue)',  bg: 'rgba(91,184,232,0.12)' },
+  deploy:     { label: 'Deploy',    color: 'var(--blue)',  bg: 'rgba(37,99,235,0.12)' },
   published:  { label: 'Publicado', color: '#A78BFA',      bg: 'rgba(167,139,250,0.12)' },
 }
 
@@ -96,7 +96,7 @@ export function ContentQueue() {
                   </button>
                   <button
                     onClick={() => sendToMultipost(item.id, item.caption, item.platforms)}
-                    style={btn('var(--blue)', 'rgba(91,184,232,0.3)', 'rgba(91,184,232,0.1)')}
+                    style={btn('var(--blue)', 'rgba(37,99,235,0.3)', 'rgba(37,99,235,0.1)')}
                   >
                     <Send size={10} /> Multipost
                   </button>

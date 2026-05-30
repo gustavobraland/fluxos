@@ -24,14 +24,14 @@ const STATUS_COLOR: Record<ApprovalStatus, string> = {
   pending:  'var(--yellow)',
   approved: 'var(--green)',
   rejected: 'var(--red)',
-  changes:  '#F07B54',
+  changes:  '#E0201A',
 }
 
 const STATUS_BG: Record<ApprovalStatus, string> = {
   pending:  'rgba(245,200,66,0.15)',
   approved: 'rgba(62,207,142,0.15)',
   rejected: 'rgba(248,113,113,0.15)',
-  changes:  'rgba(240,123,84,0.15)',
+  changes:  'rgba(224,32,26,0.15)',
 }
 
 function getItemIcon(emoji: string) {
@@ -268,7 +268,7 @@ function MediaViewer({
             position: 'absolute', left: `${pendingPin.x}%`, top: `${pendingPin.y}%`,
             transform: 'translate(-50%, -50%)',
             width: 24, height: 24, borderRadius: '50%', zIndex: 11, cursor: 'pointer',
-            background: 'rgba(91,184,232,0.25)', color: '#fff',
+            background: 'rgba(37,99,235,0.25)', color: '#fff',
             border: '2px dashed #fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
@@ -451,7 +451,7 @@ function CommentPanel({
                 style={{
                   padding: '10px 16px', borderBottom: '1px solid var(--border-subtle)',
                   opacity: c.resolved ? 0.45 : 1,
-                  background: flashId === c.id ? 'rgba(91,184,232,0.16)' : 'transparent',
+                  background: flashId === c.id ? 'rgba(37,99,235,0.16)' : 'transparent',
                   transition: 'background 0.4s',
                 }}
               >
@@ -519,7 +519,7 @@ function CommentPanel({
               style={{
                 display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
                 fontSize: 10, fontWeight: 700, color: 'var(--blue)',
-                background: 'rgba(91,184,232,0.12)', border: '1px solid rgba(91,184,232,0.3)',
+                background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)',
                 borderRadius: 99, padding: '2px 8px',
               }}
             >
@@ -581,7 +581,7 @@ function ReasonModal({
 }) {
   const [text, setText] = useState('')
   const cfg = mode === 'adjust'
-    ? { title: 'Pedir ajuste', label: 'Descreva o que precisa mudar', color: '#F07B54', cta: 'Enviar ajuste' }
+    ? { title: 'Pedir ajuste', label: 'Descreva o que precisa mudar', color: '#E0201A', cta: 'Enviar ajuste' }
     : { title: 'Rejeitar conteúdo', label: 'Motivo da rejeição', color: 'var(--red)', cta: 'Rejeitar' }
   const valid = text.trim().length > 0
 
@@ -718,7 +718,7 @@ export default function ApprovalsPage() {
     const it = items.find((i) => i.id === itemId)
     const note: Comment = {
       id: `sys-${Date.now()}`, author: 'Você', avatar: 'VC',
-      color: mode === 'adjust' ? '#F07B54' : 'var(--red)',
+      color: mode === 'adjust' ? '#E0201A' : 'var(--red)',
       text: `${mode === 'adjust' ? 'Ajuste solicitado' : 'Rejeitado'}: ${text}`,
       resolved: false, createdAt: 'agora',
     }

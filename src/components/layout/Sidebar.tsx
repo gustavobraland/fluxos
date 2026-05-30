@@ -88,7 +88,7 @@ export function Sidebar() {
                     {item.badge && (
                       <span
                         className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-[0.5px]"
-                        style={{ background: '#F07B5422', color: 'var(--coral)' }}
+                        style={{ background: '#E0201A22', color: 'var(--coral)' }}
                       >
                         <span className="animate-pulse-dot inline-block mr-0.5">●</span>
                         {item.badge}

@@ -165,7 +165,7 @@ function CenteredState({
           onClick={action.onClick}
           style={{
             marginTop: 6, height: 32, padding: '0 16px', borderRadius: 8,
-            background: 'rgba(91,184,232,0.12)', border: '1px solid rgba(91,184,232,0.3)',
+            background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)',
             color: 'var(--blue)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
           }}
         >

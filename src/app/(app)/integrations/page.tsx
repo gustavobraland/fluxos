@@ -163,7 +163,7 @@ function IntegrationCard({
               whiteSpace: 'nowrap',
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(91,184,232,0.12)'
+              e.currentTarget.style.background = 'rgba(37,99,235,0.12)'
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent'

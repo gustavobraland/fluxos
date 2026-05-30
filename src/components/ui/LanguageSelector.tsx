@@ -32,8 +32,8 @@ export function LanguageSelector() {
         className="flex items-center gap-1.5 h-8 px-2 rounded-lg transition-colors hover:bg-[var(--s2)]"
         style={{
           color: directorMode ? 'var(--blue)' : 'var(--txt2)',
-          border: directorMode ? '1px solid rgba(91,184,232,.3)' : '1px solid transparent',
-          background: directorMode ? 'rgba(91,184,232,.08)' : 'transparent',
+          border: directorMode ? '1px solid rgba(37,99,235,.3)' : '1px solid transparent',
+          background: directorMode ? 'rgba(37,99,235,.08)' : 'transparent',
         }}
       >
         <span style={{ fontSize: 14, lineHeight: 1 }}>{current.flag}</span>

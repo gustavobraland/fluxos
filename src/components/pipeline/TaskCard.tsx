@@ -11,14 +11,14 @@ import { PlatformIcon } from '@/components/ui/PlatformIcon'
 
 const TYPE_COLORS: Record<string, string> = {
   'Copy':          '#A78BFA',
-  'Design':        '#F07B54',
-  'Motion':        '#5BB8E8',
+  'Design':        '#E0201A',
+  'Motion':        '#2563EB',
   'Copy + Design': '#F5C842',
   'Estratégia':    '#3ECF8E',
 }
 
 const PRIORITY_COLORS: Record<string, string> = {
-  high:   '#F07B54',
+  high:   '#E0201A',
   medium: '#F5C842',
   low:    '#5B5B7A',
 }

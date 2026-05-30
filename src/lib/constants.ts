@@ -25,8 +25,8 @@ export const NAV_ITEMS: NavSection[] = [
 
 export const PIPELINE_COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
   { id: 'backlog',    label: 'Backlog',    color: '#5B5B7A' },
-  { id: 'production', label: 'Produção',   color: '#5BB8E8' },
-  { id: 'review',     label: 'Revisão',    color: '#F5A040' },
+  { id: 'production', label: 'Produção',   color: '#2563EB' },
+  { id: 'review',     label: 'Revisão',    color: '#D97706' },
   { id: 'ready',      label: 'Pronto',     color: '#3ECF8E' },
   { id: 'published',  label: 'Publicado',  color: '#A78BFA' },
 ]

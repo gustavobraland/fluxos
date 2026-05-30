@@ -4,6 +4,7 @@ import { Search, Bell, Sun, Moon, Command, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '@/store/useAppStore'
 import { PresenceAvatars } from './PresenceAvatars'
+import { FluxLogo } from './FluxLogo'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -27,20 +28,8 @@ export function Topbar() {
       }}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 shrink-0">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo.webp"
-          alt="Flux OS"
-          width={30}
-          height={30}
-          className="rounded-xl shrink-0"
-          style={{ boxShadow: '0 2px 10px rgba(91,184,232,.35)' }}
-        />
-        <div className="flex items-end gap-[2px] leading-none">
-          <span className="text-[14px] font-semibold tracking-tight" style={{ color: 'var(--txt)' }}>Flux</span>
-          <span className="text-[9px] uppercase tracking-[1.5px] pb-[1px]" style={{ color: 'var(--txt3)' }}>OS</span>
-        </div>
+      <div className="shrink-0">
+        <FluxLogo size="sm" showWordmark />
       </div>
 
       {/* Search — center */}
@@ -64,7 +53,7 @@ export function Topbar() {
             className="w-full h-8 pl-8 pr-16 rounded-lg text-[12.5px] outline-none transition-all"
             style={{
               background: 'var(--s2)',
-              border: `1px solid ${searchFocused ? 'rgba(91,184,232,.3)' : 'var(--border-subtle)'}`,
+              border: `1px solid ${searchFocused ? 'rgba(37,99,235,.3)' : 'var(--border-subtle)'}`,
               color: 'var(--txt)',
             }}
           />
@@ -140,7 +129,7 @@ export function Topbar() {
         {/* Avatar */}
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold text-white cursor-pointer ml-1"
-          style={{ background: 'linear-gradient(135deg, #5BB8E8, #A78BFA)' }}
+          style={{ background: 'linear-gradient(135deg, #2563EB, #A78BFA)' }}
           title="Meu perfil"
         >
           G

@@ -326,7 +326,7 @@ export function MediaUpload({ media, onChange }: MediaUploadProps) {
         padding: '24px 16px',
         borderRadius: 10,
         border: `1.5px dashed ${dragging ? 'var(--blue)' : 'var(--border-subtle)'}`,
-        background: dragging ? 'rgba(91,184,232,.06)' : 'var(--s2)',
+        background: dragging ? 'rgba(37,99,235,.06)' : 'var(--s2)',
         cursor: 'pointer',
         transition: 'all 0.15s',
         textAlign: 'center',

@@ -69,7 +69,7 @@ export function TeamAssetCard({
           style={{
             flex: 1, height: 24, borderRadius: 6, cursor: 'pointer',
             fontSize: 10, fontWeight: 600, color: 'var(--blue)',
-            background: 'rgba(91,184,232,0.12)', border: '1px solid rgba(91,184,232,0.3)',
+            background: 'rgba(37,99,235,0.12)', border: '1px solid rgba(37,99,235,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
           }}
         >
