@@ -5,6 +5,7 @@ import { Radio } from 'lucide-react'
 import { useWarRoomStore } from '@/store/useWarRoomStore'
 import { isLiveStatus, isFinishedStatus } from '@/types/fixtures'
 import { MatchHeader } from '@/components/warroom/MatchHeader'
+import { MatchFooter } from '@/components/warroom/MatchFooter'
 import { WarRoomTabs } from '@/components/warroom/WarRoomTabs'
 import { LineupPanel } from '@/components/warroom/LineupPanel'
 import { ContentQueue } from '@/components/warroom/ContentQueue'
@@ -188,6 +189,8 @@ export default function WarRoomPage() {
           <QuotaDisplay />
         </div>
       </div>
+
+      <MatchFooter />
     </div>
   )
 }

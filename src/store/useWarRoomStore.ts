@@ -83,6 +83,17 @@ function defaultPrePacks(): PrePack[] {
   ]
 }
 
+// ─── Goal log (scorer / minute / score) ──────────────────────────────────────
+
+export interface GoalLog {
+  id: string
+  side: 'home' | 'away'
+  team: string
+  scorer: string | null
+  minute: number | null
+  score: { home: number; away: number }
+}
+
 // ─── Per-fixture live session ─────────────────────────────────────────────────
 
 interface Session {
@@ -91,10 +102,11 @@ interface Session {
   queue: QueueItem[]
   prePacks: PrePack[]
   matchEnded: boolean
+  goals: GoalLog[]
 }
 
 function freshSession(): Session {
-  return { lineup: null, liveData: null, queue: [], prePacks: defaultPrePacks(), matchEnded: false }
+  return { lineup: null, liveData: null, queue: [], prePacks: defaultPrePacks(), matchEnded: false, goals: [] }
 }
 
 // ─── Calendar sync helper ─────────────────────────────────────────────────────
@@ -140,6 +152,7 @@ interface WarRoomState {
   queue: QueueItem[]
   prePacks: PrePack[]
   matchEnded: boolean
+  goals: GoalLog[]
 
   // Fixture management
   addFixture: (f: Fixture) => void
@@ -153,6 +166,7 @@ interface WarRoomState {
   setLiveData: (d: LiveData) => void
   addQueueItem: (item: QueueItem) => void
   updateQueueItem: (id: string, patch: Partial<QueueItem>) => void
+  addGoal: (g: GoalLog) => void
   activatePrePack: (scenario: PrePackScenario) => void
   setMatchEnded: (v: boolean) => void
   reset: () => void
@@ -173,6 +187,7 @@ function mirror(activeFixtures: Fixture[], selectedFixtureId: number | null, ses
     queue: sess?.queue ?? [],
     prePacks: sess?.prePacks ?? defaultPrePacks(),
     matchEnded: sess?.matchEnded ?? false,
+    goals: sess?.goals ?? [],
   }
 }
 
@@ -199,6 +214,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     queue: [],
     prePacks: defaultPrePacks(),
     matchEnded: false,
+    goals: [],
 
     addFixture: (f) => {
       const id = f.fixture.id
@@ -256,6 +272,7 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     setLineup: (lineup) => patchSelected(s => ({ ...s, lineup })),
     setLiveData: (liveData) => patchSelected(s => ({ ...s, liveData })),
     addQueueItem: (item) => patchSelected(s => ({ ...s, queue: [item, ...s.queue].slice(0, 40) })),
+    addGoal: (g) => patchSelected(s => ({ ...s, goals: [...s.goals, g] })),
     updateQueueItem: (id, patch) => patchSelected(s => ({
       ...s, queue: s.queue.map(q => (q.id === id ? { ...q, ...patch } : q)),
     })),

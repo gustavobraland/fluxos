@@ -23,16 +23,17 @@ interface MockStep {
   status: FixtureStatus
   elapsed: number | null
   goals: { home: number; away: number }
+  scorer?: string
 }
 
 // 7 states, 3 s apart. Final placar 1–1 → pré-pack Empate.
 const SEQUENCE: MockStep[] = [
   { status: 'NS', elapsed: null, goals: { home: 0, away: 0 } }, // 1. não iniciado
   { status: '1H', elapsed: 20,   goals: { home: 0, away: 0 } }, // 2. em jogo, sem gols
-  { status: '1H', elapsed: 35,   goals: { home: 1, away: 0 } }, // 3. gol home → goal trigger
+  { status: '1H', elapsed: 35,   goals: { home: 1, away: 0 }, scorer: 'Pedro' },    // 3. gol home
   { status: 'HT', elapsed: 45,   goals: { home: 1, away: 0 } }, // 4. intervalo → halftime trigger + pausa
   { status: '2H', elapsed: 65,   goals: { home: 1, away: 0 } }, // 5. 2º tempo
-  { status: '2H', elapsed: 82,   goals: { home: 1, away: 1 } }, // 6. gol away → goal trigger
+  { status: '2H', elapsed: 82,   goals: { home: 1, away: 1 }, scorer: 'Endrick' },  // 6. gol away
   { status: 'FT', elapsed: 90,   goals: { home: 1, away: 1 } }, // 7. fim → match-end + pré-pack Empate + Multipost
 ]
 
@@ -61,8 +62,8 @@ function applyStep(step: MockStep): void {
 
   // Goal detection by score increase vs the previous state (identical to polling)
   if (prev) {
-    if (goals.home > prev.goals.home) triggerGoalContent('home', fx, goals)
-    if (goals.away > prev.goals.away) triggerGoalContent('away', fx, goals)
+    if (goals.home > prev.goals.home) triggerGoalContent('home', fx, goals, step.scorer, step.elapsed)
+    if (goals.away > prev.goals.away) triggerGoalContent('away', fx, goals, step.scorer, step.elapsed)
   }
 
   if (step.status === 'HT') {

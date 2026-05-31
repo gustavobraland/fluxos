@@ -1,8 +1,8 @@
 'use client'
 import { useState } from 'react'
 import {
-  DndContext, DragOverlay, rectIntersection, PointerSensor,
-  useSensor, useSensors, type DragStartEvent, type DragEndEvent,
+  DndContext, DragOverlay, closestCorners, PointerSensor,
+  useSensor, useSensors, type DragStartEvent, type DragEndEvent, type DragOverEvent,
 } from '@dnd-kit/core'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Filter, SlidersHorizontal, X, Star, Clock, Tag, Trash2, ChevronDown } from 'lucide-react'
@@ -453,8 +453,10 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
 
 // ─── Board ─────────────────────────────────────────────────────────────────────
 
+const COL_IDS = PIPELINE_COLUMNS.map(c => c.id) as TaskStatus[]
+
 export function PipelineBoard() {
-  const { tasks, moveTask } = usePipelineStore()
+  const { tasks, moveTask, reorderTasks } = usePipelineStore()
   const [activeTask, setActiveTask]   = useState<Task | null>(null)
   const [showCreate, setShowCreate]   = useState(false)
   const [createStatus, setCreateStatus] = useState<TaskStatus>('backlog')
@@ -469,30 +471,34 @@ export function PipelineBoard() {
     return acc
   }, {} as Record<TaskStatus, Task[]>)
 
+  // Resolve which column a droppable id belongs to (column id, or a task's status)
+  const statusOf = (id: string): TaskStatus | null => {
+    if (COL_IDS.includes(id as TaskStatus)) return id as TaskStatus
+    return usePipelineStore.getState().tasks.find(t => t.id === id)?.status ?? null
+  }
+
   const handleDragStart = ({ active }: DragStartEvent) => {
     setActiveTask(tasks.find(t => t.id === active.id) || null)
+  }
+
+  // Live cross-column move: as the card hovers a different column, switch its
+  // status so it visually flows into that column (canonical multi-container pattern).
+  const handleDragOver = ({ active, over }: DragOverEvent) => {
+    if (!over || active.id === over.id) return
+    const current = usePipelineStore.getState().tasks.find(t => t.id === active.id)
+    if (!current) return
+    const target = statusOf(over.id as string)
+    if (target && target !== current.status) {
+      moveTask(active.id as string, target)
+    }
   }
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveTask(null)
     if (!over) return
-
-    const task = tasks.find(t => t.id === active.id)
-    if (!task) return
-
-    const colIds = PIPELINE_COLUMNS.map(c => c.id)
-    if (colIds.includes(over.id as TaskStatus)) {
-      if (task.status !== over.id) {
-        moveTask(task.id, over.id as TaskStatus)
-        toast.success(`Movido para ${PIPELINE_COLUMNS.find(c => c.id === over.id)?.label}`)
-      }
-      return
-    }
-
-    const overTask = tasks.find(t => t.id === over.id)
-    if (overTask && overTask.status !== task.status) {
-      moveTask(task.id, overTask.status)
-      toast.success(`Movido para ${PIPELINE_COLUMNS.find(c => c.id === overTask.status)?.label}`)
+    // Same column (or settling next to a task): finalize order via reorder.
+    if (active.id !== over.id && !COL_IDS.includes(over.id as TaskStatus)) {
+      reorderTasks(active.id as string, over.id as string)
     }
   }
 
@@ -542,8 +548,9 @@ export function PipelineBoard() {
       {/* Board */}
       <DndContext
         sensors={sensors}
-        collisionDetection={rectIntersection}
+        collisionDetection={closestCorners}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="flex-1 overflow-x-auto overflow-y-hidden">
@@ -560,9 +567,9 @@ export function PipelineBoard() {
           </div>
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeTask ? (
-            <div className="rotate-2 opacity-90">
+            <div className="rotate-2" style={{ width: 224, cursor: 'grabbing' }}>
               <TaskCard task={activeTask} />
             </div>
           ) : null}

@@ -52,12 +52,35 @@ function scoreLine(fx: Fixture, goals: Goals): string {
 
 // ─── Goal ───────────────────────────────────────────────────────────────────
 
-export function triggerGoalContent(side: 'home' | 'away', fx: Fixture, goals: Goals) {
+// Pull the latest goal scorer for a side from the fixture's events (when the
+// API returns them on /fixtures?id=). Returns null when unavailable.
+function extractScorer(fx: Fixture, side: 'home' | 'away'): string | null {
+  const events = (fx as unknown as { events?: { type?: string; team?: { id?: number }; player?: { name?: string } }[] }).events
+  if (!Array.isArray(events)) return null
+  const teamId = fx.teams[side].id
+  const goalEvents = events.filter(e => e.type === 'Goal' && e.team?.id === teamId)
+  return goalEvents[goalEvents.length - 1]?.player?.name ?? null
+}
+
+export function triggerGoalContent(side: 'home' | 'away', fx: Fixture, goals: Goals, scorer?: string | null, minuteOverride?: number | null) {
   const scorerTeam = side === 'home' ? fx.teams.home.name : fx.teams.away.name
-  const minute = fx.fixture.status.elapsed
+  const minute = minuteOverride ?? fx.fixture.status.elapsed
+  const who = scorer ?? extractScorer(fx, side)
   const caption =
-    `⚽ GOL DO ${scorerTeam.toUpperCase()}!\n${scoreLine(fx, goals)}` +
+    `⚽ GOL DO ${scorerTeam.toUpperCase()}!` +
+    (who ? ` ${who}` : '') +
+    `\n${scoreLine(fx, goals)}` +
     (minute ? ` · ${minute}'` : '')
+
+  // Log the goal (scorer/minute/score) for the War Room footer
+  useWarRoomStore.getState().addGoal({
+    id: `g-${Date.now()}-${side}`,
+    side,
+    team: scorerTeam,
+    scorer: who ?? null,
+    minute: minute ?? null,
+    score: { home: goals.home, away: goals.away },
+  })
 
   const id = nextId('goal')
   useWarRoomStore.getState().addQueueItem({
