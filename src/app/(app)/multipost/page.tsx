@@ -1,18 +1,23 @@
 'use client'
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, Loader2, Zap, CheckCircle2, CalendarClock } from 'lucide-react'
+import { Sparkles, Loader2, Zap, CheckCircle2, CalendarClock, Trash2 } from 'lucide-react'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
 import { YoutubeGlyph } from '@/components/multipost/YoutubeGlyph'
 import { MediaUpload, type MediaState } from '@/components/multipost/MediaUpload'
 import { PlatformCopies } from '@/components/multipost/PlatformCopies'
 import { PlatformPreview } from '@/components/multipost/PlatformPreview'
-import { PLATFORM_ORDER, PLATFORM_META, type PlatformId } from '@/lib/platform-limits'
+import { PLATFORM_ORDER, PLATFORM_META, PLATFORM_LIMITS, type PlatformId } from '@/lib/platform-limits'
 import { useMultipostStore } from '@/store/useMultipostStore'
 import { useWorkspaceStore, brandVoiceToString } from '@/store/useWorkspaceStore'
 import { usePipelineStore } from '@/store/usePipelineStore'
+import { useScheduleStore } from '@/store/useScheduleStore'
+import { useCalendarStore } from '@/store/useCalendarStore'
+import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
 import type { PlatformId as TaskPlatformId } from '@/types'
+
+const TZ = 'America/Sao_Paulo'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -78,6 +83,9 @@ export default function MultipostPage() {
   const { draft, clearDraft } = useMultipostStore()
   const { brandVoice } = useWorkspaceStore()
   const { addTask } = usePipelineStore()
+  const scheduledPosts = useScheduleStore(useShallow(s => s.scheduled))
+  const schedule = useScheduleStore(s => s.schedule)
+  const removeScheduled = useScheduleStore(s => s.removeScheduled)
 
   // Keep preview tab valid as selection changes.
   useEffect(() => {
@@ -235,6 +243,30 @@ export default function MultipostPage() {
     setTimeout(() => setPublished(false), 3000)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, copies, baseCopy, scheduledAt, trackTask])
+
+  // Real scheduling: persist the post + mirror it onto the Calendar as a content event
+  const schedulePost = () => {
+    if (!guard()) return
+    if (!scheduledAt) { toast.error('Escolha data e hora'); return }
+    const ts = new Date(scheduledAt).getTime()
+    if (isNaN(ts)) { toast.error('Data inválida'); return }
+    const caption = (applyVars(baseCopy).trim() || applyVars(copies[selected[0]] || '').trim())
+    schedule({ caption, platforms: selected, scheduledAt: ts })
+    useCalendarStore.getState().addEvent({
+      id: `content-${ts}-${selected.join('')}`,
+      type: 'content',
+      title: caption.split('\n')[0].slice(0, 50) || 'Post agendado',
+      subtitle: selected.map(p => PLATFORM_META[p].short).join(' · '),
+      date: new Date(ts).toLocaleDateString('en-CA', { timeZone: TZ }),
+      time: new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: TZ }),
+      timestamp: Math.floor(ts / 1000),
+      source: 'multipost',
+      platforms: selected,
+    })
+    trackTask('backlog')
+    toast.success(`Agendado para ${new Date(ts).toLocaleString('pt-BR')} · também no Calendário`)
+    setScheduledAt('')
+  }
 
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -479,7 +511,7 @@ export default function MultipostPage() {
             </button>
             <motion.button
               whileTap={{ scale: 0.97 }}
-              onClick={publishNow}
+              onClick={scheduledAt ? schedulePost : publishNow}
               disabled={publishing || published}
               className="flex items-center justify-center shrink-0 transition-all"
               style={{
@@ -521,6 +553,9 @@ export default function MultipostPage() {
           ) : (
             selected.map((id) => {
               const active = previewTab === id
+              const lim = PLATFORM_LIMITS[id]
+              const count = applyVars(copies[id] || baseCopy).length
+              const countColor = count > lim.caption ? 'var(--red)' : count > lim.recommended ? 'var(--yellow)' : 'var(--txt3)'
               return (
                 <button
                   key={id}
@@ -528,7 +563,7 @@ export default function MultipostPage() {
                   className="inline-flex items-center transition-all"
                   style={{
                     height: 28,
-                    padding: '0 10px',
+                    padding: '0 8px 0 10px',
                     gap: 5,
                     borderRadius: 7,
                     fontSize: 11,
@@ -541,6 +576,12 @@ export default function MultipostPage() {
                 >
                   <PlatformGlyph id={id} size={12} />
                   {PLATFORM_META[id].short}
+                  <span style={{
+                    fontFamily: 'JetBrains Mono, monospace', fontSize: 9, fontWeight: 700,
+                    color: countColor, background: 'var(--s3)', borderRadius: 5, padding: '1px 4px',
+                  }}>
+                    {count}/{lim.caption}
+                  </span>
                 </button>
               )
             })
@@ -569,6 +610,50 @@ export default function MultipostPage() {
             />
           )}
         </div>
+
+        {/* Agendados */}
+        {scheduledPosts.length > 0 && (
+          <div className="border-t" style={{ borderColor: 'var(--border-subtle)', flexShrink: 0, maxHeight: 200, overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}>
+              <CalendarClock size={12} style={{ color: 'var(--blue)' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt)' }}>Agendados</span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: 'var(--blue)', background: 'rgba(37,99,235,.12)', borderRadius: 99, padding: '1px 7px' }}>
+                {scheduledPosts.length}
+              </span>
+            </div>
+            {scheduledPosts.map((p) => (
+              <div key={p.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px',
+                borderTop: '1px solid var(--border-subtle)',
+              }}>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, fontWeight: 700, color: 'var(--blue)', flexShrink: 0, width: 96 }}>
+                  {new Date(p.scheduledAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: TZ })}
+                </span>
+                <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {p.caption.split('\n')[0] || '(sem texto)'}
+                </span>
+                <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+                  {p.platforms.slice(0, 5).map((pid) => (
+                    <span key={pid} style={{ color: 'var(--txt3)' }}>
+                      <PlatformGlyph id={pid as PlatformId} size={11} />
+                    </span>
+                  ))}
+                </div>
+                <button
+                  onClick={() => { removeScheduled(p.id); toast.success('Agendamento removido') }}
+                  title="Remover agendamento"
+                  style={{
+                    width: 22, height: 22, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
+                    background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--red)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <Trash2 size={11} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
