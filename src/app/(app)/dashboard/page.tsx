@@ -1,11 +1,18 @@
 'use client'
 
+import { useEffect } from 'react'
 import { usePipelineStore } from '@/store/usePipelineStore'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
+import { useApprovalsStore } from '@/store/useApprovalsStore'
+import { useFixturesStore } from '@/store/useFixturesStore'
 import { PIPELINE_COLUMNS } from '@/lib/constants'
-import { Plus, Zap, Radio, BarChart3 } from 'lucide-react'
+import { Plus, Zap, Radio, BarChart3, CheckSquare, Trophy } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useShallow } from 'zustand/shallow'
 import { useTranslation } from '@/hooks/useTranslation'
+import { TeamLogo } from '@/components/timeline/TeamLogo'
+import { formatTimeBRT, dayLabelBRT } from '@/lib/fixtures-client'
+import { isLiveStatus } from '@/types/fixtures'
 
 const mono = 'JetBrains Mono, monospace'
 const card: React.CSSProperties = {
@@ -84,6 +91,20 @@ export default function DashboardPage() {
 
   // Platforms: social media integrations only
   const socialIntegrations = integrations.filter(i => SOCIAL_IDS.includes(i.id))
+
+  // Aprovações pendentes (real store)
+  const approvalItems = useApprovalsStore(useShallow(s => s.items))
+  const pendingApprovals = approvalItems.filter(a => a.status === 'pending')
+
+  // Próximos jogos (real fixtures — cached, refreshed on mount)
+  const fixtures = useFixturesStore(useShallow(s => s.fixtures))
+  const fetchAll = useFixturesStore(s => s.fetchAll)
+  useEffect(() => { fetchAll() }, [fetchAll])
+  const nowSec = Math.floor(Date.now() / 1000)
+  const upcomingFixtures = [...fixtures]
+    .filter(f => f.fixture.timestamp >= nowSec - 3 * 3600) // inclui jogos em andamento
+    .sort((a, b) => a.fixture.timestamp - b.fixture.timestamp)
+    .slice(0, 4)
 
   // Is a deadline urgent? (today or earlier)
   const todayStr = new Date().toISOString().slice(0, 10)
@@ -328,6 +349,91 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ─ APROVAÇÕES + PRÓXIMOS JOGOS ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+
+        {/* Aprovações pendentes */}
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+            <CheckSquare size={11} style={{ color: 'var(--yellow)' }} />
+            <span style={{ ...sectionLabel, marginBottom: 0 }}>Aprovações pendentes</span>
+            <span style={{
+              marginLeft: 'auto', fontSize: 9, fontWeight: 700, fontFamily: mono,
+              color: pendingApprovals.length ? 'var(--yellow)' : 'var(--txt3)',
+              background: pendingApprovals.length ? 'rgba(217,119,6,.14)' : 'var(--s3)',
+              borderRadius: 99, padding: '1px 7px',
+            }}>
+              {pendingApprovals.length}
+            </span>
+          </div>
+          {pendingApprovals.length === 0 ? (
+            <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '10px 0', textAlign: 'center' }}>
+              Nada pendente ✓
+            </div>
+          ) : pendingApprovals.slice(0, 4).map((a, i, arr) => (
+            <button
+              key={a.id}
+              onClick={() => router.push('/approvals')}
+              style={{
+                width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0',
+                borderBottom: i < Math.min(arr.length, 4) - 1 ? '1px solid var(--border-subtle)' : 'none',
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--yellow)', flexShrink: 0 }} />
+              <span style={{ flex: 1, fontSize: 11, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {a.name}
+              </span>
+              <span style={{ fontSize: 9, color: 'var(--txt3)', flexShrink: 0 }}>{a.subtitle.split('·')[0].trim()}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Próximos jogos */}
+        <div style={card}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+            <Trophy size={11} style={{ color: 'var(--red)' }} />
+            <span style={{ ...sectionLabel, marginBottom: 0 }}>Próximos jogos</span>
+            <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, fontFamily: mono, color: 'var(--txt3)', background: 'var(--s3)', borderRadius: 99, padding: '1px 7px' }}>
+              {upcomingFixtures.length}
+            </span>
+          </div>
+          {upcomingFixtures.length === 0 ? (
+            <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '10px 0', textAlign: 'center' }}>
+              Sem jogos carregados
+            </div>
+          ) : upcomingFixtures.map((f, i, arr) => {
+            const live = isLiveStatus(f.fixture.status.short)
+            return (
+              <button
+                key={f.fixture.id}
+                onClick={() => router.push('/timeline')}
+                style={{
+                  width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: 7, padding: '6px 0',
+                  borderBottom: i < arr.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                }}
+              >
+                <TeamLogo src={f.teams.home.logo} alt={f.teams.home.name} size={15} />
+                <span style={{ flex: 1, minWidth: 0, fontSize: 11, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {f.teams.home.name} × {f.teams.away.name}
+                </span>
+                {live ? (
+                  <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--red)', background: 'var(--red-s)', borderRadius: 99, padding: '1px 6px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--red)', animation: 'pulseDot 1.4s ease-in-out infinite' }} />
+                    AO VIVO
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 9, fontFamily: mono, color: 'var(--txt3)', flexShrink: 0 }}>
+                    {dayLabelBRT(f.fixture.timestamp)} {formatTimeBRT(f.fixture.timestamp)}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
       </div>
 
