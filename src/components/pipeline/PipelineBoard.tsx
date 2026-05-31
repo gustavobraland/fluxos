@@ -1,8 +1,9 @@
 'use client'
 import { useState } from 'react'
 import {
-  DndContext, DragOverlay, closestCorners, PointerSensor,
-  useSensor, useSensors, type DragStartEvent, type DragEndEvent, type DragOverEvent,
+  DndContext, DragOverlay, pointerWithin, rectIntersection, PointerSensor,
+  useSensor, useSensors,
+  type DragStartEvent, type DragEndEvent, type DragOverEvent, type CollisionDetection,
 } from '@dnd-kit/core'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Filter, SlidersHorizontal, X, Star, Clock, Tag, Trash2, ChevronDown } from 'lucide-react'
@@ -458,6 +459,17 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
 
 const COL_IDS = PIPELINE_COLUMNS.map(c => c.id) as TaskStatus[]
 
+// Pointer-first collision detection. `closestCorners` measured the dragged
+// card's (224px-wide) corners, so near a column edge it snapped to the
+// NEIGHBOURING column. `pointerWithin` uses the actual cursor position
+// (unambiguous), falling back to rect-intersection only when the pointer is
+// outside every droppable (e.g. over the gap between columns).
+const collisionDetection: CollisionDetection = (args) => {
+  const pointer = pointerWithin(args)
+  if (pointer.length > 0) return pointer
+  return rectIntersection(args)
+}
+
 export function PipelineBoard() {
   const { t } = useTranslation()
   const { tasks, moveTask, reorderTasks } = usePipelineStore()
@@ -552,7 +564,7 @@ export function PipelineBoard() {
       {/* Board */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
