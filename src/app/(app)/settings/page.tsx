@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { User, Shield, Sliders, Building2, Camera, Sun, Moon, Check, Eye, EyeOff, Sparkles } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { useWorkspaceStore, type BrandVoice } from '@/store/useWorkspaceStore'
+import { useI18nStore, SUPPORTED_LOCALES } from '@/store/useI18nStore'
 
 type Tab = 'profile' | 'security' | 'preferences' | 'workspace' | 'brandvoice'
 
@@ -328,12 +329,16 @@ function SecurityTab() {
 
 function PreferencesTab() {
   const { theme, setTheme } = useAppStore()
-  const [language, setLanguage] = useState('pt-BR')
-  const [notifEmail, setNotifEmail]   = useState(true)
-  const [notifPush, setNotifPush]     = useState(false)
+  const { locale, setLocale } = useI18nStore()
+  const [notifEmail, setNotifEmail] = useState(() => (typeof localStorage !== 'undefined' ? localStorage.getItem('flux-notif-email') !== '0' : true))
+  const [notifPush, setNotifPush]   = useState(() => (typeof localStorage !== 'undefined' ? localStorage.getItem('flux-notif-push') === '1' : false))
   const [saved, setSaved] = useState(false)
 
   function handleSave() {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('flux-notif-email', notifEmail ? '1' : '0')
+      localStorage.setItem('flux-notif-push', notifPush ? '1' : '0')
+    }
     setSaved(true)
     toast.success('Preferências salvas')
     setTimeout(() => setSaved(false), 3000)
@@ -413,18 +418,21 @@ function PreferencesTab() {
       }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 14 }}>Idioma</div>
         <select
-          value={language}
-          onChange={e => setLanguage(e.target.value)}
+          value={locale}
+          onChange={e => setLocale(e.target.value as typeof locale)}
           style={{
             width: '100%', height: 38, padding: '0 12px', borderRadius: 8,
             fontSize: 13, background: 'var(--s3)', border: '1px solid var(--border-subtle)',
-            color: 'var(--txt)', fontFamily: 'Sora, sans-serif', outline: 'none',
+            color: 'var(--txt)', fontFamily: 'inherit', outline: 'none',
           }}
         >
-          <option value="pt-BR">Português (Brasil)</option>
-          <option value="en-US">English (US)</option>
-          <option value="es">Español</option>
+          {SUPPORTED_LOCALES.map(l => (
+            <option key={l.id} value={l.id}>{l.flag} {l.nativeLabel}</option>
+          ))}
         </select>
+        <p style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 8 }}>
+          Muda o idioma do sistema na hora (igual ao seletor da barra superior).
+        </p>
       </div>
 
       {/* Notifications */}

@@ -3,19 +3,15 @@ import { useState, useMemo } from 'react'
 import { Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { TEAMS, BRAND_ASSETS, TEAM_CATEGORY_META, type TeamCategory } from '@/lib/teams'
+import { TEAMS, BRAND_ASSETS, type TeamCategory } from '@/lib/teams'
 import { useWarRoomStore } from '@/store/useWarRoomStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import { TeamAssetCard, type AssetCardItem } from '@/components/assets/TeamAssetCard'
 
 type Filter = 'all' | TeamCategory | 'brand'
 
-const FILTERS: { id: Filter; label: string }[] = [
-  { id: 'all',   label: 'Todos' },
-  { id: 'BR',    label: '🇧🇷 Brasil' },
-  { id: 'EU',    label: '🌍 Europa' },
-  { id: 'NT',    label: '🏳 Seleções' },
-  { id: 'brand', label: '✦ Marca' },
-]
+const FILTER_IDS: Filter[] = ['all', 'BR', 'EU', 'NT', 'brand']
+const SECTION_EMOJI: Record<TeamCategory, string> = { BR: '🇧🇷', EU: '🌍', NT: '🏳' }
 
 const GRID: React.CSSProperties = {
   display: 'grid',
@@ -44,6 +40,7 @@ async function downloadImage(url: string, name: string) {
 
 export default function AssetsPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const warRoomActive = useWarRoomStore(s => s.activeFixtures.length > 0)
@@ -63,16 +60,16 @@ export default function AssetsPage() {
 
   const copyUrl = (url: string) => {
     void navigator.clipboard?.writeText(url)
-    toast.success('URL copiada!')
+    toast.success(t('assets.toast.urlCopied'))
   }
   const insertMultipost = (url: string) => {
     void navigator.clipboard?.writeText(url)
-    toast.success('URL copiada — disponível para colar no Multipost')
+    toast.success(t('assets.toast.urlCopiedMultipost'))
     router.push('/multipost')
   }
   const insertWarRoom = (url: string) => {
     void navigator.clipboard?.writeText(url)
-    toast.success('URL copiada para o War Room')
+    toast.success(t('assets.toast.urlCopiedWarRoom'))
     router.push('/warroom')
   }
 
@@ -94,9 +91,9 @@ export default function AssetsPage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--bg)' }}>
       {/* Header */}
       <div style={{ padding: '20px 28px 14px', flexShrink: 0 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--txt)' }}>Assets</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: 'var(--txt)' }}>{t('assets.title')}</h1>
         <p style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 2 }}>
-          Emblemas dos times e marcas — servidos da CDN, sem storage
+          {t('assets.subtitle')}
         </p>
 
         {/* Search */}
@@ -105,7 +102,7 @@ export default function AssetsPage() {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Buscar: Flamengo, Brasil, Barcelona…"
+            placeholder={t('assets.searchPlaceholder')}
             style={{
               width: '100%', height: 38, padding: '0 12px 0 34px', borderRadius: 10,
               background: 'var(--s2)', border: '1px solid var(--border-subtle)',
@@ -116,12 +113,12 @@ export default function AssetsPage() {
 
         {/* Filters */}
         <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-          {FILTERS.map(f => {
-            const active = filter === f.id
+          {FILTER_IDS.map(id => {
+            const active = filter === id
             return (
               <button
-                key={f.id}
-                onClick={() => setFilter(f.id)}
+                key={id}
+                onClick={() => setFilter(id)}
                 style={{
                   height: 30, padding: '0 14px', borderRadius: 8, cursor: 'pointer',
                   fontSize: 12, fontWeight: 600,
@@ -130,7 +127,7 @@ export default function AssetsPage() {
                   border: `1px solid ${active ? 'var(--blue)' : 'var(--border-subtle)'}`,
                 }}
               >
-                {f.label}
+                {t(`assets.filters.${id}`)}
               </button>
             )
           })}
@@ -141,14 +138,14 @@ export default function AssetsPage() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 28px 28px' }}>
         {nothing && (
           <div style={{ textAlign: 'center', color: 'var(--txt3)', fontSize: 13, padding: '48px 0' }}>
-            Nenhum emblema encontrado para “{query}”.
+            {t('assets.empty', { query })}
           </div>
         )}
 
         {cats.map(c => showCat(c) && (
           <section key={c} style={{ marginBottom: 26 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 10 }}>
-              {TEAM_CATEGORY_META[c].emoji} {TEAM_CATEGORY_META[c].label}
+              {SECTION_EMOJI[c]} {t(`assets.sections.${c}`)}
             </h2>
             <div style={GRID}>
               {teams.filter(t => t.category === c).map(t => (
@@ -161,7 +158,7 @@ export default function AssetsPage() {
         {showBrand && (
           <section style={{ marginBottom: 26 }}>
             <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 10 }}>
-              ✦ Marca BraLand
+              ✦ {t('assets.sections.brand')}
             </h2>
             <div style={GRID}>
               {brand.map(b => (

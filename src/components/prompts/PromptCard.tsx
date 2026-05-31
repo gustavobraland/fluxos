@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { MoreHorizontal, Copy, Trash2, Pencil, Send } from 'lucide-react'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
+import { useTranslation } from '@/hooks/useTranslation'
 import { CATEGORY_COLOR } from '@/types/prompts'
 import type { Prompt } from '@/types/prompts'
 
@@ -23,6 +24,7 @@ interface PromptCardProps {
 }
 
 export function PromptCard({ prompt, onUse, onEdit, onDuplicate, onDelete }: PromptCardProps) {
+  const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const accent = CATEGORY_COLOR[prompt.category]
@@ -73,7 +75,7 @@ export function PromptCard({ prompt, onUse, onEdit, onDuplicate, onDelete }: Pro
         <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Mais opções"
+            aria-label={t('prompts.card.moreOptions')}
             style={{
               background: 'transparent',
               border: 'none',
@@ -111,7 +113,7 @@ export function PromptCard({ prompt, onUse, onEdit, onDuplicate, onDelete }: Pro
                 }}
                 style={menuItemStyle('var(--txt)')}
               >
-                <Copy size={14} /> Duplicar
+                <Copy size={14} /> {t('prompts.card.duplicate')}
               </button>
               <button
                 onClick={() => {
@@ -120,7 +122,7 @@ export function PromptCard({ prompt, onUse, onEdit, onDuplicate, onDelete }: Pro
                 }}
                 style={menuItemStyle('var(--red)')}
               >
-                <Trash2 size={14} /> Deletar
+                <Trash2 size={14} /> {t('prompts.card.delete')}
               </button>
             </div>
           )}
@@ -171,7 +173,7 @@ export function PromptCard({ prompt, onUse, onEdit, onDuplicate, onDelete }: Pro
       {/* Footer */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto' }}>
         <span style={{ fontSize: 10.5, color: 'var(--txt3)', marginRight: 'auto' }}>
-          Usado: {prompt.usageCount}x
+          {t('prompts.card.used', { count: prompt.usageCount })}
         </span>
         <button
           onClick={() => onEdit(prompt)}
@@ -189,7 +191,7 @@ export function PromptCard({ prompt, onUse, onEdit, onDuplicate, onDelete }: Pro
             gap: 5,
           }}
         >
-          <Pencil size={13} /> Editar
+          <Pencil size={13} /> {t('prompts.card.edit')}
         </button>
         <button
           onClick={() => onUse(prompt)}
@@ -207,7 +209,7 @@ export function PromptCard({ prompt, onUse, onEdit, onDuplicate, onDelete }: Pro
             gap: 5,
           }}
         >
-          <Send size={13} /> Usar
+          <Send size={13} /> {t('prompts.card.use')}
         </button>
       </div>
     </div>

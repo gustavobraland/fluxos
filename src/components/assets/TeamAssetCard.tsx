@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Copy, Download, Send, Zap, MousePointerClick } from 'lucide-react'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export interface AssetCardItem {
   name: string
@@ -22,6 +23,7 @@ interface TeamAssetCardProps {
 export function TeamAssetCard({
   item, warRoomActive, onInsertMultipost, onInsertWarRoom, onCopy, onDownload,
 }: TeamAssetCardProps) {
+  const { t } = useTranslation()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const act = (fn: () => void) => { fn(); setMenuOpen(false) }
@@ -73,11 +75,11 @@ export function TeamAssetCard({
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
           }}
         >
-          <MousePointerClick size={10} /> Usar
+          <MousePointerClick size={10} /> {t('assets.card.use')}
         </button>
         <button
           onClick={onCopy}
-          title="Copiar URL"
+          title={t('assets.card.copyUrl')}
           style={{
             width: 28, height: 24, borderRadius: 6, cursor: 'pointer',
             color: 'var(--txt2)', background: 'var(--s2)', border: '1px solid var(--border-subtle)',
@@ -102,15 +104,15 @@ export function TeamAssetCard({
               borderRadius: 8, overflow: 'hidden', boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             }}
           >
-            <MenuRow icon={<Send size={11} />} label="Inserir no Multipost" onClick={() => act(onInsertMultipost)} />
+            <MenuRow icon={<Send size={11} />} label={t('assets.card.insertMultipost')} onClick={() => act(onInsertMultipost)} />
             <MenuRow
               icon={<Zap size={11} />}
-              label="Inserir no War Room"
+              label={t('assets.card.insertWarRoom')}
               disabled={!warRoomActive}
               onClick={() => act(onInsertWarRoom)}
             />
-            <MenuRow icon={<Copy size={11} />} label="Copiar URL" onClick={() => act(onCopy)} />
-            <MenuRow icon={<Download size={11} />} label="Download" onClick={() => act(onDownload)} />
+            <MenuRow icon={<Copy size={11} />} label={t('assets.card.copyUrl')} onClick={() => act(onCopy)} />
+            <MenuRow icon={<Download size={11} />} label={t('assets.card.download')} onClick={() => act(onDownload)} />
           </motion.div>
         )}
       </AnimatePresence>

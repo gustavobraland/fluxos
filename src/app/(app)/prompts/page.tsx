@@ -5,6 +5,7 @@ import { Search, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePromptsStore } from '@/store/usePromptsStore'
 import { useMultipostStore } from '@/store/useMultipostStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import { PromptCard } from '@/components/prompts/PromptCard'
 import { PromptModal, type PromptModalData } from '@/components/prompts/PromptModal'
 import { PROMPT_CATEGORIES } from '@/types/prompts'
@@ -14,6 +15,7 @@ type Filter = 'all' | PromptCategory
 
 export default function PromptsPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const prompts = usePromptsStore((s) => s.prompts)
   const addPrompt = usePromptsStore((s) => s.addPrompt)
   const updatePrompt = usePromptsStore((s) => s.updatePrompt)
@@ -46,7 +48,7 @@ export default function PromptsPage() {
       scheduledAt: null,
       source: 'prompt',
     })
-    toast.success('Prompt carregado no Multipost')
+    toast.success(t('prompts.toast.loaded'))
     router.push('/multipost')
   }
 
@@ -62,7 +64,7 @@ export default function PromptsPage() {
 
   const handleDuplicate = (p: Prompt) => {
     addPrompt({
-      title: `${p.title} (cópia)`,
+      title: `${p.title} ${t('prompts.copySuffix')}`,
       category: p.category,
       tone: p.tone,
       template: p.template,
@@ -70,21 +72,21 @@ export default function PromptsPage() {
       tags: [...p.tags],
       createdBy: p.createdBy,
     })
-    toast.success('Prompt duplicado')
+    toast.success(t('prompts.toast.duplicated'))
   }
 
   const handleDelete = (p: Prompt) => {
     deletePrompt(p.id)
-    toast.success('Prompt deletado')
+    toast.success(t('prompts.toast.deleted'))
   }
 
   const handleSave = (data: PromptModalData) => {
     if (editing) {
       updatePrompt(editing.id, data)
-      toast.success('Prompt atualizado')
+      toast.success(t('prompts.toast.updated'))
     } else {
-      addPrompt({ ...data, createdBy: 'Você' })
-      toast.success('Prompt criado')
+      addPrompt({ ...data, createdBy: t('prompts.createdBy') })
+      toast.success(t('prompts.toast.created'))
     }
     setModalOpen(false)
     setEditing(null)
@@ -118,7 +120,7 @@ export default function PromptsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="🔍 Buscar prompts..."
+            placeholder={t('prompts.searchPlaceholder')}
             style={{
               width: '100%',
               background: 'var(--s2)',
@@ -149,7 +151,7 @@ export default function PromptsPage() {
             flexShrink: 0,
           }}
         >
-          <Plus size={15} /> Novo prompt
+          <Plus size={15} /> {t('prompts.new')}
         </button>
       </div>
 
@@ -166,9 +168,10 @@ export default function PromptsPage() {
         }}
         className="no-scrollbar"
       >
-        {([{ id: 'all', label: 'Todos' }, ...PROMPT_CATEGORIES] as { id: Filter; label: string }[]).map(
+        {([{ id: 'all' }, ...PROMPT_CATEGORIES.map((c) => ({ id: c.id }))] as { id: Filter }[]).map(
           (c) => {
             const active = filter === c.id
+            const label = c.id === 'all' ? t('prompts.filterAll') : t(`prompts.categories.${c.id}`)
             return (
               <button
                 key={c.id}
@@ -186,7 +189,7 @@ export default function PromptsPage() {
                   flexShrink: 0,
                 }}
               >
-                {c.label}
+                {label}
               </button>
             )
           }
@@ -204,7 +207,7 @@ export default function PromptsPage() {
               fontSize: 14,
             }}
           >
-            Nenhum prompt encontrado.
+            {t('prompts.empty')}
           </div>
         ) : (
           <div

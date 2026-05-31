@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
+import { useTranslation } from '@/hooks/useTranslation'
 import { PROMPT_CATEGORIES } from '@/types/prompts'
 import type { Prompt, PromptCategory } from '@/types/prompts'
 
@@ -25,6 +26,7 @@ interface PromptModalProps {
 const PLATFORM_OPTIONS = ['instagram', 'twitter', 'tiktok', 'facebook', 'telegram']
 
 export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps) {
+  const { t } = useTranslation()
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<PromptCategory>('custom')
   const [tone, setTone] = useState('')
@@ -123,11 +125,11 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
               }}
             >
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)' }}>
-                {initial ? 'Editar prompt' : 'Novo prompt'}
+                {initial ? t('prompts.modal.editTitle') : t('prompts.modal.newTitle')}
               </div>
               <button
                 onClick={onClose}
-                aria-label="Fechar"
+                aria-label={t('prompts.modal.close')}
                 style={{
                   background: 'transparent',
                   border: 'none',
@@ -144,11 +146,11 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
             {/* Body */}
             <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
               {/* Título */}
-              <Field label="Título">
+              <Field label={t('prompts.modal.fieldTitle')}>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ex: Gol dramático nos acréscimos"
+                  placeholder={t('prompts.modal.titlePlaceholder')}
                   style={inputStyle}
                 />
               </Field>
@@ -156,7 +158,7 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
               {/* Categoria + Tom */}
               <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                  <Field label="Categoria">
+                  <Field label={t('prompts.modal.fieldCategory')}>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value as PromptCategory)}
@@ -164,18 +166,18 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
                     >
                       {PROMPT_CATEGORIES.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.label}
+                          {t(`prompts.categories.${c.id}`)}
                         </option>
                       ))}
                     </select>
                   </Field>
                 </div>
                 <div style={{ flex: 1 }}>
-                  <Field label="Tom">
+                  <Field label={t('prompts.modal.fieldTone')}>
                     <input
                       value={tone}
                       onChange={(e) => setTone(e.target.value)}
-                      placeholder="Ex: Eufórico"
+                      placeholder={t('prompts.modal.tonePlaceholder')}
                       style={inputStyle}
                     />
                   </Field>
@@ -183,7 +185,7 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
               </div>
 
               {/* Plataformas */}
-              <Field label="Plataformas">
+              <Field label={t('prompts.modal.fieldPlatforms')}>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {PLATFORM_OPTIONS.map((p) => {
                     const active = platforms.includes(p)
@@ -216,12 +218,12 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
               </Field>
 
               {/* Template */}
-              <Field label="Template">
+              <Field label={t('prompts.modal.fieldTemplate')}>
                 <textarea
                   value={template}
                   onChange={(e) => setTemplate(e.target.value)}
                   rows={8}
-                  placeholder="Conteúdo do prompt..."
+                  placeholder={t('prompts.modal.templatePlaceholder')}
                   style={{
                     ...inputStyle,
                     resize: 'vertical',
@@ -231,17 +233,17 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
                   }}
                 />
                 <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 5 }}>
-                  Use {'{{variavel}}'} para campos dinâmicos
+                  {t('prompts.modal.templateHint')}
                 </div>
               </Field>
 
               {/* Tags */}
-              <Field label="Tags">
+              <Field label={t('prompts.modal.fieldTags')}>
                 {tags.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                    {tags.map((t) => (
+                    {tags.map((tag) => (
                       <span
-                        key={t}
+                        key={tag}
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -254,11 +256,11 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
                           fontSize: 11.5,
                         }}
                       >
-                        {t}
+                        {tag}
                         <button
                           type="button"
-                          onClick={() => removeTag(t)}
-                          aria-label={`Remover ${t}`}
+                          onClick={() => removeTag(tag)}
+                          aria-label={t('prompts.modal.removeTag', { tag })}
                           style={{
                             background: 'transparent',
                             border: 'none',
@@ -284,7 +286,7 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
                     }
                   }}
                   onBlur={commitTag}
-                  placeholder="Digite e pressione Enter ou vírgula"
+                  placeholder={t('prompts.modal.tagsPlaceholder')}
                   style={inputStyle}
                 />
               </Field>
@@ -313,7 +315,7 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
                   cursor: 'pointer',
                 }}
               >
-                Cancelar
+                {t('prompts.modal.cancel')}
               </button>
               <button
                 onClick={handleSave}
@@ -330,7 +332,7 @@ export function PromptModal({ open, initial, onClose, onSave }: PromptModalProps
                   opacity: canSave ? 1 : 0.5,
                 }}
               >
-                Salvar
+                {t('prompts.modal.save')}
               </button>
             </div>
           </motion.div>

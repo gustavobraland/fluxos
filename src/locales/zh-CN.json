@@ -309,7 +309,87 @@
   "assets": {
     "title": "素材库",
     "upload": "上传",
-    "filter": "筛选"
+    "filter": "筛选",
+    "subtitle": "球队与品牌徽标 — 由 CDN 直接提供，无需存储",
+    "searchPlaceholder": "搜索：弗拉门戈、巴西、巴塞罗那…",
+    "empty": "未找到与“{{query}}”匹配的徽标。",
+    "filters": {
+      "all": "全部",
+      "BR": "🇧🇷 巴西",
+      "EU": "🌍 欧洲",
+      "NT": "🏳 国家队",
+      "brand": "✦ 品牌"
+    },
+    "sections": {
+      "BR": "巴西球队",
+      "EU": "欧洲",
+      "NT": "国家队",
+      "brand": "BraLand 品牌"
+    },
+    "card": {
+      "use": "使用",
+      "copyUrl": "复制链接",
+      "insertMultipost": "插入到 Multipost",
+      "insertWarRoom": "插入到作战室",
+      "download": "下载"
+    },
+    "toast": {
+      "urlCopied": "链接已复制！",
+      "urlCopiedMultipost": "链接已复制 — 可粘贴到 Multipost",
+      "urlCopiedWarRoom": "链接已复制到作战室"
+    }
+  },
+
+  "prompts": {
+    "searchPlaceholder": "🔍 搜索提示词...",
+    "new": "新建提示词",
+    "empty": "未找到提示词。",
+    "filterAll": "全部",
+    "categories": {
+      "gol": "进球",
+      "resultado": "比赛结果",
+      "pre-jogo": "赛前",
+      "igaming": "iGaming",
+      "institucional": "官方",
+      "engajamento": "互动",
+      "custom": "自定义"
+    },
+    "card": {
+      "moreOptions": "更多选项",
+      "duplicate": "复制",
+      "delete": "删除",
+      "used": "已使用：{{count}} 次",
+      "edit": "编辑",
+      "use": "使用"
+    },
+    "modal": {
+      "editTitle": "编辑提示词",
+      "newTitle": "新建提示词",
+      "close": "关闭",
+      "fieldTitle": "标题",
+      "titlePlaceholder": "例如：补时阶段的戏剧性进球",
+      "fieldCategory": "分类",
+      "fieldTone": "语气",
+      "tonePlaceholder": "例如：激昂",
+      "fieldPlatforms": "平台",
+      "fieldTemplate": "模板",
+      "templatePlaceholder": "提示词内容...",
+      "templateHint": "使用 {{variavel}} 表示动态字段",
+      "fieldTags": "标签",
+      "removeTag": "移除 {{tag}}",
+      "tagsPlaceholder": "输入后按回车或逗号",
+      "cancel": "取消",
+      "save": "保存"
+    },
+    "toast": {
+      "loaded": "提示词已加载到 Multipost",
+      "duplicated": "提示词已复制",
+      "deleted": "提示词已删除",
+      "updated": "提示词已更新",
+      "created": "提示词已创建"
+    },
+    "copySuffix": "（副本）",
+    "createdBy": "你"
   },
 
   "settings": {

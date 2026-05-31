@@ -309,7 +309,87 @@
   "assets": {
     "title": "Assets",
     "upload": "Upload",
-    "filter": "Filtrar"
+    "filter": "Filtrar",
+    "subtitle": "Emblemas dos times e marcas — servidos da CDN, sem storage",
+    "searchPlaceholder": "Buscar: Flamengo, Brasil, Barcelona…",
+    "empty": "Nenhum emblema encontrado para “{{query}}”.",
+    "filters": {
+      "all": "Todos",
+      "BR": "🇧🇷 Brasil",
+      "EU": "🌍 Europa",
+      "NT": "🏳 Seleções",
+      "brand": "✦ Marca"
+    },
+    "sections": {
+      "BR": "Times Brasileiros",
+      "EU": "Europa",
+      "NT": "Seleções",
+      "brand": "Marca BraLand"
+    },
+    "card": {
+      "use": "Usar",
+      "copyUrl": "Copiar URL",
+      "insertMultipost": "Inserir no Multipost",
+      "insertWarRoom": "Inserir no War Room",
+      "download": "Download"
+    },
+    "toast": {
+      "urlCopied": "URL copiada!",
+      "urlCopiedMultipost": "URL copiada — disponível para colar no Multipost",
+      "urlCopiedWarRoom": "URL copiada para o War Room"
+    }
+  },
+
+  "prompts": {
+    "searchPlaceholder": "🔍 Buscar prompts...",
+    "new": "Novo prompt",
+    "empty": "Nenhum prompt encontrado.",
+    "filterAll": "Todos",
+    "categories": {
+      "gol": "Gol",
+      "resultado": "Resultado",
+      "pre-jogo": "Pré-jogo",
+      "igaming": "iGaming",
+      "institucional": "Institucional",
+      "engajamento": "Engajamento",
+      "custom": "Custom"
+    },
+    "card": {
+      "moreOptions": "Mais opções",
+      "duplicate": "Duplicar",
+      "delete": "Deletar",
+      "used": "Usado: {{count}}x",
+      "edit": "Editar",
+      "use": "Usar"
+    },
+    "modal": {
+      "editTitle": "Editar prompt",
+      "newTitle": "Novo prompt",
+      "close": "Fechar",
+      "fieldTitle": "Título",
+      "titlePlaceholder": "Ex: Gol dramático nos acréscimos",
+      "fieldCategory": "Categoria",
+      "fieldTone": "Tom",
+      "tonePlaceholder": "Ex: Eufórico",
+      "fieldPlatforms": "Plataformas",
+      "fieldTemplate": "Template",
+      "templatePlaceholder": "Conteúdo do prompt...",
+      "templateHint": "Use {{variavel}} para campos dinâmicos",
+      "fieldTags": "Tags",
+      "removeTag": "Remover {{tag}}",
+      "tagsPlaceholder": "Digite e pressione Enter ou vírgula",
+      "cancel": "Cancelar",
+      "save": "Salvar"
+    },
+    "toast": {
+      "loaded": "Prompt carregado no Multipost",
+      "duplicated": "Prompt duplicado",
+      "deleted": "Prompt deletado",
+      "updated": "Prompt atualizado",
+      "created": "Prompt criado"
+    },
+    "copySuffix": "(cópia)",
+    "createdBy": "Você"
   },
 
   "settings": {
