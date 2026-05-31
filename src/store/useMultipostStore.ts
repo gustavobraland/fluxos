@@ -9,7 +9,7 @@ export interface MultipostDraft {
   caption: string
   platforms: string[]
   scheduledAt: number | null
-  source: 'warroom' | 'manual' | 'prompt'
+  source: 'warroom' | 'manual' | 'prompt' | 'clipador'
 }
 
 interface MultipostState {

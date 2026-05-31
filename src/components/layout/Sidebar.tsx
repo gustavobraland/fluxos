@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays,
   Send, FolderOpen, CheckSquare, BarChart3, Plug, ChevronRight,
-  Settings, HelpCircle, ClipboardList, Sparkles,
+  Settings, HelpCircle, ClipboardList, Sparkles, Scissors,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { NAV_ITEMS } from '@/lib/constants'
@@ -12,7 +12,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays,
-  Send, FolderOpen, CheckSquare, BarChart3, Plug, ClipboardList,
+  Send, FolderOpen, CheckSquare, BarChart3, Plug, ClipboardList, Scissors,
 }
 
 export function Sidebar() {

@@ -46,6 +46,7 @@
     "pipeline": "Pipeline",
     "calendar": "Calendar",
     "multipost": "Multipost",
+    "clipador": "Clipador",
     "prompts": "Prompts",
     "assets": "Assets",
     "approvals": "Aprovações",
@@ -365,6 +366,7 @@
       "refinedLocal": "Copies adaptadas localmente (IA não configurada)",
       "refineFailed": "Falha ao refinar copies",
       "warroomLoaded": "Conteúdo do War Room carregado ✓",
+      "clipadorLoaded": "Clip carregado do Clipador ✓",
       "promptLoaded": "Prompt carregado — preencha as variáveis",
       "draftSaved": "Rascunho salvo",
       "sentToApproval": "Enviado para aprovação",
@@ -639,6 +641,51 @@
       "urlCopied": "URL copiada!",
       "urlCopiedMultipost": "URL copiada — disponível para colar no Multipost",
       "urlCopiedWarRoom": "URL copiada para o War Room"
+    }
+  },
+
+  "clipador": {
+    "title": "Clipador",
+    "subtitle": "Cole o link do YouTube ou faça upload do vídeo — a IA identifica os melhores trechos para clip",
+    "ytPlaceholder": "🔗 Cole o link do YouTube…",
+    "or": "ou",
+    "upload": "↑ Upload de vídeo",
+    "fileHint": "MP4, MOV, AVI · até 500MB",
+    "process": "Processar",
+    "demoNote": "Demonstração — pipeline simulado (transcrição e clips de exemplo). A IA real entra quando as chaves forem configuradas.",
+    "status": {
+      "downloading": "Baixando o áudio do vídeo…",
+      "transcribing": "Transcrevendo o áudio com IA…",
+      "analyzing": "Analisando e identificando os melhores clips…",
+      "ready": "Clips prontos"
+    },
+    "clipsFound": "{{count}} clips identificados",
+    "avgScore": "Score médio: {{score}}",
+    "types": { "hook": "Gancho", "value": "Valor", "viral": "Viral", "cta": "CTA" },
+    "score": "Score",
+    "preview": "▶ Preview",
+    "adjust": "Ajustar",
+    "approve": "Aprovar",
+    "approved": "Aprovado",
+    "discard": "Descartar",
+    "startLabel": "Início",
+    "endLabel": "Fim",
+    "sendMultipost": "Enviar para Multipost",
+    "addPipeline": "Criar task no Pipeline",
+    "exportTitle": "Exportar clips aprovados",
+    "exportBtn": "⬇ Exportar",
+    "exportHint": "Gera .srt + captions + timestamps para o CapCut",
+    "empty": "Nenhum clip ainda — processe um vídeo para começar",
+    "toast": {
+      "needInput": "Cole um link do YouTube ou selecione um vídeo",
+      "fileTooLarge": "Arquivo acima de 500MB — escolha um menor",
+      "approved": "Clip aprovado",
+      "discarded": "Clip descartado",
+      "noApproved": "Aprove ao menos um clip antes de exportar",
+      "noPlatform": "Selecione ao menos uma plataforma",
+      "exported": "Export gerado — download iniciado",
+      "pipelineCreated": "Task criada no Pipeline para o editor",
+      "youtubeServer": "Download do YouTube precisa de um servidor à parte — por enquanto use upload"
     }
   },
 

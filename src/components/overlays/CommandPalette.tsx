@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays, Send,
   FolderOpen, CheckSquare, BarChart3, Plug, Plus, CalendarPlus,
-  Sparkles, Clock, Sun, Search,
+  Sparkles, Clock, Sun, Search, Scissors,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { CMD_ACTIONS } from '@/lib/constants'
@@ -13,7 +13,7 @@ import { CMD_ACTIONS } from '@/lib/constants'
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays, Send,
   FolderOpen, CheckSquare, BarChart3, Plug, Plus, CalendarPlus,
-  Sparkles, Clock, Sun, Search,
+  Sparkles, Clock, Sun, Search, Scissors,
 }
 
 export function CommandPalette() {

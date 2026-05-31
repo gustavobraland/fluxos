@@ -152,7 +152,7 @@ export default function MultipostPage() {
 
   useEffect(() => {
     if (!draft) return
-    if (draft.source !== 'warroom' && draft.source !== 'prompt') return
+    if (draft.source !== 'warroom' && draft.source !== 'prompt' && draft.source !== 'clipador') return
 
     const valid = draft.platforms
       .map(normalizePlatform)
@@ -169,6 +169,9 @@ export default function MultipostPage() {
       clearDraft()
       // Auto-refine — War Room content is already final copy.
       void refineRef.current(draft.caption, platforms)
+    } else if (draft.source === 'clipador') {
+      toast.success(t('multipost.toastApi.clipadorLoaded'))
+      clearDraft()
     } else {
       // Prompt template: fill the {{variáveis}} first, then refine manually.
       setVarValues({})
