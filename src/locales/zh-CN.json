@@ -62,7 +62,8 @@
     "cmdPalette": "命令面板 (⌘K)",
     "toggleTheme": "切换主题",
     "notifications": "通知",
-    "workspacePlan": "专业版"
+    "workspacePlan": "专业版",
+    "logout": "退出"
   },
 
   "languageSelector": {
@@ -95,10 +96,14 @@
     "signingIn": "正在登录 Flux OS…",
     "noAccount": "没有账号？",
     "contactTeam": "联系团队",
+    "restrictedTo": "仅限 @braland.com.br 账号访问",
+    "domainOnly": "只有 @braland.com.br 邮箱可以登录",
     "errors": {
       "enterDomain": "请输入公司域名",
       "emailRequired": "邮箱为必填项",
-      "passwordRequired": "密码为必填项"
+      "passwordRequired": "密码为必填项",
+      "domain": "请使用您的 @braland.com.br 邮箱登录",
+      "auth": "登录失败，请重试。"
     }
   },
 

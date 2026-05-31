@@ -1,18 +1,45 @@
 'use client'
-import { useState } from 'react'
-import { Search, Bell, Sun, Moon, Command, ChevronDown } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Bell, Sun, Moon, Command, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
 import { PresenceAvatars } from './PresenceAvatars'
 import { FluxLogo } from './FluxLogo'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { useTranslation } from '@/hooks/useTranslation'
+import { createClient } from '@/lib/supabase/client'
+
+interface SessionUser { email: string; name: string; avatar: string | null }
 
 export function Topbar() {
   const { theme, setTheme, toggleCmd, toggleNotif } = useAppStore()
   const { t } = useTranslation()
+  const router = useRouter()
   const [searchFocused, setSearchFocused] = useState(false)
   const [searchVal, setSearchVal] = useState('')
+  const [user, setUser] = useState<SessionUser | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data.user
+      if (!u) return
+      const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string; avatar_url?: string; picture?: string }
+      setUser({
+        email: u.email ?? '',
+        name: meta.full_name || meta.name || (u.email ?? '').split('@')[0],
+        avatar: meta.avatar_url || meta.picture || null,
+      })
+    })
+  }, [])
+
+  const handleLogout = async () => {
+    await createClient().auth.signOut()
+    router.push('/login')
+  }
+
+  const initials = (user?.name || user?.email || 'FX').slice(0, 2).toUpperCase()
 
   return (
     <div
@@ -106,34 +133,33 @@ export function Topbar() {
         {/* Divider */}
         <div className="w-px h-5 mx-1" style={{ background: 'var(--border-subtle)' }} />
 
-        {/* Workspace selector */}
-        <button
-          className="flex items-center gap-2 h-8 px-2.5 rounded-lg transition-colors hover:bg-[var(--s2)]"
-          style={{ color: 'var(--txt)' }}
-        >
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold text-white"
-            style={{ background: 'var(--grad)' }}
-          >
-            {(process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'FX').slice(0, 2).toUpperCase()}
-          </div>
-          <div className="flex flex-col items-start leading-none">
-            <span className="text-[12px] font-medium">
-              {process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'Flux OS'}
+        {/* User */}
+        <div className="flex items-center gap-2 h-8 px-2.5 rounded-lg" style={{ color: 'var(--txt)' }}>
+          {user?.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatar} alt={user.name} className="w-6 h-6 rounded-full" style={{ objectFit: 'cover' }} />
+          ) : (
+            <div
+              className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold text-white"
+              style={{ background: 'var(--red)' }}
+            >
+              {initials}
+            </div>
+          )}
+          <div className="flex flex-col items-start leading-none max-w-[140px]">
+            <span className="text-[12px] font-medium truncate" style={{ maxWidth: 140 }}>
+              {user?.name || (process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'Flux OS')}
             </span>
-            <span className="text-[9px]" style={{ color: 'var(--txt3)' }}>Pro</span>
+            <span className="text-[9px] truncate" style={{ color: 'var(--txt3)', maxWidth: 140 }}>
+              {user?.email || 'Pro'}
+            </span>
           </div>
-          <ChevronDown size={12} style={{ color: 'var(--txt3)' }} />
-        </button>
-
-        {/* Avatar */}
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold text-white cursor-pointer ml-1"
-          style={{ background: 'linear-gradient(135deg, #2563EB, #A78BFA)' }}
-          title="Meu perfil"
-        >
-          G
         </div>
+
+        {/* Logout */}
+        <TopBtn onClick={handleLogout} title={t('topbar.logout')}>
+          <LogOut size={14} />
+        </TopBtn>
       </div>
     </div>
   )

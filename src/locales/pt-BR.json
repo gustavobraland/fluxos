@@ -62,7 +62,8 @@
     "cmdPalette": "Command palette (⌘K)",
     "toggleTheme": "Alternar tema",
     "notifications": "Notificações",
-    "workspacePlan": "Pro"
+    "workspacePlan": "Pro",
+    "logout": "Sair"
   },
 
   "languageSelector": {
@@ -95,10 +96,14 @@
     "signingIn": "Entrando no Flux OS…",
     "noAccount": "Não tem conta?",
     "contactTeam": "Fale com o time",
+    "restrictedTo": "Acesso restrito a contas @braland.com.br",
+    "domainOnly": "Apenas e-mails @braland.com.br podem entrar",
     "errors": {
       "enterDomain": "Digite o domínio da sua empresa",
       "emailRequired": "E-mail obrigatório",
-      "passwordRequired": "Senha obrigatória"
+      "passwordRequired": "Senha obrigatória",
+      "domain": "Use seu e-mail @braland.com.br para entrar",
+      "auth": "Não foi possível entrar. Tente novamente."
     }
   },
 
