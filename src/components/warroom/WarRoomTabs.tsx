@@ -5,6 +5,7 @@ import { useShallow } from 'zustand/shallow'
 import { useWarRoomStore } from '@/store/useWarRoomStore'
 import { isLiveStatus } from '@/types/fixtures'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
+import { useTranslation } from '@/hooks/useTranslation'
 
 function LiveDot() {
   return (
@@ -23,6 +24,7 @@ export function WarRoomTabs() {
   const selectedId = useWarRoomStore(s => s.selectedFixtureId)
   const sessions = useWarRoomStore(s => s.sessions)
   const selectFixture = useWarRoomStore(s => s.selectFixture)
+  const { t } = useTranslation()
 
   if (fixtures.length === 0) return null
 
@@ -63,7 +65,7 @@ export function WarRoomTabs() {
 
       <button
         onClick={() => router.push('/timeline')}
-        title="Adicionar outro jogo"
+        title={t('warroom.addAnotherMatch')}
         style={{
           display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
           height: 30, padding: '0 10px', borderRadius: 8, cursor: 'pointer',
@@ -72,7 +74,7 @@ export function WarRoomTabs() {
           border: '1px dashed var(--border-subtle)',
         }}
       >
-        <Plus size={12} /> Jogo
+        <Plus size={12} /> {t('warroom.matchTab')}
       </button>
     </div>
   )

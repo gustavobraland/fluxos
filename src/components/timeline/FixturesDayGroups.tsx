@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion'
 import type { Fixture } from '@/types/fixtures'
 import { groupByDay, hasLiveFixture } from '@/lib/fixtures-client'
 import { FixtureCard } from './FixtureCard'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function FixturesDayGroups({
   fixtures,
@@ -15,6 +16,7 @@ export function FixturesDayGroups({
   onSelect: (f: Fixture) => void
   onOpenWarRoom: (f: Fixture) => void
 }) {
+  const { t } = useTranslation()
   const groups = groupByDay(fixtures)
 
   return (
@@ -40,7 +42,7 @@ export function FixturesDayGroups({
                 fontSize: 10, fontWeight: 700, color: 'var(--txt3)',
                 fontFamily: 'var(--font-mono)',
               }}>
-                {group.fixtures.length} {group.fixtures.length === 1 ? 'jogo' : 'jogos'}
+                {group.fixtures.length} {group.fixtures.length === 1 ? t('timeline.game') : t('timeline.games')}
               </span>
               {liveHere && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
@@ -49,7 +51,7 @@ export function FixturesDayGroups({
                     animation: 'pulseDot 1.2s ease-in-out infinite',
                   }} />
                   <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>
-                    AO VIVO
+                    {t('timeline.live')}
                   </span>
                 </span>
               )}

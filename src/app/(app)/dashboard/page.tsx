@@ -78,14 +78,14 @@ export default function DashboardPage() {
   // Pipeline bar chart
   const pipelineCounts = PIPELINE_COLUMNS.map(col => ({
     ...col,
-    count: tasks.filter(t => t.status === col.id).length,
+    count: tasks.filter(tk => tk.status === col.id).length,
   }))
   const pipelineMax = Math.max(...pipelineCounts.map(s => s.count), 1)
   const pipelineTotal = pipelineCounts.reduce((a, b) => a + b.count, 0)
 
   // Deadlines: tasks with dueDate, sorted asc, max 5
   const deadlineTasks = [...tasks]
-    .filter(t => !!t.dueDate)
+    .filter(tk => !!tk.dueDate)
     .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
     .slice(0, 5)
 
@@ -278,7 +278,7 @@ export default function DashboardPage() {
               {pipelineCounts.map(s => (
                 <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                   <span style={{ fontSize: 9, color: 'var(--txt2)', width: 58, flexShrink: 0 }}>
-                    {s.label}
+                    {t(`dashboard.status.${s.id}`)}
                   </span>
                   <div style={{
                     flex: 1,
@@ -359,7 +359,7 @@ export default function DashboardPage() {
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
             <CheckSquare size={11} style={{ color: 'var(--yellow)' }} />
-            <span style={{ ...sectionLabel, marginBottom: 0 }}>Aprovações pendentes</span>
+            <span style={{ ...sectionLabel, marginBottom: 0 }}>{t('dashboard.pendingApprovals')}</span>
             <span style={{
               marginLeft: 'auto', fontSize: 9, fontWeight: 700, fontFamily: mono,
               color: pendingApprovals.length ? 'var(--yellow)' : 'var(--txt3)',
@@ -371,7 +371,7 @@ export default function DashboardPage() {
           </div>
           {pendingApprovals.length === 0 ? (
             <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '10px 0', textAlign: 'center' }}>
-              Nada pendente ✓
+              {t('dashboard.nothingPending')}
             </div>
           ) : pendingApprovals.slice(0, 4).map((a, i, arr) => (
             <button
@@ -396,14 +396,14 @@ export default function DashboardPage() {
         <div style={card}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
             <Trophy size={11} style={{ color: 'var(--red)' }} />
-            <span style={{ ...sectionLabel, marginBottom: 0 }}>Próximos jogos</span>
+            <span style={{ ...sectionLabel, marginBottom: 0 }}>{t('dashboard.upcomingMatches')}</span>
             <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 700, fontFamily: mono, color: 'var(--txt3)', background: 'var(--s3)', borderRadius: 99, padding: '1px 7px' }}>
               {upcomingFixtures.length}
             </span>
           </div>
           {upcomingFixtures.length === 0 ? (
             <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '10px 0', textAlign: 'center' }}>
-              Sem jogos carregados
+              {t('dashboard.noMatchesLoaded')}
             </div>
           ) : upcomingFixtures.map((f, i, arr) => {
             const live = isLiveStatus(f.fixture.status.short)
@@ -424,7 +424,7 @@ export default function DashboardPage() {
                 {live ? (
                   <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--red)', background: 'var(--red-s)', borderRadius: 99, padding: '1px 6px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
                     <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--red)', animation: 'pulseDot 1.4s ease-in-out infinite' }} />
-                    AO VIVO
+                    {t('dashboard.live')}
                   </span>
                 ) : (
                   <span style={{ fontSize: 9, fontFamily: mono, color: 'var(--txt3)', flexShrink: 0 }}>

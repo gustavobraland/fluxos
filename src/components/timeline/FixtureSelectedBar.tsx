@@ -4,6 +4,7 @@ import { Zap, X } from 'lucide-react'
 import type { Fixture } from '@/types/fixtures'
 import { formatDateShortBRT, formatTimeBRT } from '@/lib/fixtures-client'
 import { TeamLogo } from './TeamLogo'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function FixtureSelectedBar({
   fixture,
@@ -14,6 +15,7 @@ export function FixtureSelectedBar({
   onOpenWarRoom: () => void
   onClear: () => void
 }) {
+  const { t } = useTranslation()
   const { fixture: f, teams } = fixture
 
   return (
@@ -65,11 +67,11 @@ export function FixtureSelectedBar({
           display: 'flex', alignItems: 'center', gap: 7,
         }}
       >
-        <Zap size={14} /> Abrir War Room
+        <Zap size={14} /> {t('timeline.openWarRoom')}
       </button>
       <button
         onClick={onClear}
-        title="Desmarcar"
+        title={t('timeline.deselect')}
         style={{
           width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
           background: 'var(--s1)', border: '1px solid var(--border-subtle)',

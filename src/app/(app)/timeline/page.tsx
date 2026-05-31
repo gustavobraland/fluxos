@@ -11,8 +11,10 @@ import { FixturesToolbar, type FixtureFilter } from '@/components/timeline/Fixtu
 import { FixturesDayGroups } from '@/components/timeline/FixturesDayGroups'
 import { FixtureSelectedBar } from '@/components/timeline/FixtureSelectedBar'
 import { WarRoomSetupModal } from '@/components/timeline/WarRoomSetupModal'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function TimelinePage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const setActiveFixture = useWarRoomStore(s => s.setActiveFixture)
 
@@ -68,10 +70,10 @@ export default function TimelinePage() {
         padding: '12px 16px', flexShrink: 0,
       }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)' }}>
-          Partidas
+          {t('timeline.title')}
         </div>
         <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 1 }}>
-          Próximos 7 dias · 30 times prioritários · dados ao vivo da API
+          {t('timeline.subtitle')}
         </div>
       </div>
 
@@ -92,19 +94,19 @@ export default function TimelinePage() {
         padding: '16px', paddingBottom: selectedFixture ? 90 : 16,
       }}>
         {loading && fixtures.length === 0 ? (
-          <CenteredState emoji="⏳" text="Carregando partidas…" />
+          <CenteredState emoji="⏳" text={t('timeline.loading')} />
         ) : error && fixtures.length === 0 ? (
           <CenteredState
             emoji="⚠"
-            text={connected ? 'Erro ao carregar partidas' : 'API de futebol indisponível'}
+            text={connected ? t('timeline.errorLoad') : t('timeline.apiUnavailable')}
             sub={error}
-            action={{ label: 'Tentar novamente', onClick: fetchAll }}
+            action={{ label: t('timeline.tryAgain'), onClick: fetchAll }}
           />
         ) : filtered.length === 0 ? (
           <CenteredState
             emoji="🏟"
-            text="Nenhuma partida encontrada"
-            sub={filter === 'ALL' ? 'Sem jogos nos próximos 7 dias' : 'Tente outro filtro'}
+            text={t('timeline.noFixtures')}
+            sub={filter === 'ALL' ? t('timeline.noFixturesAll') : t('timeline.noFixturesFilter')}
           />
         ) : (
           <FixturesDayGroups

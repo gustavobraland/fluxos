@@ -5,11 +5,12 @@ import type { Fixture, MatchCategory } from '@/types/fixtures'
 import { isLiveStatus, isFinishedStatus } from '@/types/fixtures'
 import { formatTimeBRT, formatDateShortBRT } from '@/lib/fixtures-client'
 import { TeamLogo } from './TeamLogo'
+import { useTranslation } from '@/hooks/useTranslation'
 
-const CATEGORY_META: Record<MatchCategory, { label: string; emoji: string; color: string }> = {
-  BR: { label: 'BRASIL',  emoji: '🇧🇷', color: 'var(--green)' },
-  EU: { label: 'EUROPA',  emoji: '🌍', color: 'var(--blue)' },
-  NT: { label: 'SELEÇÃO', emoji: '🏳', color: 'var(--orange)' },
+const CATEGORY_META: Record<MatchCategory, { emoji: string; color: string }> = {
+  BR: { emoji: '🇧🇷', color: 'var(--green)' },
+  EU: { emoji: '🌍', color: 'var(--blue)' },
+  NT: { emoji: '🏳', color: 'var(--orange)' },
 }
 
 export function FixtureCard({
@@ -23,6 +24,7 @@ export function FixtureCard({
   onSelect: () => void
   onOpenWarRoom: () => void
 }) {
+  const { t } = useTranslation()
   const { fixture: f, league, teams, goals } = fixture
   const status = f.status.short
   const live = isLiveStatus(status)
@@ -82,7 +84,7 @@ export function FixtureCard({
             background: `${cat.color}1a`, border: `1px solid ${cat.color}33`,
             borderRadius: 99, padding: '1px 7px', letterSpacing: '0.04em',
           }}>
-            {cat.emoji} {cat.label}
+            {cat.emoji} {t(`timeline.category.${fixture._category}`)}
           </span>
           {live ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -91,12 +93,12 @@ export function FixtureCard({
                 animation: 'pulseDot 1.2s ease-in-out infinite',
               }} />
               <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>
-                {status === 'HT' ? 'INTERVALO' : `${f.status.elapsed ?? ''}'`}
+                {status === 'HT' ? t('timeline.halftime') : `${f.status.elapsed ?? ''}'`}
               </span>
             </span>
           ) : finished ? (
             <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--txt3)', fontFamily: 'var(--font-mono)' }}>
-              ENCERRADO
+              {t('timeline.finished')}
             </span>
           ) : null}
         </div>
@@ -177,7 +179,7 @@ export function FixtureCard({
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
             }}
           >
-            <Zap size={13} /> Abrir War Room para este jogo
+            <Zap size={13} /> {t('timeline.openWarRoomForMatch')}
           </button>
         </motion.div>
       )}

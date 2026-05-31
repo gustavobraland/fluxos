@@ -8,6 +8,7 @@ import { useShallow } from 'zustand/shallow'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
+import { useTranslation } from '@/hooks/useTranslation'
 
 type ViewMode = 'month' | 'week'
 
@@ -27,13 +28,13 @@ interface DisplayEvent {
   awayLogo?: string
 }
 
-const RESULT_META: Record<'win' | 'draw' | 'loss', { color: string; label: string }> = {
-  win:  { color: 'var(--green)',  label: 'Vitória' },
-  draw: { color: 'var(--txt2)',   label: 'Empate'  },
-  loss: { color: 'var(--red)',    label: 'Derrota' },
+const RESULT_COLOR: Record<'win' | 'draw' | 'loss', string> = {
+  win:  'var(--green)',
+  draw: 'var(--txt2)',
+  loss: 'var(--red)',
 }
 
-const DAYS_HEADER = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
 
 const TYPE_COLORS: Record<string, string> = {
   match:    'var(--blue)',
@@ -77,6 +78,7 @@ function getFirstDayOfMonth(year: number, month: number) {
 }
 
 export default function CalendarPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const { integrations, connectInt, connecting } = useIntegrationsStore()
   const gcal = integrations.find(i => i.id === 'gcal')
@@ -88,10 +90,7 @@ export default function CalendarPage() {
   const [currentYear, setCurrentYear] = useState(2026)
   const [selectedDay, setSelectedDay] = useState<number | null>(27)
 
-  const monthNames = [
-    'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
-  ]
+  const monthName = (m: number) => t(`calendar.months.${m}`)
 
   // Live events from the War Room / Multipost sync
   const storeEvents = useCalendarStore(useShallow(s => s.events))
@@ -151,7 +150,7 @@ export default function CalendarPage() {
         }}>
           <CalendarDays size={15} style={{ color: '#4285F4', flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: 'var(--txt2)', flex: 1 }}>
-            Conecte o Google Calendar para sincronizar eventos, criar e editar diretamente nesta view.
+            {t('calendar.bannerConnectDesc')}
           </span>
           <button
             onClick={() => connectInt('gcal')}
@@ -171,7 +170,7 @@ export default function CalendarPage() {
               flexShrink: 0,
             }}
           >
-            {isConnecting ? 'Conectando…' : 'Conectar Google Calendar'}
+            {isConnecting ? t('calendar.connecting') : t('calendar.connectGcal')}
           </button>
           <button
             onClick={() => router.push('/integrations')}
@@ -189,7 +188,7 @@ export default function CalendarPage() {
               flexShrink: 0,
             }}
           >
-            Ver integrações
+            {t('calendar.viewIntegrations')}
           </button>
         </div>
       ) : (
@@ -204,7 +203,7 @@ export default function CalendarPage() {
         }}>
           <CheckCircle2 size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: 'var(--txt2)', flex: 1 }}>
-            Google Calendar conectado — exibindo eventos sincronizados.
+            {t('calendar.connectedDesc')}
           </span>
           <button style={{
             height: 26,
@@ -222,7 +221,7 @@ export default function CalendarPage() {
             gap: 5,
           }}>
             <RefreshCw size={10} />
-            Sincronizar
+            {t('calendar.syncGcal')}
           </button>
         </div>
       )}
@@ -237,7 +236,7 @@ export default function CalendarPage() {
         marginBottom: 20,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Calendário</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{t('calendar.pageTitle')}</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={prevMonth}
@@ -246,7 +245,7 @@ export default function CalendarPage() {
               <ChevronLeft size={16} />
             </button>
             <span style={{ fontSize: 15, fontWeight: 600, minWidth: 140, textAlign: 'center' }}>
-              {monthNames[currentMonth - 1]} {currentYear}
+              {monthName(currentMonth)} {currentYear}
             </span>
             <button
               onClick={nextMonth}
@@ -269,7 +268,7 @@ export default function CalendarPage() {
                 transition: 'all 0.18s ease',
               }}
             >
-              {v === 'month' ? 'Mês' : 'Semana'}
+              {v === 'month' ? t('calendar.viewMonth') : t('calendar.viewWeek')}
             </button>
           ))}
         </div>
@@ -294,7 +293,7 @@ export default function CalendarPage() {
         </div>
 
         <div style={{ width: 280, flexShrink: 0, marginRight: 28, marginLeft: 20, display: 'flex', flexDirection: 'column' }}>
-          <SidePanel selectedDay={selectedDay} events={selectedEvents} monthName={monthNames[currentMonth - 1]} />
+          <SidePanel selectedDay={selectedDay} events={selectedEvents} monthName={monthName(currentMonth)} />
         </div>
       </div>
     </div>
@@ -312,6 +311,7 @@ function MonthView({
   selectedDay: number | null
   onSelectDay: (d: number) => void
 }) {
+  const { t } = useTranslation()
   const cells: (number | null)[] = [
     ...Array(firstDay).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -321,9 +321,9 @@ function MonthView({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
-        {DAYS_HEADER.map((d) => (
-          <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--txt3)', padding: '0 0 10px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            {d}
+        {DAY_KEYS.map((dk) => (
+          <div key={dk} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--txt3)', padding: '0 0 10px', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            {t(`calendar.daysHeader.${dk}`)}
           </div>
         ))}
       </div>
@@ -373,13 +373,14 @@ function MonthView({
 }
 
 function WeekView({ weekDays, eventsForDay, today }: { weekDays: number[]; eventsForDay: (d: number) => DisplayEvent[]; today: number }) {
+  const { t } = useTranslation()
   return (
     <div style={{ flex: 1, overflowY: 'auto' }}>
       <div style={{ display: 'grid', gridTemplateColumns: '50px repeat(7, 1fr)', marginBottom: 4, position: 'sticky', top: 0, background: 'var(--bg)', zIndex: 2, paddingBottom: 8 }}>
         <div />
         {weekDays.map((d, i) => (
           <div key={i} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 11, color: 'var(--txt3)', textTransform: 'uppercase' }}>{DAYS_HEADER[i]}</div>
+            <div style={{ fontSize: 11, color: 'var(--txt3)', textTransform: 'uppercase' }}>{t(`calendar.daysHeader.${DAY_KEYS[i]}`)}</div>
             <div style={{ width: 28, height: 28, borderRadius: '50%', margin: '4px auto 0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontFamily: 'JetBrains Mono, monospace', fontWeight: 600, background: d === today ? 'var(--grad)' : 'transparent', color: d === today ? '#fff' : 'var(--txt)' }}>
               {d}
             </div>
@@ -409,15 +410,16 @@ function WeekView({ weekDays, eventsForDay, today }: { weekDays: number[]; event
 }
 
 function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | null; events: DisplayEvent[]; monthName: string }) {
+  const { t } = useTranslation()
   return (
     <div style={{ background: 'var(--s2)', border: '1px solid var(--border-subtle)', borderRadius: 14, display: 'flex', flexDirection: 'column', overflow: 'hidden', height: '100%' }}>
       <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>
-          {selectedDay ? `Eventos — ${selectedDay} ${monthName}` : 'Selecione um dia'}
+          {selectedDay ? t('calendar.eventsForDay', { day: selectedDay, month: monthName }) : t('calendar.selectDay')}
         </div>
         {selectedDay && (
           <div style={{ fontSize: 11, color: 'var(--txt2)', marginTop: 2 }}>
-            {events.length} evento{events.length !== 1 ? 's' : ''}
+            {events.length !== 1 ? t('calendar.eventCountPlural', { count: events.length }) : t('calendar.eventCount', { count: events.length })}
           </div>
         )}
       </div>
@@ -429,13 +431,13 @@ function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | n
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--txt3)', fontSize: 13, gap: 8, padding: '40px 0', textAlign: 'center' }}
             >
               <CalendarDays size={28} style={{ opacity: 0.3 }} />
-              Clique em um dia para ver os eventos
+              {t('calendar.clickDayHint')}
             </motion.div>
           ) : events.length === 0 ? (
             <motion.div key="no-events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               style={{ textAlign: 'center', color: 'var(--txt3)', fontSize: 13, padding: '30px 0' }}
             >
-              Nenhum evento neste dia.
+              {t('calendar.noEvents')}
             </motion.div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -443,7 +445,7 @@ function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | n
                 const Icon = TYPE_ICONS[ev.type] || FileText
                 const color = TYPE_COLORS[ev.type] || 'var(--txt2)'
                 const isMatch = ev.type === 'match'
-                const res = ev.result ? RESULT_META[ev.result] : null
+                const resColor = ev.result ? RESULT_COLOR[ev.result] : null
                 return (
                   <div key={ev.id} style={{ background: 'var(--s3)', borderRadius: 10, padding: '10px 12px', borderLeft: `3px solid ${color}` }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -453,13 +455,13 @@ function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | n
                         <Icon size={12} style={{ color, flexShrink: 0 }} />
                       )}
                       <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono, monospace', color: 'var(--txt2)' }}>{ev.time}</span>
-                      {res && (
+                      {resColor && ev.result && (
                         <span style={{
                           marginLeft: 'auto', fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
                           letterSpacing: '0.04em', borderRadius: 99, padding: '1px 7px',
-                          color: res.color, background: `${res.color}22`, border: `1px solid ${res.color}55`,
+                          color: resColor, background: `${resColor}22`, border: `1px solid ${resColor}55`,
                         }}>
-                          {res.label}
+                          {t(`calendar.result.${ev.result}`)}
                         </span>
                       )}
                     </div>
@@ -488,7 +490,7 @@ function SidePanel({ selectedDay, events, monthName }: { selectedDay: number | n
       <div style={{ padding: '12px 14px', borderTop: '1px solid var(--border-subtle)' }}>
         <button style={{ width: '100%', padding: '10px 0', borderRadius: 10, border: '1px dashed var(--border-mid)', background: 'transparent', color: 'var(--txt2)', fontSize: 13, fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           <Plus size={14} />
-          Agendar conteúdo
+          {t('calendar.scheduleContent')}
         </button>
       </div>
     </div>

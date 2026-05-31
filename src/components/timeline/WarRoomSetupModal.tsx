@@ -6,13 +6,14 @@ import type { Fixture } from '@/types/fixtures'
 import { type WarRoomSetup, DEFAULT_SETUP } from '@/store/useWarRoomStore'
 import { formatDateShortBRT, formatTimeBRT } from '@/lib/fixtures-client'
 import { TeamLogo } from './TeamLogo'
+import { useTranslation } from '@/hooks/useTranslation'
 
-const OPTIONS: { key: keyof WarRoomSetup; label: string; desc: string }[] = [
-  { key: 'liveWarRoom',       label: 'War Room ao vivo',     desc: 'Acompanhar gols e lances em tempo real' },
-  { key: 'prePacks',          label: 'Pacotes pré-jogo',     desc: 'Gerar artes de escalação e antevisão' },
-  { key: 'preMatchHype',      label: 'Hype pré-partida',     desc: 'Conteúdo de aquecimento para redes' },
-  { key: 'iGaming',           label: 'iGaming / Odds',       desc: 'Integração de cotações e apostas' },
-  { key: 'realtimeAnalytics', label: 'Analytics em tempo real', desc: 'Estatísticas e métricas durante o jogo' },
+const OPTIONS: { key: keyof WarRoomSetup; labelKey: string; descKey: string }[] = [
+  { key: 'liveWarRoom',       labelKey: 'timeline.setup.liveWarRoom',       descKey: 'timeline.setup.liveWarRoomDesc' },
+  { key: 'prePacks',          labelKey: 'timeline.setup.prePacks',          descKey: 'timeline.setup.prePacksDesc' },
+  { key: 'preMatchHype',      labelKey: 'timeline.setup.preMatchHype',      descKey: 'timeline.setup.preMatchHypeDesc' },
+  { key: 'iGaming',           labelKey: 'timeline.setup.iGaming',           descKey: 'timeline.setup.iGamingDesc' },
+  { key: 'realtimeAnalytics', labelKey: 'timeline.setup.realtimeAnalytics', descKey: 'timeline.setup.realtimeAnalyticsDesc' },
 ]
 
 export function WarRoomSetupModal({
@@ -24,6 +25,7 @@ export function WarRoomSetupModal({
   onClose: () => void
   onLaunch: (setup: WarRoomSetup) => void
 }) {
+  const { t } = useTranslation()
   const [setup, setSetup] = useState<WarRoomSetup>(DEFAULT_SETUP)
   const { teams, fixture: f, league } = fixture
 
@@ -66,10 +68,10 @@ export function WarRoomSetupModal({
         }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--txt)' }}>
-              Configurar War Room
+              {t('timeline.setup.title')}
             </div>
             <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 2 }}>
-              Escolha os módulos para esta partida
+              {t('timeline.setup.subtitle')}
             </div>
           </div>
           <button
@@ -146,10 +148,10 @@ export function WarRoomSetupModal({
                 </span>
                 <span style={{ flex: 1 }}>
                   <span style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>
-                    {opt.label}
+                    {t(opt.labelKey)}
                   </span>
                   <span style={{ display: 'block', fontSize: 10, color: 'var(--txt3)', marginTop: 1 }}>
-                    {opt.desc}
+                    {t(opt.descKey)}
                   </span>
                 </span>
               </button>
@@ -168,7 +170,7 @@ export function WarRoomSetupModal({
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             }}
           >
-            <Zap size={15} /> Lançar War Room
+            <Zap size={15} /> {t('timeline.setup.launch')}
           </button>
         </div>
       </motion.div>

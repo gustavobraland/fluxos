@@ -3,6 +3,7 @@ import { PlatformIcon } from '@/components/ui/PlatformIcon'
 import { CharCounter } from './CharCounter'
 import { YoutubeGlyph } from './YoutubeGlyph'
 import { PLATFORM_LIMITS, PLATFORM_META, type PlatformId } from '@/lib/platform-limits'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface PlatformCopiesProps {
   copies: Record<PlatformId, string>
@@ -20,10 +21,11 @@ function PlatformGlyph({ id, size = 14 }: { id: PlatformId; size?: number }) {
 }
 
 export function PlatformCopies({ copies, selected, loading, onEdit, onFocus }: PlatformCopiesProps) {
+  const { t } = useTranslation()
   if (selected.length === 0) {
     return (
       <p style={{ fontSize: 11, color: 'var(--txt3)', textAlign: 'center', padding: '16px 0' }}>
-        Selecione ao menos uma plataforma para gerar as copies.
+        {t('multipost.selectPlatformCopies')}
       </p>
     )
   }

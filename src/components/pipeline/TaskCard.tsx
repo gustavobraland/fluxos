@@ -8,6 +8,7 @@ import type { Task } from '@/types'
 import { usePipelineStore } from '@/store/usePipelineStore'
 import { toast } from 'sonner'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const TYPE_COLORS: Record<string, string> = {
   'Copy':          '#A78BFA',
@@ -29,6 +30,7 @@ interface Props {
 }
 
 export function TaskCard({ task, onCardClick }: Props) {
+  const { t } = useTranslation()
   const { deleteTask } = usePipelineStore()
   const [hovering, setHovering] = useState(false)
 
@@ -79,7 +81,7 @@ export function TaskCard({ task, onCardClick }: Props) {
               onClick={e => e.stopPropagation()}
               className="flex items-center shrink-0"
               style={{ color: 'var(--txt3)', cursor: 'grab', padding: '1px' }}
-              title="Arrastar"
+              title={t('pipeline.drag')}
             >
               <GripVertical size={11} />
             </div>
@@ -151,7 +153,7 @@ export function TaskCard({ task, onCardClick }: Props) {
             onClick={(e) => {
               e.stopPropagation()
               deleteTask(task.id)
-              toast.success('Task removida')
+              toast.success(t('pipeline.toast.deleted'))
             }}
             className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center shadow"
             style={{ background: 'var(--s3)', color: 'var(--red)', border: '1px solid var(--border-subtle)' }}

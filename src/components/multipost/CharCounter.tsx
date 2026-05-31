@@ -1,4 +1,5 @@
 'use client'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface CharCounterProps {
   count: number
@@ -7,6 +8,7 @@ interface CharCounterProps {
 }
 
 export function CharCounter({ count, recommended, limit }: CharCounterProps) {
+  const { t } = useTranslation()
   const over = count > limit
   const warn = count > recommended && count <= limit
   const ideal = count <= recommended
@@ -49,7 +51,7 @@ export function CharCounter({ count, recommended, limit }: CharCounterProps) {
               padding: '1px 7px',
             }}
           >
-            ✓ Ideal
+            {t('multipost.charIdeal')}
           </span>
         )}
         <span style={{ flex: 1 }} />

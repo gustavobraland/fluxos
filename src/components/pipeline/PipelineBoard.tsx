@@ -12,13 +12,14 @@ import { PIPELINE_COLUMNS, PLATFORMS } from '@/lib/constants'
 import { PipelineColumn } from './PipelineColumn'
 import { TaskCard } from './TaskCard'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { Task, TaskStatus, TaskType, PlatformId } from '@/types'
 
 const TASK_TYPES: TaskType[] = ['Copy', 'Design', 'Motion', 'Copy + Design', 'Estratégia']
 const PRIORITY_OPTIONS = [
-  { value: 'low',    label: 'Baixa',  color: '#5B5B7A' },
-  { value: 'medium', label: 'Média',  color: '#F5C842' },
-  { value: 'high',   label: 'Alta',   color: '#E0201A' },
+  { value: 'low',    labelKey: 'pipeline.priorities.low',    color: '#5B5B7A' },
+  { value: 'medium', labelKey: 'pipeline.priorities.medium', color: '#F5C842' },
+  { value: 'high',   labelKey: 'pipeline.priorities.high',   color: '#E0201A' },
 ] as const
 
 type PriorityLevel = 'low' | 'medium' | 'high'
@@ -51,6 +52,7 @@ const fieldStyle = {
 // ─── Task Detail / Edit Modal ─────────────────────────────────────────────────
 
 function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void }) {
+  const { t } = useTranslation()
   const { updateTask, deleteTask } = usePipelineStore()
 
   const [title, setTitle]           = useState(task.title)
@@ -69,7 +71,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
   }
 
   function handleSave() {
-    if (!title.trim()) { toast.error('Título obrigatório'); return }
+    if (!title.trim()) { toast.error(t('pipeline.titleRequired')); return }
     updateTask(task.id, {
       title: title.trim(),
       description: description.trim() || undefined,
@@ -79,15 +81,15 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
       priority: priorityLevel === 'high',
       dueDate: dueDate || undefined,
       platforms,
-      tags: tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+      tags: tagsRaw.split(',').map(tag => tag.trim()).filter(Boolean),
     })
-    toast.success('Task atualizada')
+    toast.success(t('pipeline.taskUpdated'))
     onClose()
   }
 
   function handleDelete() {
     deleteTask(task.id)
-    toast.success('Task removida')
+    toast.success(t('pipeline.toast.deleted'))
     onClose()
   }
 
@@ -107,7 +109,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
         <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: 'var(--txt3)', marginBottom: 2, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Editar Task
+              {t('pipeline.editTask')}
             </div>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               {task.title}
@@ -116,7 +118,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
           <button
             onClick={handleDelete}
             style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(248,113,113,.1)', color: 'var(--red)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            title="Remover task"
+            title={t('pipeline.removeTask')}
           >
             <Trash2 size={13} />
           </button>
@@ -130,7 +132,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
 
           {/* Title */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Título *</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.titleStar')}</label>
             <input
               value={title}
               onChange={e => setTitle(e.target.value)}
@@ -140,11 +142,11 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
 
           {/* Description */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Descrição</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.descriptionLabel')}</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Descreva o contexto, briefing ou detalhes da task…"
+              placeholder={t('pipeline.descPlaceholderEdit')}
               rows={3}
               style={{ ...fieldStyle, width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 12, resize: 'none', boxSizing: 'border-box' }}
             />
@@ -153,30 +155,30 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
           {/* Type + Status row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Tipo</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.typeLabel')}</label>
               <select
                 value={type}
                 onChange={e => setType(e.target.value as TaskType)}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12 }}
               >
-                {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                {TASK_TYPES.map(tt => <option key={tt} value={tt}>{tt}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Status</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.statusLabel')}</label>
               <select
                 value={status}
                 onChange={e => setStatus(e.target.value as TaskStatus)}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12 }}
               >
-                {PIPELINE_COLUMNS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                {PIPELINE_COLUMNS.map(c => <option key={c.id} value={c.id}>{t(`pipeline.columns.${c.id}`)}</option>)}
               </select>
             </div>
           </div>
 
           {/* Priority */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>Prioridade</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.priorityLabel')}</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {PRIORITY_OPTIONS.map(opt => (
                 <button
@@ -193,7 +195,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
                   }}
                 >
                   {opt.value === 'high' && <Star size={11} style={{ fill: 'currentColor' }} />}
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </button>
               ))}
             </div>
@@ -204,7 +206,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
                 <Clock size={10} style={{ display: 'inline', marginRight: 4 }} />
-                Data limite
+                {t('pipeline.dueDateLabelShort')}
               </label>
               <input
                 type="date"
@@ -216,12 +218,12 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
                 <Tag size={10} style={{ display: 'inline', marginRight: 4 }} />
-                Tags (separadas por vírgula)
+                {t('pipeline.tagsCommaLabel')}
               </label>
               <input
                 value={tagsRaw}
                 onChange={e => setTagsRaw(e.target.value)}
-                placeholder="urgente, copa, reel"
+                placeholder={t('pipeline.tagsExampleEdit')}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }}
               />
             </div>
@@ -229,7 +231,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
 
           {/* Platforms */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>Plataformas</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.platformsLabel')}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {PLATFORMS.map(p => {
                 const sel = platforms.includes(p.id)
@@ -258,10 +260,10 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
         {/* Footer */}
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: 8, flexShrink: 0 }}>
           <button onClick={onClose} style={{ flex: 1, height: 36, borderRadius: 8, fontSize: 13, background: 'transparent', color: 'var(--txt2)', border: '1px solid var(--border-subtle)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Cancelar
+            {t('pipeline.cancel')}
           </button>
           <button onClick={handleSave} style={{ flex: 2, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600, background: 'var(--grad)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Salvar alterações
+            {t('pipeline.saveChanges')}
           </button>
         </div>
       </motion.div>
@@ -272,6 +274,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
 // ─── Create Task Modal ─────────────────────────────────────────────────────────
 
 function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus; onClose: () => void }) {
+  const { t } = useTranslation()
   const { addTask } = usePipelineStore()
 
   const [title, setTitle]             = useState('')
@@ -290,8 +293,8 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
   }
 
   function handleCreate() {
-    if (!title.trim()) { toast.error('Título obrigatório'); return }
-    if (platforms.length === 0) { toast.error('Selecione ao menos uma plataforma'); return }
+    if (!title.trim()) { toast.error(t('pipeline.titleRequired')); return }
+    if (platforms.length === 0) { toast.error(t('pipeline.platformRequired')); return }
     addTask({
       title: title.trim(),
       description: description.trim() || undefined,
@@ -301,9 +304,9 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
       priority: priorityLevel === 'high',
       dueDate: dueDate || undefined,
       platforms,
-      tags: tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+      tags: tagsRaw.split(',').map(tag => tag.trim()).filter(Boolean),
     })
-    toast.success('Task criada!')
+    toast.success(t('pipeline.toast.created'))
     onClose()
   }
 
@@ -321,7 +324,7 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
       >
         {/* Header */}
         <div style={{ padding: '16px 20px 12px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', margin: 0, flex: 1 }}>Nova Task</h3>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--txt)', margin: 0, flex: 1 }}>{t('pipeline.newTask')}</h3>
           <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 7, background: 'var(--s3)', color: 'var(--txt2)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <X size={14} />
           </button>
@@ -332,24 +335,24 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
 
           {/* Title */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Título *</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.titleStar')}</label>
             <input
               autoFocus
               value={title}
               onChange={e => setTitle(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreate()}
-              placeholder="Ex: Post Flamengo pré-jogo"
+              placeholder={t('pipeline.newTaskTitlePlaceholder')}
               style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 10px', borderRadius: 8, fontSize: 13, boxSizing: 'border-box' }}
             />
           </div>
 
           {/* Description */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Descrição</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.descriptionLabel')}</label>
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="Briefing, contexto ou detalhes importantes…"
+              placeholder={t('pipeline.descPlaceholderCreate')}
               rows={3}
               style={{ ...fieldStyle, width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 12, resize: 'none', boxSizing: 'border-box' }}
             />
@@ -358,24 +361,24 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
           {/* Type + Status */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Tipo</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.typeLabel')}</label>
               <select value={type} onChange={e => setType(e.target.value as TaskType)}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12 }}>
-                {TASK_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                {TASK_TYPES.map(tt => <option key={tt} value={tt}>{tt}</option>)}
               </select>
             </div>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Status inicial</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.statusInitial')}</label>
               <select value={status} onChange={e => setStatus(e.target.value as TaskStatus)}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12 }}>
-                {PIPELINE_COLUMNS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                {PIPELINE_COLUMNS.map(c => <option key={c.id} value={c.id}>{t(`pipeline.columns.${c.id}`)}</option>)}
               </select>
             </div>
           </div>
 
           {/* Priority */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>Prioridade</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.priorityLabel')}</label>
             <div style={{ display: 'flex', gap: 8 }}>
               {PRIORITY_OPTIONS.map(opt => (
                 <button
@@ -392,7 +395,7 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
                   }}
                 >
                   {opt.value === 'high' && <Star size={11} style={{ fill: 'currentColor' }} />}
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </button>
               ))}
             </div>
@@ -401,20 +404,20 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
           {/* Due date + Tags */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Data limite</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.dueDateLabelShort')}</label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }} />
             </div>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Tags</label>
-              <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)} placeholder="urgente, copa…"
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.tagsLabel')}</label>
+              <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)} placeholder={t('pipeline.tagsExampleCreate')}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }} />
             </div>
           </div>
 
           {/* Platforms */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>Plataformas *</label>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.platformsStar')}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {PLATFORMS.map(p => {
                 const sel = platforms.includes(p.id)
@@ -440,10 +443,10 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
         {/* Footer */}
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-subtle)', display: 'flex', gap: 8, flexShrink: 0 }}>
           <button onClick={onClose} style={{ flex: 1, height: 36, borderRadius: 8, fontSize: 13, background: 'transparent', color: 'var(--txt2)', border: '1px solid var(--border-subtle)', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Cancelar
+            {t('pipeline.cancel')}
           </button>
           <button onClick={handleCreate} style={{ flex: 2, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600, background: 'var(--grad)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Criar Task
+            {t('pipeline.createTask')}
           </button>
         </div>
       </motion.div>
@@ -456,6 +459,7 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
 const COL_IDS = PIPELINE_COLUMNS.map(c => c.id) as TaskStatus[]
 
 export function PipelineBoard() {
+  const { t } = useTranslation()
   const { tasks, moveTask, reorderTasks } = usePipelineStore()
   const [activeTask, setActiveTask]   = useState<Task | null>(null)
   const [showCreate, setShowCreate]   = useState(false)
@@ -467,25 +471,25 @@ export function PipelineBoard() {
   )
 
   const tasksByStatus = PIPELINE_COLUMNS.reduce((acc, col) => {
-    acc[col.id] = tasks.filter(t => t.status === col.id)
+    acc[col.id] = tasks.filter(task => task.status === col.id)
     return acc
   }, {} as Record<TaskStatus, Task[]>)
 
   // Resolve which column a droppable id belongs to (column id, or a task's status)
   const statusOf = (id: string): TaskStatus | null => {
     if (COL_IDS.includes(id as TaskStatus)) return id as TaskStatus
-    return usePipelineStore.getState().tasks.find(t => t.id === id)?.status ?? null
+    return usePipelineStore.getState().tasks.find(task => task.id === id)?.status ?? null
   }
 
   const handleDragStart = ({ active }: DragStartEvent) => {
-    setActiveTask(tasks.find(t => t.id === active.id) || null)
+    setActiveTask(tasks.find(task => task.id === active.id) || null)
   }
 
   // Live cross-column move: as the card hovers a different column, switch its
   // status so it visually flows into that column (canonical multi-container pattern).
   const handleDragOver = ({ active, over }: DragOverEvent) => {
     if (!over || active.id === over.id) return
-    const current = usePipelineStore.getState().tasks.find(t => t.id === active.id)
+    const current = usePipelineStore.getState().tasks.find(task => task.id === active.id)
     if (!current) return
     const target = statusOf(over.id as string)
     if (target && target !== current.status) {
@@ -507,24 +511,24 @@ export function PipelineBoard() {
       {/* Toolbar */}
       <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center gap-3">
-          <h1 className="text-[15px] font-semibold" style={{ color: 'var(--txt)' }}>Pipeline</h1>
+          <h1 className="text-[15px] font-semibold" style={{ color: 'var(--txt)' }}>{t('pipeline.boardTitle')}</h1>
           <span className="text-[11px] px-2 py-0.5 rounded-full font-mono" style={{ background: 'var(--s2)', color: 'var(--txt3)' }}>
-            {tasks.length} tasks
+            {t('pipeline.taskCount', { count: tasks.length })}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] hover:bg-[var(--s2)] transition-colors" style={{ color: 'var(--txt2)' }}>
-            <Filter size={12} /> Filtrar
+            <Filter size={12} /> {t('pipeline.filter')}
           </button>
           <button className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] hover:bg-[var(--s2)] transition-colors" style={{ color: 'var(--txt2)' }}>
-            <SlidersHorizontal size={12} /> Ordenar
+            <SlidersHorizontal size={12} /> {t('pipeline.sort')}
           </button>
           <button
             onClick={() => { setCreateStatus('backlog'); setShowCreate(true) }}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[12px] text-white font-medium"
             style={{ background: 'var(--grad)' }}
           >
-            <Plus size={13} /> Nova Task
+            <Plus size={13} /> {t('pipeline.newTask')}
           </button>
         </div>
       </div>

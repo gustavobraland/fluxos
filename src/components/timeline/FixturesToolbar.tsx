@@ -1,15 +1,11 @@
 'use client'
 import { RefreshCw } from 'lucide-react'
 import type { MatchCategory } from '@/types/fixtures'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export type FixtureFilter = 'ALL' | MatchCategory
 
-const FILTERS: { id: FixtureFilter; label: string }[] = [
-  { id: 'ALL', label: 'Todos' },
-  { id: 'BR',  label: '🇧🇷 Brasil' },
-  { id: 'EU',  label: '🌍 Europa' },
-  { id: 'NT',  label: '🏳 Seleções' },
-]
+const FILTER_IDS: FixtureFilter[] = ['ALL', 'BR', 'EU', 'NT']
 
 export function FixturesToolbar({
   filter,
@@ -28,6 +24,7 @@ export function FixturesToolbar({
   lastFetched: number | null
   onRefresh: () => void
 }) {
+  const { t } = useTranslation()
   const updatedLabel = lastFetched
     ? new Date(lastFetched).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
     : null
@@ -40,12 +37,12 @@ export function FixturesToolbar({
     }}>
       {/* Filter pills */}
       <div style={{ display: 'flex', gap: 6 }}>
-        {FILTERS.map(f => {
-          const active = filter === f.id
+        {FILTER_IDS.map(id => {
+          const active = filter === id
           return (
             <button
-              key={f.id}
-              onClick={() => onFilter(f.id)}
+              key={id}
+              onClick={() => onFilter(id)}
               style={{
                 height: 30, padding: '0 12px', borderRadius: 99,
                 background: active ? 'var(--s3)' : 'transparent',
@@ -55,7 +52,7 @@ export function FixturesToolbar({
                 transition: 'all 0.15s',
               }}
             >
-              {f.label}
+              {t(`timeline.filters.${id}`)}
             </button>
           )
         })}
@@ -69,7 +66,7 @@ export function FixturesToolbar({
             animation: 'pulseDot 1.2s ease-in-out infinite',
           }} />
           <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--green)', fontFamily: 'var(--font-mono)' }}>
-            {liveCount} AO VIVO
+            {t('timeline.liveCount', { count: liveCount })}
           </span>
         </span>
       )}
@@ -78,7 +75,7 @@ export function FixturesToolbar({
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
         {updatedLabel && (
           <span style={{ fontSize: 10, color: 'var(--txt3)', fontFamily: 'var(--font-mono)' }}>
-            Atualizado às {updatedLabel}
+            {t('timeline.updatedAt', { time: updatedLabel })}
           </span>
         )}
         <span style={{
@@ -87,7 +84,7 @@ export function FixturesToolbar({
           background: 'var(--s2)', border: '1px solid var(--border-subtle)',
           borderRadius: 99, padding: '2px 9px',
         }}>
-          {requestsUsed}/100 req hoje
+          {t('timeline.requestsToday', { count: requestsUsed })}
         </span>
         <button
           onClick={onRefresh}
@@ -101,7 +98,7 @@ export function FixturesToolbar({
           }}
         >
           <RefreshCw size={12} style={{ animation: loading ? 'spin 1s linear infinite' : undefined }} />
-          Atualizar
+          {t('timeline.refresh')}
         </button>
       </div>
     </div>

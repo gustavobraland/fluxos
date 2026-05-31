@@ -1,6 +1,7 @@
 'use client'
 import { Activity, PauseCircle } from 'lucide-react'
 import { useWarRoomStore } from '@/store/useWarRoomStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 // Live API-Football quota meter. Yellow at 70+, red at 90+. Also surfaces whether
 // the adaptive poller is currently running or paused.
@@ -8,6 +9,7 @@ export function QuotaDisplay() {
   const requestsUsed = useWarRoomStore(s => s.requestsUsed)
   const isPolling = useWarRoomStore(s => s.isPolling)
   const matchEnded = useWarRoomStore(s => s.matchEnded)
+  const { t } = useTranslation()
 
   const color =
     requestsUsed >= 90 ? 'var(--red)' :
@@ -28,7 +30,7 @@ export function QuotaDisplay() {
           <PauseCircle size={13} style={{ color: 'var(--txt3)' }} />
         )}
         <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>
-          Créditos API
+          {t('warroom.apiCredits')}
         </span>
         <span style={{
           marginLeft: 'auto', fontFamily: 'var(--font-mono)',
@@ -44,10 +46,10 @@ export function QuotaDisplay() {
 
       <div style={{ fontSize: 10, color: 'var(--txt3)', marginTop: 6 }}>
         {matchEnded
-          ? 'Partida encerrada — monitoramento parado'
+          ? t('warroom.quotaEnded')
           : isPolling
-            ? 'Monitorando ao vivo (3 min · 1 min no fim)'
-            : 'Em espera — reserva de 5 créditos protegida'}
+            ? t('warroom.quotaPolling')
+            : t('warroom.quotaIdle')}
       </div>
     </div>
   )

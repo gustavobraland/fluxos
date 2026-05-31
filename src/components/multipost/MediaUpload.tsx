@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { UploadCloud, X, RefreshCw, ImageIcon, Film, Clock, Crop } from 'lucide-react'
 import { toast } from 'sonner'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export interface MediaState {
   file: File
@@ -52,6 +53,7 @@ function formatDuration(sec: number): string {
 }
 
 export function MediaUpload({ media, onChange }: MediaUploadProps) {
+  const { t } = useTranslation()
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const lastUrl = useRef<string | null>(null)
@@ -80,15 +82,15 @@ export function MediaUpload({ media, onChange }: MediaUploadProps) {
       const isVideo = VIDEO_TYPES.includes(file.type)
 
       if (!isImage && !isVideo) {
-        toast.error('Formato não suportado. Use JPG, PNG, WebP, GIF, MP4, MOV ou WebM.')
+        toast.error(t('multipost.mediaError.unsupported'))
         return
       }
       if (isImage && file.size > MAX_IMAGE) {
-        toast.error('Imagem muito grande (máx 30MB)')
+        toast.error(t('multipost.mediaError.imageTooLarge'))
         return
       }
       if (isVideo && file.size > MAX_VIDEO) {
-        toast.error('Vídeo muito grande (máx 500MB)')
+        toast.error(t('multipost.mediaError.videoTooLarge'))
         return
       }
 
@@ -127,7 +129,7 @@ export function MediaUpload({ media, onChange }: MediaUploadProps) {
         vid.src = previewUrl
       }
     },
-    [onChange]
+    [onChange, t]
   )
 
   const onDrop = useCallback(
@@ -175,7 +177,7 @@ export function MediaUpload({ media, onChange }: MediaUploadProps) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={media.previewUrl}
-              alt="preview"
+              alt={t('multipost.media.previewAlt')}
               style={{ maxWidth: '100%', maxHeight: 240, objectFit: 'contain' }}
             />
           ) : (
@@ -271,7 +273,7 @@ export function MediaUpload({ media, onChange }: MediaUploadProps) {
             }}
           >
             <RefreshCw size={11} />
-            Trocar
+            {t('multipost.media.swap')}
           </button>
           <button
             onClick={() => onChange(null)}
@@ -292,7 +294,7 @@ export function MediaUpload({ media, onChange }: MediaUploadProps) {
             }}
           >
             <X size={11} />
-            Remover
+            {t('multipost.media.remove')}
           </button>
         </div>
 
@@ -334,12 +336,12 @@ export function MediaUpload({ media, onChange }: MediaUploadProps) {
     >
       <UploadCloud size={24} style={{ color: dragging ? 'var(--blue)' : 'var(--txt3)' }} />
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)' }}>
-        Arraste mídia ou clique para selecionar
+        {t('multipost.media.dropHint')}
       </div>
       <div style={{ fontSize: 10, color: 'var(--txt3)', lineHeight: 1.5 }}>
-        Imagem JPG, PNG, WebP, GIF (máx 30MB)
+        {t('multipost.media.imageHint')}
         <br />
-        Vídeo MP4, MOV, WebM (máx 500MB)
+        {t('multipost.media.videoHint')}
       </div>
       <input
         ref={inputRef}

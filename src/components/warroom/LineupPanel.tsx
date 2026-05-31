@@ -1,13 +1,15 @@
 'use client'
 import { Users, Sparkles } from 'lucide-react'
 import { useWarRoomStore, type TeamLineup } from '@/store/useWarRoomStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 function TeamColumn({ side }: { side: TeamLineup | null }) {
+  const { t } = useTranslation()
   if (!side || side.players.length === 0) {
     return (
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '8px 0' }}>
-          Escalação não disponível
+          {t('warroom.lineupUnavailable')}
         </div>
       </div>
     )
@@ -61,6 +63,7 @@ function TeamColumn({ side }: { side: TeamLineup | null }) {
 // store. When the official XI isn't published yet, shows the "Provável" badge.
 export function LineupPanel() {
   const lineup = useWarRoomStore(s => s.lineup)
+  const { t } = useTranslation()
 
   return (
     <div style={{
@@ -72,7 +75,7 @@ export function LineupPanel() {
         display: 'flex', alignItems: 'center', gap: 7,
       }}>
         <Users size={13} style={{ color: 'var(--txt2)' }} />
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>Escalação</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{t('warroom.lineup')}</span>
         <span style={{
           marginLeft: 'auto', fontSize: 9, fontWeight: 700, textTransform: 'uppercase',
           letterSpacing: '0.04em', borderRadius: 99, padding: '2px 8px',
@@ -80,14 +83,14 @@ export function LineupPanel() {
           background: lineup?.available ? 'rgba(62,207,142,0.12)' : 'rgba(245,200,66,0.12)',
           border: `1px solid ${lineup?.available ? 'rgba(62,207,142,0.25)' : 'rgba(245,200,66,0.25)'}`,
         }}>
-          {lineup?.available ? 'Oficial' : 'Provável'}
+          {lineup?.available ? t('warroom.lineupOfficial') : t('warroom.lineupProbable')}
         </span>
       </div>
 
       <div style={{ padding: 14 }}>
         {!lineup ? (
           <div style={{ fontSize: 11, color: 'var(--txt3)', textAlign: 'center', padding: '12px 0' }}>
-            Carregando escalação…
+            {t('warroom.lineupLoading')}
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 16 }}>
@@ -106,7 +109,7 @@ export function LineupPanel() {
         }}>
           <Sparkles size={11} style={{ color: '#A78BFA', flexShrink: 0 }} />
           <span style={{ fontSize: 10, color: 'var(--txt3)' }}>
-            Escalação oficial sai ~1h antes do apito — atualiza automaticamente.
+            {t('warroom.lineupHint')}
           </span>
         </div>
       )}

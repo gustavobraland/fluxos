@@ -2,6 +2,7 @@
 import { Heart, MessageCircle, Send, Bookmark, Music2, Share2, MoreHorizontal, ThumbsUp, Repeat2 } from 'lucide-react'
 import type { PlatformId } from '@/lib/platform-limits'
 import type { MediaState } from './MediaUpload'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface PlatformPreviewProps {
   platform: PlatformId
@@ -80,6 +81,7 @@ const AVATAR = (
 )
 
 export function PlatformPreview({ platform, media, caption }: PlatformPreviewProps) {
+  const { t } = useTranslation()
   const text = caption.trim()
 
   // ─── Instagram ──────────────────────────────────────────────────────────────
@@ -100,13 +102,13 @@ export function PlatformPreview({ platform, media, caption }: PlatformPreviewPro
         </div>
         <div style={{ padding: '0 12px 12px' }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)', marginBottom: 4 }}>
-            1.248 curtidas
+            {t('multipost.preview.igLikes')}
           </div>
           <div style={{ fontSize: 12.5, color: 'var(--txt2)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
             <span style={{ fontWeight: 600, color: 'var(--txt)' }}>braland </span>
-            {text || 'Sua legenda aparece aqui…'}
+            {text || t('multipost.preview.igCaption')}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 6 }}>Ver todos os 84 comentários</div>
+          <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 6 }}>{t('multipost.preview.igComments')}</div>
         </div>
       </div>
     )
@@ -137,7 +139,7 @@ export function PlatformPreview({ platform, media, caption }: PlatformPreviewPro
               overflow: 'hidden',
             }}
           >
-            {text || 'Título do Short aparece aqui'}
+            {text || t('multipost.preview.shortTitle')}
           </div>
           <div
             style={{
@@ -207,11 +209,11 @@ export function PlatformPreview({ platform, media, caption }: PlatformPreviewPro
                 overflow: 'hidden',
               }}
             >
-              {text || 'Legenda do TikTok…'}
+              {text || t('multipost.preview.tiktokCaption')}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, marginTop: 6 }}>
               <Music2 size={11} />
-              som original - braland
+              {t('multipost.preview.tiktokSound')}
             </div>
           </div>
         </div>
@@ -227,12 +229,12 @@ export function PlatformPreview({ platform, media, caption }: PlatformPreviewPro
           {AVATAR}
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt)' }}>BraLand</div>
-            <div style={{ fontSize: 10, color: 'var(--txt3)' }}>Agora · 🌎</div>
+            <div style={{ fontSize: 10, color: 'var(--txt3)' }}>{t('multipost.preview.fbTime')}</div>
           </div>
           <MoreHorizontal size={16} style={{ marginLeft: 'auto', color: 'var(--txt3)' }} />
         </div>
         <div style={{ fontSize: 12.5, color: 'var(--txt2)', lineHeight: 1.5, padding: '0 12px 10px', whiteSpace: 'pre-wrap' }}>
-          {text || 'Texto da publicação no Facebook…'}
+          {text || t('multipost.preview.fbCaption')}
         </div>
         <MediaFrame media={media} aspect={16 / 9} />
         <div
@@ -247,13 +249,13 @@ export function PlatformPreview({ platform, media, caption }: PlatformPreviewPro
           }}
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <ThumbsUp size={14} /> Curtir
+            <ThumbsUp size={14} /> {t('multipost.preview.fbLike')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <MessageCircle size={14} /> Comentar
+            <MessageCircle size={14} /> {t('multipost.preview.fbComment')}
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <Share2 size={14} /> Compartilhar
+            <Share2 size={14} /> {t('multipost.preview.fbShare')}
           </span>
         </div>
       </div>
@@ -268,11 +270,11 @@ export function PlatformPreview({ platform, media, caption }: PlatformPreviewPro
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
             <span style={{ fontWeight: 700, color: 'var(--txt)' }}>BraLand</span>
-            <span style={{ color: 'var(--txt3)' }}>@braland · 1m</span>
+            <span style={{ color: 'var(--txt3)' }}>{t('multipost.preview.xHandle')}</span>
             <MoreHorizontal size={14} style={{ marginLeft: 'auto', color: 'var(--txt3)' }} />
           </div>
           <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.45, margin: '4px 0 8px', whiteSpace: 'pre-wrap' }}>
-            {text || 'O que está acontecendo?'}
+            {text || t('multipost.preview.xCaption')}
           </div>
           <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
             <MediaFrame media={media} aspect={16 / 9} />

@@ -14,6 +14,7 @@ import { QuotaDisplay } from '@/components/warroom/QuotaDisplay'
 import { startPolling, stopPolling } from '@/services/warroom-polling'
 import { fetchLineup } from '@/services/warroom-lineup'
 import { startMockMatch, stopMockMatch, isMockRunning } from '@/services/warroom-mock'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const KICKOFF_WINDOW_MS = 10 * 60_000  // begin polling 10 min before kickoff
 const IS_DEV = process.env.NODE_ENV === 'development'
@@ -22,6 +23,7 @@ const IS_DEV = process.env.NODE_ENV === 'development'
 
 function EmptyState() {
   const router = useRouter()
+  const { t } = useTranslation()
   return (
     <div style={{
       height: '100%', display: 'flex', flexDirection: 'column',
@@ -30,10 +32,10 @@ function EmptyState() {
       <Radio size={32} style={{ color: 'var(--txt3)', opacity: 0.4 }} />
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt2)' }}>
-          Nenhuma partida no War Room
+          {t('warroom.emptyTitle')}
         </div>
         <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 4 }}>
-          Selecione um jogo na aba Partidas para começar a monitorar
+          {t('warroom.emptyDesc')}
         </div>
       </div>
       <button
@@ -44,7 +46,7 @@ function EmptyState() {
           color: 'var(--blue)', cursor: 'pointer', fontSize: 12, fontWeight: 600,
         }}
       >
-        ← Selecionar partida
+        {t('warroom.selectMatch')}
       </button>
     </div>
   )
@@ -53,6 +55,7 @@ function EmptyState() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function WarRoomPage() {
+  const { t } = useTranslation()
   const fixture = useWarRoomStore(s => s.activeFixture)
   const liveData = useWarRoomStore(s => s.liveData)
   const queue = useWarRoomStore(s => s.queue)
@@ -127,7 +130,7 @@ export default function WarRoomPage() {
             DEV
           </span>
           <span style={{ fontSize: 10, color: 'var(--txt3)' }}>
-            Simula NS → gol → intervalo → gol → fim (3s/estado, sem gastar quota)
+            {t('warroom.devSimDesc')}
           </span>
           <button
             onClick={() => startMockMatch()}
@@ -138,7 +141,7 @@ export default function WarRoomPage() {
               fontSize: 11, fontWeight: 700,
             }}
           >
-            ▶ Simular jogo
+            {t('warroom.devSimulate')}
           </button>
         </div>
       )}
@@ -159,7 +162,7 @@ export default function WarRoomPage() {
               borderRadius: 12, padding: '32px 16px', textAlign: 'center',
             }}>
               <div style={{ fontSize: 12, color: 'var(--txt3)' }}>
-                Monitorando ao vivo — conteúdo aparece em gol, intervalo e fim de jogo.
+                {t('warroom.monitoringLive')}
               </div>
             </div>
           )}
@@ -170,10 +173,10 @@ export default function WarRoomPage() {
               borderRadius: 12, padding: '32px 16px', textAlign: 'center',
             }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt2)' }}>
-                Aguardando o apito inicial
+                {t('warroom.waitingKickoffTitle')}
               </div>
               <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 4 }}>
-                O monitoramento ao vivo começa automaticamente perto do horário do jogo.
+                {t('warroom.waitingKickoffDesc')}
               </div>
             </div>
           )}

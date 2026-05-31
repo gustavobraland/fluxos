@@ -6,15 +6,16 @@ import { User, Shield, Sliders, Building2, Camera, Sun, Moon, Check, Eye, EyeOff
 import { useAppStore } from '@/store/useAppStore'
 import { useWorkspaceStore, type BrandVoice } from '@/store/useWorkspaceStore'
 import { useI18nStore, SUPPORTED_LOCALES } from '@/store/useI18nStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 type Tab = 'profile' | 'security' | 'preferences' | 'workspace' | 'brandvoice'
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'profile',     label: 'Perfil',        icon: User },
-  { id: 'security',   label: 'Segurança',     icon: Shield },
-  { id: 'preferences',label: 'Preferências',  icon: Sliders },
-  { id: 'brandvoice', label: 'Brand Voice',   icon: Sparkles },
-  { id: 'workspace',  label: 'Workspace',     icon: Building2 },
+const TABS: { id: Tab; icon: React.ElementType }[] = [
+  { id: 'profile',     icon: User },
+  { id: 'security',    icon: Shield },
+  { id: 'preferences', icon: Sliders },
+  { id: 'brandvoice',  icon: Sparkles },
+  { id: 'workspace',   icon: Building2 },
 ]
 
 // ─── Field components ─────────────────────────────────────────────────────────
@@ -84,6 +85,7 @@ function Field({
 }
 
 function SaveButton({ onClick, saved }: { onClick: () => void; saved: boolean }) {
+  const { t } = useTranslation()
   return (
     <button
       onClick={onClick}
@@ -105,7 +107,7 @@ function SaveButton({ onClick, saved }: { onClick: () => void; saved: boolean })
       }}
     >
       {saved && <Check size={14} />}
-      {saved ? 'Salvo!' : 'Salvar alterações'}
+      {saved ? t('settings.saved') : t('settings.saveChanges')}
     </button>
   )
 }
@@ -113,6 +115,7 @@ function SaveButton({ onClick, saved }: { onClick: () => void; saved: boolean })
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
 function ProfileTab() {
+  const { t } = useTranslation()
   const [name, setName]   = useState('Admin')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
@@ -121,19 +124,19 @@ function ProfileTab() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleSave() {
-    if (!name.trim()) { toast.error('Nome é obrigatório'); return }
+    if (!name.trim()) { toast.error(t('settings.profileTab.nameRequired')); return }
     setSaved(true)
-    toast.success('Perfil atualizado com sucesso')
+    toast.success(t('settings.profileTab.profileUpdated'))
     setTimeout(() => setSaved(false), 3000)
   }
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 5 * 1024 * 1024) { toast.error('Imagem muito grande (máx 5MB)'); return }
+    if (file.size > 5 * 1024 * 1024) { toast.error(t('settings.profileTab.imageTooLarge')); return }
     const url = URL.createObjectURL(file)
     setAvatar(url)
-    toast.success('Foto atualizada')
+    toast.success(t('settings.profileTab.photoUpdated'))
   }
 
   const initials = name.trim().slice(0, 2).toUpperCase() || 'AD'
@@ -202,8 +205,8 @@ function ProfileTab() {
           />
         </div>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>Foto de perfil</div>
-          <div style={{ fontSize: 11, color: 'var(--txt3)', marginBottom: 8 }}>JPG, PNG ou WebP · Máx 5MB</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{t('settings.profileTab.avatarTitle')}</div>
+          <div style={{ fontSize: 11, color: 'var(--txt3)', marginBottom: 8 }}>{t('settings.profileTab.avatarHint')}</div>
           <button
             onClick={() => fileRef.current?.click()}
             style={{
@@ -219,7 +222,7 @@ function ProfileTab() {
               fontFamily: 'inherit',
             }}
           >
-            Alterar foto
+            {t('settings.profileTab.changePhoto')}
           </button>
         </div>
       </div>
@@ -227,10 +230,10 @@ function ProfileTab() {
       {/* Fields */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div style={{ gridColumn: '1 / -1' }}>
-          <Field label="Nome completo" value={name} onChange={setName} placeholder="Seu nome" />
+          <Field label={t('settings.profileTab.fullName')} value={name} onChange={setName} placeholder={t('settings.profileTab.namePlaceholder')} />
         </div>
-        <Field label="E-mail" value={email} onChange={setEmail} type="email" placeholder="seu@email.com" />
-        <Field label="Telefone" value={phone} onChange={setPhone} placeholder="+55 11 99999-9999" />
+        <Field label={t('settings.profileTab.email')} value={email} onChange={setEmail} type="email" placeholder={t('settings.profileTab.emailPlaceholder')} />
+        <Field label={t('settings.profileTab.phone')} value={phone} onChange={setPhone} placeholder={t('settings.profileTab.phonePlaceholder')} />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -241,6 +244,7 @@ function ProfileTab() {
 }
 
 function SecurityTab() {
+  const { t } = useTranslation()
   const [current, setCurrent] = useState('')
   const [next, setNext]       = useState('')
   const [confirm, setConfirm] = useState('')
@@ -248,11 +252,11 @@ function SecurityTab() {
   const [twoFA, setTwoFA]     = useState(false)
 
   function handleSave() {
-    if (!current) { toast.error('Digite sua senha atual'); return }
-    if (next.length < 8) { toast.error('Nova senha deve ter ao menos 8 caracteres'); return }
-    if (next !== confirm) { toast.error('As senhas não coincidem'); return }
+    if (!current) { toast.error(t('settings.securityTab.currentRequired')); return }
+    if (next.length < 8) { toast.error(t('settings.securityTab.minLength')); return }
+    if (next !== confirm) { toast.error(t('settings.securityTab.noMatch')); return }
     setSaved(true)
-    toast.success('Senha atualizada com sucesso')
+    toast.success(t('settings.securityTab.passwordUpdated'))
     setCurrent(''); setNext(''); setConfirm('')
     setTimeout(() => setSaved(false), 3000)
   }
@@ -269,10 +273,10 @@ function SecurityTab() {
         flexDirection: 'column',
         gap: 16,
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>Alterar senha</div>
-        <Field label="Senha atual" value={current} onChange={setCurrent} type="password" placeholder="••••••••" />
-        <Field label="Nova senha" value={next} onChange={setNext} type="password" placeholder="••••••••" hint="Mínimo 8 caracteres" />
-        <Field label="Confirmar nova senha" value={confirm} onChange={setConfirm} type="password" placeholder="••••••••" />
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{t('settings.securityTab.changePassword')}</div>
+        <Field label={t('settings.securityTab.currentPassword')} value={current} onChange={setCurrent} type="password" placeholder="••••••••" />
+        <Field label={t('settings.securityTab.newPassword')} value={next} onChange={setNext} type="password" placeholder="••••••••" hint={t('settings.securityTab.newPasswordHint')} />
+        <Field label={t('settings.securityTab.confirmPassword')} value={confirm} onChange={setConfirm} type="password" placeholder="••••••••" />
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <SaveButton onClick={handleSave} saved={saved} />
         </div>
@@ -290,14 +294,14 @@ function SecurityTab() {
       }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>
-            Autenticação de dois fatores
+            {t('settings.securityTab.twoFactor')}
           </div>
           <div style={{ fontSize: 11, color: 'var(--txt3)' }}>
-            Adiciona uma camada extra de segurança ao seu login.
+            {t('settings.securityTab.twoFactorDesc')}
           </div>
         </div>
         <button
-          onClick={() => { setTwoFA(v => !v); toast(twoFA ? '2FA desativado' : '2FA ativado') }}
+          onClick={() => { setTwoFA(v => !v); toast(twoFA ? t('settings.securityTab.twoFAOff') : t('settings.securityTab.twoFAOn')) }}
           style={{
             width: 44,
             height: 24,
@@ -328,6 +332,7 @@ function SecurityTab() {
 }
 
 function PreferencesTab() {
+  const { t } = useTranslation()
   const { theme, setTheme } = useAppStore()
   const { locale, setLocale } = useI18nStore()
   const [notifEmail, setNotifEmail] = useState(() => (typeof localStorage !== 'undefined' ? localStorage.getItem('flux-notif-email') !== '0' : true))
@@ -340,7 +345,7 @@ function PreferencesTab() {
       localStorage.setItem('flux-notif-push', notifPush ? '1' : '0')
     }
     setSaved(true)
-    toast.success('Preferências salvas')
+    toast.success(t('settings.prefsTab.saved'))
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -378,18 +383,18 @@ function PreferencesTab() {
         padding: 20, background: 'var(--s2)', borderRadius: 12,
         border: '1px solid var(--border-subtle)',
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 14 }}>Tema</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 14 }}>{t('settings.theme')}</div>
         <div style={{ display: 'flex', gap: 10 }}>
-          {(['dark', 'light'] as const).map(t => (
+          {(['dark', 'light'] as const).map(themeOpt => (
             <button
-              key={t}
-              onClick={() => setTheme(t)}
+              key={themeOpt}
+              onClick={() => setTheme(themeOpt)}
               style={{
                 flex: 1,
                 height: 64,
                 borderRadius: 10,
-                border: theme === t ? '2px solid var(--blue)' : '1px solid var(--border-subtle)',
-                background: t === 'dark' ? '#0e0e14' : '#f5f5f7',
+                border: theme === themeOpt ? '2px solid var(--blue)' : '1px solid var(--border-subtle)',
+                background: themeOpt === 'dark' ? '#0e0e14' : '#f5f5f7',
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
@@ -399,12 +404,12 @@ function PreferencesTab() {
                 transition: 'border 0.15s',
               }}
             >
-              {t === 'dark'
+              {themeOpt === 'dark'
                 ? <Moon size={18} style={{ color: '#A78BFA' }} />
                 : <Sun size={18} style={{ color: '#D97706' }} />
               }
-              <span style={{ fontSize: 11, fontWeight: 600, color: t === 'dark' ? '#fff' : '#111' }}>
-                {t === 'dark' ? 'Escuro' : 'Claro'}
+              <span style={{ fontSize: 11, fontWeight: 600, color: themeOpt === 'dark' ? '#fff' : '#111' }}>
+                {themeOpt === 'dark' ? t('settings.dark') : t('settings.light')}
               </span>
             </button>
           ))}
@@ -416,7 +421,7 @@ function PreferencesTab() {
         padding: 20, background: 'var(--s2)', borderRadius: 12,
         border: '1px solid var(--border-subtle)',
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 14 }}>Idioma</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 14 }}>{t('settings.language')}</div>
         <select
           value={locale}
           onChange={e => setLocale(e.target.value as typeof locale)}
@@ -431,7 +436,7 @@ function PreferencesTab() {
           ))}
         </select>
         <p style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 8 }}>
-          Muda o idioma do sistema na hora (igual ao seletor da barra superior).
+          {t('settings.prefsTab.languageHint')}
         </p>
       </div>
 
@@ -441,10 +446,10 @@ function PreferencesTab() {
         border: '1px solid var(--border-subtle)',
       }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', padding: '12px 0', borderBottom: '1px solid var(--border-subtle)', marginBottom: 4 }}>
-          Notificações
+          {t('settings.prefsTab.notifications')}
         </div>
-        <ToggleRow label="E-mail" sub="Receba alertas no seu e-mail" value={notifEmail} onChange={setNotifEmail} />
-        <ToggleRow label="Push" sub="Notificações no navegador" value={notifPush} onChange={setNotifPush} />
+        <ToggleRow label={t('settings.prefsTab.email')} sub={t('settings.prefsTab.emailSub')} value={notifEmail} onChange={setNotifEmail} />
+        <ToggleRow label={t('settings.prefsTab.push')} sub={t('settings.prefsTab.pushSub')} value={notifPush} onChange={setNotifPush} />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -455,13 +460,14 @@ function PreferencesTab() {
 }
 
 function WorkspaceTab() {
+  const { t } = useTranslation()
   const [wsName, setWsName] = useState(process.env.NEXT_PUBLIC_WORKSPACE_NAME || '')
   const [saved, setSaved] = useState(false)
 
   function handleSave() {
-    if (!wsName.trim()) { toast.error('Nome do workspace é obrigatório'); return }
+    if (!wsName.trim()) { toast.error(t('settings.workspaceTab.nameRequired')); return }
     setSaved(true)
-    toast.success('Workspace atualizado. Recarregue a página para aplicar.')
+    toast.success(t('settings.workspaceTab.updated'))
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -473,7 +479,7 @@ function WorkspaceTab() {
         padding: 20, background: 'var(--s2)', borderRadius: 12,
         border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 16,
       }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>Identidade do Workspace</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{t('settings.workspaceTab.identity')}</div>
 
         {/* Logo preview */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -487,16 +493,16 @@ function WorkspaceTab() {
           </div>
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{wsName || 'Flux OS'}</div>
-            <div style={{ fontSize: 11, color: 'var(--txt3)' }}>Plano Pro</div>
+            <div style={{ fontSize: 11, color: 'var(--txt3)' }}>{t('settings.workspaceTab.plan')}</div>
           </div>
         </div>
 
         <Field
-          label="Nome do workspace"
+          label={t('settings.workspaceTab.name')}
           value={wsName}
           onChange={setWsName}
-          placeholder="Nome do seu workspace"
-          hint="Defina NEXT_PUBLIC_WORKSPACE_NAME no .env.local para persistir entre deploys."
+          placeholder={t('settings.workspaceTab.namePlaceholder')}
+          hint={t('settings.workspaceTab.nameHint')}
         />
 
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -508,6 +514,7 @@ function WorkspaceTab() {
 }
 
 function BrandVoiceTab() {
+  const { t } = useTranslation()
   const { brandVoice, setBrandVoice } = useWorkspaceStore()
   const [hashtagsText, setHashtagsText] = useState(brandVoice.hashtags.join(', '))
   const [saved, setSaved] = useState(false)
@@ -519,7 +526,7 @@ function BrandVoiceTab() {
       .filter(Boolean)
     setBrandVoice({ hashtags })
     setSaved(true)
-    toast.success('Brand voice salva')
+    toast.success(t('settings.brandVoiceTab.saved'))
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -558,35 +565,35 @@ function BrandVoiceTab() {
       }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>
-            Voz da marca
+            {t('settings.brandVoiceTab.title')}
           </div>
           <div style={{ fontSize: 11, color: 'var(--txt3)' }}>
-            Usada pela IA ao refinar as copies no Multipost.
+            {t('settings.brandVoiceTab.desc')}
           </div>
         </div>
 
         <Field
-          label="Tom de voz"
+          label={t('settings.brandVoiceTab.tone')}
           value={brandVoice.tone}
           onChange={(v) => setBrandVoice({ tone: v })}
-          placeholder="Ex: Energético, direto, apaixonado por esporte"
+          placeholder={t('settings.brandVoiceTab.tonePlaceholder')}
         />
         <Field
-          label="Evitar"
+          label={t('settings.brandVoiceTab.avoid')}
           value={brandVoice.avoid}
           onChange={(v) => setBrandVoice({ avoid: v })}
-          placeholder="Ex: Linguagem corporativa, clichês"
+          placeholder={t('settings.brandVoiceTab.avoidPlaceholder')}
         />
         <Field
-          label="Hashtags padrão"
+          label={t('settings.brandVoiceTab.hashtags')}
           value={hashtagsText}
           onChange={setHashtagsText}
-          placeholder="Ex: braland, futebol, brasileirao"
-          hint="Separe por vírgulas. O # é opcional."
+          placeholder={t('settings.brandVoiceTab.hashtagsPlaceholder')}
+          hint={t('settings.brandVoiceTab.hashtagsHint')}
         />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)' }}>Idioma</label>
+          <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)' }}>{t('settings.brandVoiceTab.language')}</label>
           <select
             value={brandVoice.language}
             onChange={(e) => setBrandVoice({ language: e.target.value as BrandVoice['language'] })}
@@ -596,16 +603,16 @@ function BrandVoiceTab() {
               color: 'var(--txt)', fontFamily: 'Sora, sans-serif', outline: 'none',
             }}
           >
-            <option value="pt-BR">Português (Brasil)</option>
-            <option value="en">Inglês</option>
-            <option value="es">Espanhol</option>
-            <option value="hybrid">Híbrido (PT + EN)</option>
+            <option value="pt-BR">{t('settings.brandVoiceTab.langPtBR')}</option>
+            <option value="en">{t('settings.brandVoiceTab.langEn')}</option>
+            <option value="es">{t('settings.brandVoiceTab.langEs')}</option>
+            <option value="hybrid">{t('settings.brandVoiceTab.langHybrid')}</option>
           </select>
         </div>
 
         <ToggleRow
-          label="Emojis"
-          sub="Permitir que a IA use emojis nas copies"
+          label={t('settings.brandVoiceTab.emojis')}
+          sub={t('settings.brandVoiceTab.emojisSub')}
           value={brandVoice.emojis}
           onChange={(v) => setBrandVoice({ emojis: v })}
         />
@@ -621,6 +628,7 @@ function BrandVoiceTab() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>('profile')
   const ActiveTab = {
     profile:     <ProfileTab />,
@@ -638,15 +646,15 @@ export default function SettingsPage() {
         display: 'flex', flexDirection: 'column', padding: '16px 8px', gap: 2,
       }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', padding: '4px 12px 8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          Configurações
+          {t('settings.title')}
         </div>
-        {TABS.map(t => {
-          const Icon = t.icon
-          const active = tab === t.id
+        {TABS.map(item => {
+          const Icon = item.icon
+          const active = tab === item.id
           return (
             <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
+              key={item.id}
+              onClick={() => setTab(item.id)}
               style={{
                 width: '100%', textAlign: 'left', padding: '9px 12px', borderRadius: 8,
                 border: 'none', cursor: 'pointer', fontFamily: 'Sora, sans-serif',
@@ -659,7 +667,7 @@ export default function SettingsPage() {
               }}
             >
               <Icon size={14} style={{ color: active ? 'var(--blue)' : 'var(--txt3)', flexShrink: 0 }} />
-              {t.label}
+              {t(`settings.tabs.${item.id}`)}
             </button>
           )
         })}

@@ -7,6 +7,7 @@ import { formatDateShortBRT, formatTimeBRT } from '@/lib/fixtures-client'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
 import { CountdownTimer } from './CountdownTimer'
 import { stopPolling } from '@/services/warroom-polling'
+import { useTranslation } from '@/hooks/useTranslation'
 
 function PulsingDot({ color = 'var(--red)' }: { color?: string }) {
   return (
@@ -25,6 +26,7 @@ export function MatchHeader() {
   const liveData = useWarRoomStore(s => s.liveData)
   const clearActiveFixture = useWarRoomStore(s => s.clearActiveFixture)
   const router = useRouter()
+  const { t } = useTranslation()
 
   if (!fixture) return null
 
@@ -90,12 +92,12 @@ export function MatchHeader() {
                 <>
                   <PulsingDot color="var(--green)" />
                   <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--green)' }}>
-                    {status === 'HT' ? 'INTERVALO' : `${elapsed ?? ''}'`}
+                    {status === 'HT' ? t('warroom.halftime') : `${elapsed ?? ''}'`}
                   </span>
                 </>
               ) : (
                 <span style={{ fontSize: 9, fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--txt3)' }}>
-                  ENCERRADO
+                  {t('warroom.finished')}
                 </span>
               )}
             </div>
@@ -124,7 +126,7 @@ export function MatchHeader() {
       {/* Dismiss */}
       <button
         onClick={dismiss}
-        title="Sair do War Room"
+        title={t('warroom.leaveWarRoom')}
         style={{
           width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
           background: 'var(--s2)', border: '1px solid var(--border-subtle)',

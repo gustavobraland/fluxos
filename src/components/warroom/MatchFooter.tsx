@@ -2,12 +2,17 @@
 import { useWarRoomStore } from '@/store/useWarRoomStore'
 import { isLiveStatus, isFinishedStatus, type FixtureStatus } from '@/types/fixtures'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
+import { useTranslation } from '@/hooks/useTranslation'
 
-function statusLabel(status: FixtureStatus, elapsed: number | null): { text: string; live: boolean } {
-  if (status === 'HT') return { text: 'INTERVALO', live: true }
-  if (isFinishedStatus(status)) return { text: 'ENCERRADO', live: false }
+function statusLabel(
+  status: FixtureStatus,
+  elapsed: number | null,
+  t: (key: string) => string,
+): { text: string; live: boolean } {
+  if (status === 'HT') return { text: t('warroom.halftime'), live: true }
+  if (isFinishedStatus(status)) return { text: t('warroom.finished'), live: false }
   if (isLiveStatus(status)) return { text: `${elapsed ?? 0}'`, live: true }
-  return { text: 'PRÉ-JOGO', live: false }
+  return { text: t('warroom.preMatch'), live: false }
 }
 
 // Bottom bar (rodapé) of the War Room — visual live strip: status/minute on the
@@ -16,13 +21,14 @@ export function MatchFooter() {
   const fixture = useWarRoomStore(s => s.activeFixture)
   const liveData = useWarRoomStore(s => s.liveData)
   const goals = useWarRoomStore(s => s.goals)
+  const { t } = useTranslation()
 
   if (!fixture) return null
 
   const status = liveData?.status ?? fixture.fixture.status.short
   const elapsed = liveData?.elapsed ?? fixture.fixture.status.elapsed
   const score = liveData?.goals ?? { home: fixture.goals.home ?? 0, away: fixture.goals.away ?? 0 }
-  const { text, live } = statusLabel(status, elapsed)
+  const { text, live } = statusLabel(status, elapsed, t)
   const { home, away } = fixture.teams
 
   return (
@@ -50,7 +56,7 @@ export function MatchFooter() {
       {/* Goals timeline */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', minWidth: 0 }} className="no-scrollbar">
         {goals.length === 0 ? (
-          <span style={{ fontSize: 11, color: 'var(--txt3)' }}>Sem gols ainda — o feed aparece aqui ⚽</span>
+          <span style={{ fontSize: 11, color: 'var(--txt3)' }}>{t('warroom.noGoalsYet')}</span>
         ) : (
           goals.map((g) => (
             <div key={g.id} style={{

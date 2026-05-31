@@ -4,6 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { TaskCard } from './TaskCard'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { Task, TaskStatus } from '@/types'
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function PipelineColumn({ column, tasks, onAddTask, onTaskClick }: Props) {
+  const { t } = useTranslation()
   const { setNodeRef, isOver } = useDroppable({ id: column.id })
 
   return (
@@ -22,7 +24,7 @@ export function PipelineColumn({ column, tasks, onAddTask, onTaskClick }: Props)
       <div className="flex items-center justify-between px-1 mb-2">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full" style={{ background: column.color }} />
-          <span className="text-[12px] font-semibold" style={{ color: 'var(--txt)' }}>{column.label}</span>
+          <span className="text-[12px] font-semibold" style={{ color: 'var(--txt)' }}>{t(`pipeline.columns.${column.id}`)}</span>
           <span
             className="text-[10px] font-mono px-1.5 py-0.5 rounded"
             style={{ background: 'var(--s2)', color: 'var(--txt3)' }}
@@ -40,7 +42,7 @@ export function PipelineColumn({ column, tasks, onAddTask, onTaskClick }: Props)
       </div>
 
       {/* Drop zone */}
-      <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={tasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
         <div
           ref={setNodeRef}
           className="flex-1 min-h-[120px] rounded-xl transition-colors"
@@ -55,7 +57,7 @@ export function PipelineColumn({ column, tasks, onAddTask, onTaskClick }: Props)
               style={{ color: 'var(--txt3)' }}
             >
               <div className="text-2xl mb-1 opacity-20">◻</div>
-              <span className="text-[11px]">Solte aqui</span>
+              <span className="text-[11px]">{t('pipeline.dropHere')}</span>
             </div>
           ) : (
             <div className="flex flex-col gap-1.5">

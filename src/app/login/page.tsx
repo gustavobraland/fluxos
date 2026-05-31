@@ -156,7 +156,7 @@ export default function LoginPage() {
 
                     <div className="relative flex items-center gap-3">
                       <div className="flex-1 h-px" style={{ background: 'var(--border-subtle)' }} />
-                      <span className="text-[11px]" style={{ color: 'var(--txt3)' }}>ou</span>
+                      <span className="text-[11px]" style={{ color: 'var(--txt3)' }}>{t('common.or')}</span>
                       <div className="flex-1 h-px" style={{ background: 'var(--border-subtle)' }} />
                     </div>
 

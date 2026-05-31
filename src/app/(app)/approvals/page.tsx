@@ -8,17 +8,11 @@ import {
 } from 'lucide-react'
 import type { ApprovalItem, Comment } from '@/types'
 import { useApprovalsStore } from '@/store/useApprovalsStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'changes'
-
-const STATUS_LABEL: Record<ApprovalStatus, string> = {
-  pending:  'Pendente',
-  approved: 'Aprovado',
-  rejected: 'Rejeitado',
-  changes:  'Ajuste solicitado',
-}
 
 const STATUS_COLOR: Record<ApprovalStatus, string> = {
   pending:  'var(--yellow)',
@@ -55,12 +49,13 @@ function getItemIconLarge(emoji: string) {
 }
 
 function StatusBadge({ status }: { status: ApprovalStatus }) {
+  const { t } = useTranslation()
   return (
     <span style={{
       background: STATUS_BG[status], color: STATUS_COLOR[status],
       fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 99, whiteSpace: 'nowrap',
     }}>
-      {STATUS_LABEL[status]}
+      {t(`approvals.statusLabel.${status}`)}
     </span>
   )
 }
@@ -77,6 +72,7 @@ function ItemList({
   onQuickReject: (id: string) => void
 }) {
   const [hoverId, setHoverId] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   return (
     <div style={{
@@ -87,7 +83,7 @@ function ItemList({
         padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)',
         display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0,
       }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Aprovações</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{t('approvals.title')}</span>
         <span style={{ background: 'var(--s3)', color: 'var(--txt2)', fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 99 }}>
           {items.length}
         </span>
@@ -153,7 +149,7 @@ function ItemList({
                 }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); onQuickReject(item.id) }}
-                    title="Rejeitar"
+                    title={t('approvals.reject')}
                     style={{
                       width: 24, height: 24, borderRadius: 6, cursor: 'pointer',
                       background: 'rgba(248,113,113,0.10)', color: 'var(--red)',
@@ -165,7 +161,7 @@ function ItemList({
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onQuickApprove(item.id) }}
-                    title="Aprovar"
+                    title={t('approvals.approve')}
                     style={{
                       height: 24, padding: '0 8px', borderRadius: 6, cursor: 'pointer',
                       fontSize: 11, fontWeight: 700,
@@ -174,7 +170,7 @@ function ItemList({
                       display: 'flex', alignItems: 'center', gap: 3,
                     }}
                   >
-                    <CheckCircle2 size={11} /> Aprovar
+                    <CheckCircle2 size={11} /> {t('approvals.approve')}
                   </button>
                 </div>
               )}
@@ -198,6 +194,7 @@ function MediaViewer({
   onPinClick: (id: string) => void
   onClearPin: () => void
 }) {
+  const { t } = useTranslation()
   const status = item.status as ApprovalStatus
   const pinned = comments.filter(c => c.pin && !c.resolved)
 
@@ -234,7 +231,7 @@ function MediaViewer({
         }}>
           <div style={{ transform: 'scale(1.6)' }}>{getItemIconLarge(item.emoji)}</div>
           <span style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 8 }}>
-            Pré-visualização — clique na arte para marcar um ponto
+            {t('approvals.previewHint')}
           </span>
         </div>
       )}
@@ -263,7 +260,7 @@ function MediaViewer({
       {pendingPin && (
         <button
           onClick={(e) => { e.stopPropagation(); onClearPin() }}
-          title="Pin pendente — clique para remover"
+          title={t('approvals.pendingPinHint')}
           style={{
             position: 'absolute', left: `${pendingPin.x}%`, top: `${pendingPin.y}%`,
             transform: 'translate(-50%, -50%)',
@@ -294,9 +291,10 @@ function DetailPanel({
   onReject: () => void
   onRequestAdjust: () => void
 }) {
+  const { t } = useTranslation()
   const status = item.status as ApprovalStatus
   const channel = item.subtitle.split('·')[0].trim()
-  const format = item.subtitle.split('·')[1]?.trim() ?? '—'
+  const format = item.subtitle.split('·')[1]?.trim() ?? t('approvals.noFormat')
   const decided = item.status !== 'pending'
 
   return (
@@ -341,7 +339,7 @@ function DetailPanel({
           display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
           fontSize: 12, color: 'var(--txt2)', flexShrink: 0,
         }}>
-          {[item.type === 'video' ? 'Vídeo' : 'Imagem', channel, format, STATUS_LABEL[status]].map((v, i, arr) => (
+          {[item.type === 'video' ? t('approvals.typeVideo') : t('approvals.typeImage'), channel, format, t(`approvals.statusLabel.${status}`)].map((v, i, arr) => (
             <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontWeight: i === arr.length - 1 ? 700 : 500, color: i === arr.length - 1 ? STATUS_COLOR[status] : 'var(--txt2)' }}>{v}</span>
               {i < arr.length - 1 && <span style={{ color: 'var(--txt3)' }}>·</span>}
@@ -358,7 +356,7 @@ function DetailPanel({
         <button
           onClick={onReject}
           disabled={decided}
-          title="Rejeitar"
+          title={t('approvals.reject')}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0,
             background: 'rgba(248,113,113,0.10)', color: 'var(--red)',
@@ -367,12 +365,12 @@ function DetailPanel({
             cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
           }}
         >
-          <XCircle size={14} /> Rejeitar
+          <XCircle size={14} /> {t('approvals.reject')}
         </button>
         <button
           onClick={onRequestAdjust}
           disabled={decided}
-          title="Pedir ajuste"
+          title={t('approvals.requestAdjust')}
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap',
             background: 'var(--s3)', color: 'var(--txt)', border: '1px solid var(--border-mid)',
@@ -380,7 +378,7 @@ function DetailPanel({
             cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
           }}
         >
-          <RotateCcw size={14} /> Pedir ajuste
+          <RotateCcw size={14} /> {t('approvals.requestAdjust')}
         </button>
         <button
           onClick={onApprove}
@@ -392,7 +390,7 @@ function DetailPanel({
             cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
           }}
         >
-          <CheckCircle2 size={14} /> Aprovar
+          <CheckCircle2 size={14} /> {t('approvals.approve')}
         </button>
       </div>
     </div>
@@ -416,6 +414,7 @@ function CommentPanel({
   onResolve: (id: string) => void
   onClearPin: () => void
 }) {
+  const { t } = useTranslation()
   const open = comments.filter(c => !c.resolved)
 
   return (
@@ -426,13 +425,13 @@ function CommentPanel({
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
         <MessageSquare size={14} style={{ color: 'var(--txt2)' }} />
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>Comentários</span>
+        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)' }}>{t('approvals.comments')}</span>
         <span style={{
           background: open.length > 0 ? 'rgba(245,200,66,.18)' : 'var(--s3)',
           color: open.length > 0 ? 'var(--yellow)' : 'var(--txt2)',
           fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 99,
         }}>
-          {open.length} abertos
+          {t('approvals.openCount', { count: open.length })}
         </span>
       </div>
 
@@ -491,11 +490,11 @@ function CommentPanel({
                         cursor: 'pointer', marginLeft: 'auto',
                       }}
                     >
-                      <CheckCheck size={9} /> Resolver
+                      <CheckCheck size={9} /> {t('approvals.resolve')}
                     </button>
                   ) : (
                     <span style={{ fontSize: 10, color: 'var(--green)', marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <CheckCircle2 size={9} /> Resolvido
+                      <CheckCircle2 size={9} /> {t('approvals.resolved')}
                     </span>
                   )}
                 </div>
@@ -515,7 +514,7 @@ function CommentPanel({
           {pendingPin ? (
             <button
               onClick={onClearPin}
-              title="Remover pin"
+              title={t('approvals.removePin')}
               style={{
                 display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer',
                 fontSize: 10, fontWeight: 700, color: 'var(--blue)',
@@ -527,7 +526,7 @@ function CommentPanel({
             </button>
           ) : (
             <span style={{ fontSize: 10, color: 'var(--txt3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <MapPin size={10} /> Sem pin — clique na arte para marcar
+              <MapPin size={10} /> {t('approvals.noPinHint')}
             </span>
           )}
         </div>
@@ -538,7 +537,7 @@ function CommentPanel({
             ref={inputRef}
             value={commentText}
             onChange={(e) => onChangeText(e.target.value)}
-            placeholder="Adicionar comentário…"
+            placeholder={t('approvals.addComment')}
             rows={2}
             style={{
               flex: 1, background: 'var(--s3)', border: '1px solid var(--border-mid)',
@@ -551,7 +550,7 @@ function CommentPanel({
           />
           <button
             onClick={onSubmitComment}
-            title="Enviar (Enter)"
+            title={t('approvals.sendEnter')}
             style={{
               width: 36, height: 36, borderRadius: 8, flexShrink: 0, cursor: 'pointer',
               background: 'var(--blue)', color: '#000', border: 'none',
@@ -562,7 +561,7 @@ function CommentPanel({
           </button>
         </div>
         <div style={{ fontSize: 9, color: 'var(--txt3)', textAlign: 'center', letterSpacing: '0.03em' }}>
-          Atalhos: A aprovar · R pedir ajuste · ↑↓ navegar
+          {t('approvals.shortcuts')}
         </div>
       </div>
     </div>
@@ -579,10 +578,11 @@ function ReasonModal({
   onClose: () => void
   onConfirm: (text: string) => void
 }) {
+  const { t } = useTranslation()
   const [text, setText] = useState('')
   const cfg = mode === 'adjust'
-    ? { title: 'Pedir ajuste', label: 'Descreva o que precisa mudar', color: '#E0201A', cta: 'Enviar ajuste' }
-    : { title: 'Rejeitar conteúdo', label: 'Motivo da rejeição', color: 'var(--red)', cta: 'Rejeitar' }
+    ? { title: t('approvals.modal.adjustTitle'), label: t('approvals.modal.adjustLabel'), color: '#E0201A', cta: t('approvals.modal.adjustCta') }
+    : { title: t('approvals.modal.rejectTitle'), label: t('approvals.modal.rejectLabel'), color: 'var(--red)', cta: t('approvals.modal.rejectCta') }
   const valid = text.trim().length > 0
 
   return (
@@ -614,7 +614,7 @@ function ReasonModal({
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
-          placeholder="Obrigatório — sem texto não dá pra enviar."
+          placeholder={t('approvals.modal.required')}
           style={{
             width: '100%', background: 'var(--s3)', border: '1px solid var(--border-mid)',
             borderRadius: 8, padding: '10px 12px', fontSize: 13, color: 'var(--txt)',
@@ -631,7 +631,7 @@ function ReasonModal({
               background: 'transparent', color: 'var(--txt2)', border: '1px solid var(--border-mid)',
             }}
           >
-            Cancelar
+            {t('approvals.modal.cancel')}
           </button>
           <button
             onClick={() => valid && onConfirm(text.trim())}
@@ -653,6 +653,7 @@ function ReasonModal({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ApprovalsPage() {
+  const { t } = useTranslation()
   const items = useApprovalsStore((s) => s.items)
   const setStatus = useApprovalsStore((s) => s.setStatus)
   const addCommentToItem = useApprovalsStore((s) => s.addComment)
@@ -684,14 +685,14 @@ export default function ApprovalsPage() {
     const text = commentText.trim()
     if (!text || !selected) return
     const c: Comment = {
-      id: `new-${Date.now()}`, author: 'Você', avatar: 'VC', color: 'var(--blue)',
-      text, pin: pendingPin ?? undefined, resolved: false, createdAt: 'agora',
+      id: `new-${Date.now()}`, author: t('approvals.you'), avatar: t('approvals.youAvatar'), color: 'var(--blue)',
+      text, pin: pendingPin ?? undefined, resolved: false, createdAt: t('approvals.now'),
     }
     addCommentToItem(selected.id, c)
     setCommentText('')
     setPendingPin(null)
-    toast.success(pendingPin ? 'Comentário com pin adicionado' : 'Comentário adicionado')
-  }, [commentText, pendingPin, selected, addCommentToItem])
+    toast.success(pendingPin ? t('approvals.toast.commentWithPin') : t('approvals.toast.comment'))
+  }, [commentText, pendingPin, selected, addCommentToItem, t])
 
   const resolveComment = (id: string) => { if (selected) resolveCommentInItem(selected.id, id) }
 
@@ -709,26 +710,26 @@ export default function ApprovalsPage() {
   const approve = useCallback((id: string) => {
     const it = items.find((i) => i.id === id)
     updateStatus(id, 'approved')
-    toast.success(`✓ Aprovado — ${it?.name ?? ''}`)
-  }, [items, updateStatus])
+    toast.success(t('approvals.toast.approved', { name: it?.name ?? '' }))
+  }, [items, updateStatus, t])
 
   const confirmReason = (text: string) => {
     if (!reasonModal) return
     const { mode, itemId } = reasonModal
     const it = items.find((i) => i.id === itemId)
     const note: Comment = {
-      id: `sys-${Date.now()}`, author: 'Você', avatar: 'VC',
+      id: `sys-${Date.now()}`, author: t('approvals.you'), avatar: t('approvals.youAvatar'),
       color: mode === 'adjust' ? '#E0201A' : 'var(--red)',
-      text: `${mode === 'adjust' ? 'Ajuste solicitado' : 'Rejeitado'}: ${text}`,
-      resolved: false, createdAt: 'agora',
+      text: `${mode === 'adjust' ? t('approvals.noteAdjust') : t('approvals.noteReject')}: ${text}`,
+      resolved: false, createdAt: t('approvals.now'),
     }
     addCommentToItem(itemId, note)
     if (mode === 'adjust') {
       updateStatus(itemId, 'changes')
-      toast.message(`Ajuste solicitado — ${it?.name ?? ''}`, { description: 'O designer foi notificado.' })
+      toast.message(t('approvals.toast.adjustRequested', { name: it?.name ?? '' }), { description: t('approvals.toast.designerNotified') })
     } else {
       updateStatus(itemId, 'rejected')
-      toast.error(`Rejeitado — ${it?.name ?? ''}`)
+      toast.error(t('approvals.toast.rejected', { name: it?.name ?? '' }))
     }
     setReasonModal(null)
   }

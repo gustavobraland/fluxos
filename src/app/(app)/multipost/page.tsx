@@ -15,6 +15,7 @@ import { useScheduleStore } from '@/store/useScheduleStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { PlatformId as TaskPlatformId } from '@/types'
 
 const TZ = 'America/Sao_Paulo'
@@ -57,6 +58,7 @@ const emptyCopies = (): Record<PlatformId, string> => ({
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function MultipostPage() {
+  const { t } = useTranslation()
   const [media, setMedia] = useState<MediaState | null>(null)
   const [selected, setSelected] = useState<PlatformId[]>(['instagram', 'twitter'])
   const [baseCopy, setBaseCopy] = useState('')
@@ -98,11 +100,11 @@ export default function MultipostPage() {
     async (draftText: string, platforms: PlatformId[]) => {
       const text = draftText.trim()
       if (!text) {
-        toast.error('Digite uma copy base primeiro')
+        toast.error(t('multipost.toastApi.baseCopyRequired'))
         return
       }
       if (platforms.length === 0) {
-        toast.error('Selecione ao menos uma plataforma')
+        toast.error(t('multipost.toastApi.platformRequired'))
         return
       }
       setRefining(true)
@@ -129,17 +131,17 @@ export default function MultipostPage() {
           return next
         })
         if (data.refinedBy === 'ai') {
-          toast.success('Copies refinadas com IA ✦')
+          toast.success(t('multipost.toastApi.refinedAi'))
         } else {
-          toast('Copies adaptadas localmente (IA não configurada)')
+          toast(t('multipost.toastApi.refinedLocal'))
         }
       } catch {
-        toast.error('Falha ao refinar copies')
+        toast.error(t('multipost.toastApi.refineFailed'))
       } finally {
         setRefining(false)
       }
     },
-    [media, brandVoice]
+    [media, brandVoice, t]
   )
 
   // ─── War Room draft auto-load + auto-refine on mount ──────────────────────────
@@ -163,14 +165,14 @@ export default function MultipostPage() {
     }
 
     if (draft.source === 'warroom') {
-      toast.success('Conteúdo do War Room carregado ✓')
+      toast.success(t('multipost.toastApi.warroomLoaded'))
       clearDraft()
       // Auto-refine — War Room content is already final copy.
       void refineRef.current(draft.caption, platforms)
     } else {
       // Prompt template: fill the {{variáveis}} first, then refine manually.
       setVarValues({})
-      toast.success('Prompt carregado — preencha as variáveis')
+      toast.success(t('multipost.toastApi.promptLoaded'))
       clearDraft()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -205,12 +207,12 @@ export default function MultipostPage() {
 
   const guard = () => {
     if (selected.length === 0) {
-      toast.error('Selecione ao menos uma plataforma')
+      toast.error(t('multipost.toastApi.platformRequired'))
       return false
     }
     const hasCopy = selected.some((p) => (copies[p] || '').trim()) || baseCopy.trim()
     if (!hasCopy) {
-      toast.error('Escreva ou refine uma copy primeiro')
+      toast.error(t('multipost.toastApi.copyRequired'))
       return false
     }
     return true
@@ -219,13 +221,13 @@ export default function MultipostPage() {
   const saveDraft = () => {
     if (!guard()) return
     trackTask('backlog')
-    toast.success('Rascunho salvo')
+    toast.success(t('multipost.toastApi.draftSaved'))
   }
 
   const sendToApproval = () => {
     if (!guard()) return
     trackTask('review')
-    toast.success('Enviado para aprovação')
+    toast.success(t('multipost.toastApi.sentToApproval'))
   }
 
   const publishNow = useCallback(async () => {
@@ -237,8 +239,8 @@ export default function MultipostPage() {
     trackTask('published')
     toast.success(
       scheduledAt
-        ? `Agendado para ${new Date(scheduledAt).toLocaleString('pt-BR')}`
-        : `Publicado em ${selected.length} plataforma(s)`
+        ? t('multipost.toastApi.scheduledAt', { date: new Date(scheduledAt).toLocaleString('pt-BR') })
+        : t('multipost.toastApi.publishedCount', { count: selected.length })
     )
     setTimeout(() => setPublished(false), 3000)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -247,15 +249,15 @@ export default function MultipostPage() {
   // Real scheduling: persist the post + mirror it onto the Calendar as a content event
   const schedulePost = () => {
     if (!guard()) return
-    if (!scheduledAt) { toast.error('Escolha data e hora'); return }
+    if (!scheduledAt) { toast.error(t('multipost.toastApi.chooseDateTime')); return }
     const ts = new Date(scheduledAt).getTime()
-    if (isNaN(ts)) { toast.error('Data inválida'); return }
+    if (isNaN(ts)) { toast.error(t('multipost.toastApi.invalidDate')); return }
     const caption = (applyVars(baseCopy).trim() || applyVars(copies[selected[0]] || '').trim())
     schedule({ caption, platforms: selected, scheduledAt: ts })
     useCalendarStore.getState().addEvent({
       id: `content-${ts}-${selected.join('')}`,
       type: 'content',
-      title: caption.split('\n')[0].slice(0, 50) || 'Post agendado',
+      title: caption.split('\n')[0].slice(0, 50) || t('multipost.scheduledTitle'),
       subtitle: selected.map(p => PLATFORM_META[p].short).join(' · '),
       date: new Date(ts).toLocaleDateString('en-CA', { timeZone: TZ }),
       time: new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: TZ }),
@@ -264,7 +266,7 @@ export default function MultipostPage() {
       platforms: selected,
     })
     trackTask('backlog')
-    toast.success(`Agendado para ${new Date(ts).toLocaleString('pt-BR')} · também no Calendário`)
+    toast.success(t('multipost.toastApi.scheduledCalendar', { date: new Date(ts).toLocaleString('pt-BR') }))
     setScheduledAt('')
   }
 
@@ -281,7 +283,7 @@ export default function MultipostPage() {
           className="flex items-center justify-between border-b"
           style={{ padding: '10px 16px', borderColor: 'var(--border-subtle)' }}
         >
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>Multipost</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{t('multipost.title')}</span>
         </div>
 
         <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -291,7 +293,7 @@ export default function MultipostPage() {
               className="uppercase"
               style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt3)', marginBottom: 8, letterSpacing: '0.08em' }}
             >
-              Mídia
+              {t('multipost.mediaLabel')}
             </p>
             <MediaUpload media={media} onChange={setMedia} />
           </section>
@@ -302,7 +304,7 @@ export default function MultipostPage() {
               className="uppercase"
               style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt3)', marginBottom: 8, letterSpacing: '0.08em' }}
             >
-              Plataformas
+              {t('multipost.platformsLabel')}
             </p>
             <div className="flex flex-wrap" style={{ gap: 6 }}>
               {PLATFORM_ORDER.map((id) => {
@@ -338,7 +340,7 @@ export default function MultipostPage() {
                 className="uppercase"
                 style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt3)', letterSpacing: '0.08em' }}
               >
-                Copy base
+                {t('multipost.baseCopyLabel')}
               </p>
               <button
                 onClick={() => refine(applyVars(baseCopy), selected)}
@@ -359,13 +361,13 @@ export default function MultipostPage() {
                 }}
               >
                 {refining ? <Loader2 size={11} className="animate-spin" /> : <Sparkles size={11} />}
-                {refining ? 'Refinando…' : '✦ Refinar com IA'}
+                {refining ? t('multipost.refining') : t('multipost.refineAi')}
               </button>
             </div>
             <textarea
               value={baseCopy}
               onChange={(e) => setBaseCopy(e.target.value)}
-              placeholder="Digite sua copy..."
+              placeholder={t('multipost.baseCopyPlaceholder')}
               className="w-full resize-none outline-none leading-relaxed"
               style={{
                 width: '100%',
@@ -395,7 +397,7 @@ export default function MultipostPage() {
                 className="uppercase"
                 style={{ fontSize: 10, fontWeight: 600, color: '#A78BFA', marginBottom: 8, letterSpacing: '0.08em' }}
               >
-                Preencher variáveis
+                {t('multipost.fillVariables')}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {vars.map((name) => (
@@ -423,7 +425,7 @@ export default function MultipostPage() {
                 ))}
               </div>
               <p style={{ fontSize: 10, color: 'var(--txt3)', marginTop: 8 }}>
-                Substituído ao vivo no preview e no refino com IA.
+                {t('multipost.variablesHint')}
               </p>
             </section>
           )}
@@ -434,7 +436,7 @@ export default function MultipostPage() {
               className="uppercase"
               style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt3)', marginBottom: 8, letterSpacing: '0.08em' }}
             >
-              Copies por plataforma
+              {t('multipost.platformCopiesLabel')}
             </p>
             <PlatformCopies
               copies={copies}
@@ -490,7 +492,7 @@ export default function MultipostPage() {
                 cursor: 'pointer',
               }}
             >
-              Salvar Rascunho
+              {t('multipost.saveDraftBtn')}
             </button>
             <button
               onClick={sendToApproval}
@@ -507,7 +509,7 @@ export default function MultipostPage() {
                 cursor: 'pointer',
               }}
             >
-              Enviar p/ aprovação
+              {t('multipost.sendToApprovalBtn')}
             </button>
             <motion.button
               whileTap={{ scale: 0.97 }}
@@ -535,7 +537,7 @@ export default function MultipostPage() {
               ) : (
                 <Zap size={13} />
               )}
-              {publishing ? 'Publicando…' : published ? 'Publicado' : scheduledAt ? 'Agendar' : 'Publicar Agora'}
+              {publishing ? t('multipost.publishingBtn') : published ? t('multipost.publishedBtn') : scheduledAt ? t('multipost.scheduleBtn') : t('multipost.publishNowBtn')}
             </motion.button>
           </div>
         </div>
@@ -549,7 +551,7 @@ export default function MultipostPage() {
           style={{ padding: '8px 16px', gap: 6, borderColor: 'var(--border-subtle)', minHeight: 44, flexWrap: 'wrap' }}
         >
           {selected.length === 0 ? (
-            <span style={{ fontSize: 11, color: 'var(--txt3)' }}>Nenhuma plataforma selecionada</span>
+            <span style={{ fontSize: 11, color: 'var(--txt3)' }}>{t('multipost.noPlatformSelected')}</span>
           ) : (
             selected.map((id) => {
               const active = previewTab === id
@@ -600,7 +602,7 @@ export default function MultipostPage() {
         >
           {selected.length === 0 ? (
             <p style={{ fontSize: 12, color: 'var(--txt3)', paddingTop: 40 }}>
-              Selecione uma plataforma para visualizar o preview.
+              {t('multipost.previewHint')}
             </p>
           ) : (
             <PlatformPreview
@@ -616,7 +618,7 @@ export default function MultipostPage() {
           <div className="border-t" style={{ borderColor: 'var(--border-subtle)', flexShrink: 0, maxHeight: 200, overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px' }}>
               <CalendarClock size={12} style={{ color: 'var(--blue)' }} />
-              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt)' }}>Agendados</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt)' }}>{t('multipost.scheduled')}</span>
               <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, fontWeight: 700, color: 'var(--blue)', background: 'rgba(37,99,235,.12)', borderRadius: 99, padding: '1px 7px' }}>
                 {scheduledPosts.length}
               </span>
@@ -630,7 +632,7 @@ export default function MultipostPage() {
                   {new Date(p.scheduledAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: TZ })}
                 </span>
                 <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: 'var(--txt)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {p.caption.split('\n')[0] || '(sem texto)'}
+                  {p.caption.split('\n')[0] || t('multipost.noText')}
                 </span>
                 <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
                   {p.platforms.slice(0, 5).map((pid) => (
@@ -640,8 +642,8 @@ export default function MultipostPage() {
                   ))}
                 </div>
                 <button
-                  onClick={() => { removeScheduled(p.id); toast.success('Agendamento removido') }}
-                  title="Remover agendamento"
+                  onClick={() => { removeScheduled(p.id); toast.success(t('multipost.scheduleRemoved')) }}
+                  title={t('multipost.removeSchedule')}
                   style={{
                     width: 22, height: 22, borderRadius: 6, flexShrink: 0, cursor: 'pointer',
                     background: 'transparent', border: '1px solid var(--border-subtle)', color: 'var(--red)',

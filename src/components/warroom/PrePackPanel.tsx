@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useWarRoomStore, type PrePackScenario } from '@/store/useWarRoomStore'
 import { useMultipostStore } from '@/store/useMultipostStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const SCENARIO_COLOR: Record<PrePackScenario, string> = {
   win: 'var(--green)', draw: 'var(--yellow)', loss: 'var(--red)',
@@ -18,6 +19,7 @@ export function PrePackPanel() {
   const activatePrePack = useWarRoomStore(s => s.activatePrePack)
   const setDraft = useMultipostStore(s => s.setDraft)
   const router = useRouter()
+  const { t } = useTranslation()
 
   const matchup = fixture
     ? `${fixture.teams.home.name} x ${fixture.teams.away.name}`
@@ -31,7 +33,7 @@ export function PrePackPanel() {
       scheduledAt: null,
       source: 'warroom',
     })
-    toast.success(`Pré-pack "${label}" enviado para o Multipost`)
+    toast.success(t('warroom.prePackToast', { label }))
     router.push('/multipost')
   }
 
@@ -45,9 +47,9 @@ export function PrePackPanel() {
         display: 'flex', alignItems: 'center', gap: 7,
       }}>
         <Package size={13} style={{ color: 'var(--txt2)' }} />
-        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>Pré-Packs</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{t('warroom.prePacks')}</span>
         <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--txt3)' }}>
-          Deploy por cenário
+          {t('warroom.deployByScenario')}
         </span>
       </div>
 
@@ -66,14 +68,14 @@ export function PrePackPanel() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)' }}>{pack.label}</div>
                 <div style={{ fontSize: 10, color: 'var(--txt3)' }}>
-                  {pack.assetCount} artes · {pack.platformCount} plataformas
+                  {t('warroom.prePackArts', { assets: pack.assetCount, platforms: pack.platformCount })}
                 </div>
               </div>
               {deployed ? (
                 <span style={{
                   fontSize: 10, fontWeight: 700, color, display: 'flex', alignItems: 'center', gap: 4,
                 }}>
-                  <Check size={11} /> Enviado
+                  <Check size={11} /> {t('warroom.prePackSent')}
                 </span>
               ) : (
                 <button
@@ -85,7 +87,7 @@ export function PrePackPanel() {
                     display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
                   }}
                 >
-                  <Rocket size={10} /> Deploy
+                  <Rocket size={10} /> {t('warroom.prePackDeploy')}
                 </button>
               )}
             </div>

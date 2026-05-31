@@ -10,16 +10,14 @@ import { usePromptsStore } from '@/store/usePromptsStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
 import { computeInsights } from '@/lib/insights'
 import { PlatformIcon, IntegrationIcon } from '@/components/ui/PlatformIcon'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const SOCIAL_IDS = ['instagram', 'twitter', 'tiktok', 'youtube', 'facebook', 'linkedin']
 
-const DATE_RANGES = [
-  { id: '7d',  label: '7 dias' },
-  { id: '30d', label: '30 dias' },
-  { id: '90d', label: '90 dias' },
-]
+const DATE_RANGE_IDS = ['7d', '30d', '90d'] as const
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const { integrations, connectInt, connecting } = useIntegrationsStore()
   const tasks = usePipelineStore((s) => s.tasks)
@@ -61,7 +59,7 @@ export default function AnalyticsPage() {
       }}>
         <BarChart3 size={16} style={{ color: 'var(--txt2)' }} />
         <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', margin: 0 }}>
-          Analytics
+          {t('analytics.title')}
         </h1>
 
         {/* Spacer */}
@@ -69,25 +67,25 @@ export default function AnalyticsPage() {
 
         {/* Date range filter */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {DATE_RANGES.map(r => (
+          {DATE_RANGE_IDS.map(id => (
             <button
-              key={r.id}
-              onClick={() => setDateRange(r.id)}
+              key={id}
+              onClick={() => setDateRange(id)}
               style={{
                 height: 28,
                 padding: '0 12px',
                 borderRadius: 7,
                 fontSize: 11,
                 fontWeight: 500,
-                background: dateRange === r.id ? 'var(--blue)' : 'var(--s3)',
-                color: dateRange === r.id ? '#000' : 'var(--txt2)',
-                border: dateRange === r.id ? 'none' : '1px solid var(--border-subtle)',
+                background: dateRange === id ? 'var(--blue)' : 'var(--s3)',
+                color: dateRange === id ? '#000' : 'var(--txt2)',
+                border: dateRange === id ? 'none' : '1px solid var(--border-subtle)',
                 cursor: 'pointer',
                 fontFamily: 'inherit',
                 transition: 'all 0.15s',
               }}
             >
-              {r.label}
+              {t(`analytics.dateRanges.${id}`)}
             </button>
           ))}
         </div>
@@ -123,7 +121,7 @@ export default function AnalyticsPage() {
             flexShrink: 0,
           }}
         >
-          Todos
+          {t('analytics.all')}
         </button>
 
         {SOCIAL_IDS.map(id => {
@@ -182,17 +180,17 @@ export default function AnalyticsPage() {
         {/* ── Produção interna — dados reais do app ── */}
         <div style={{ width: '100%', maxWidth: 960 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 14 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', margin: 0 }}>Produção interna</h2>
-            <span style={{ fontSize: 11, color: 'var(--txt3)' }}>dados reais do Flux OS</span>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', margin: 0 }}>{t('analytics.internalProduction')}</h2>
+            <span style={{ fontSize: 11, color: 'var(--txt3)' }}>{t('analytics.realDataSub')}</span>
           </div>
 
           {/* Stat cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
             {[
-              { icon: <Workflow size={14} />, label: 'No pipeline', value: ins.pipelineTotal, sub: `${ins.createdToday} criados hoje`, color: 'var(--blue)' },
-              { icon: <CheckSquare size={14} />, label: 'Aprovações pendentes', value: ins.approvals.pending, sub: `${ins.approvals.approved} aprovadas`, color: 'var(--yellow)' },
-              { icon: <Sparkles size={14} />, label: 'Prompts usados', value: ins.prompts.uses, sub: `${ins.prompts.total} salvos`, color: '#A78BFA' },
-              { icon: <Trophy size={14} />, label: 'Jogos no calendário', value: ins.matches.total, sub: `${ins.matches.upcoming} por vir`, color: 'var(--green)' },
+              { icon: <Workflow size={14} />, label: t('analytics.inPipeline'), value: ins.pipelineTotal, sub: t('analytics.createdToday', { count: ins.createdToday }), color: 'var(--blue)' },
+              { icon: <CheckSquare size={14} />, label: t('analytics.approvalsPending'), value: ins.approvals.pending, sub: t('analytics.approvalsApproved', { count: ins.approvals.approved }), color: 'var(--yellow)' },
+              { icon: <Sparkles size={14} />, label: t('analytics.promptsUsed'), value: ins.prompts.uses, sub: t('analytics.promptsSaved', { count: ins.prompts.total }), color: '#A78BFA' },
+              { icon: <Trophy size={14} />, label: t('analytics.matchesInCalendar'), value: ins.matches.total, sub: t('analytics.matchesUpcoming', { count: ins.matches.upcoming }), color: 'var(--green)' },
             ].map((c) => (
               <div key={c.label} style={{ background: 'var(--s1)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '14px 16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: c.color, marginBottom: 8 }}>{c.icon}</div>
@@ -208,7 +206,7 @@ export default function AnalyticsPage() {
             {/* 7-day bar chart */}
             <div style={{ background: 'var(--s1)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '14px 16px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
-                Tasks criadas — últimos 7 dias
+                {t('analytics.tasksCreated7d')}
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 110 }}>
                 {ins.last7.map((d) => {
@@ -231,10 +229,10 @@ export default function AnalyticsPage() {
             {/* Top prompts */}
             <div style={{ background: 'var(--s1)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '14px 16px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 12 }}>
-                Prompts mais usados
+                {t('analytics.topPrompts')}
               </div>
               {ins.prompts.top.length === 0 ? (
-                <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '8px 0' }}>Nenhum prompt usado ainda.</div>
+                <div style={{ fontSize: 11, color: 'var(--txt3)', padding: '8px 0' }}>{t('analytics.noPromptsUsed')}</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {ins.prompts.top.map((p, i) => (
@@ -254,7 +252,7 @@ export default function AnalyticsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 32 }}>
             <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
             <span style={{ fontSize: 10, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Métricas de plataforma (requer conexão)
+              {t('analytics.platformMetricsDivider')}
             </span>
             <div style={{ flex: 1, height: 1, background: 'var(--border-subtle)' }} />
           </div>
@@ -284,12 +282,11 @@ export default function AnalyticsPage() {
           </div>
 
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)' }}>
-            Aguardando dados de plataformas
+            {t('analytics.awaitingData')}
           </div>
 
           <div style={{ fontSize: 12, color: 'var(--txt2)', lineHeight: 1.6 }}>
-            Conecte suas plataformas de publicação para ver métricas reais de alcance,
-            engajamento e crescimento.
+            {t('analytics.awaitingDataDesc')}
           </div>
 
           <button
@@ -308,7 +305,7 @@ export default function AnalyticsPage() {
               fontFamily: 'inherit',
             }}
           >
-            Conectar Plataformas →
+            {t('analytics.connectPlatforms')}
           </button>
         </div>
 
@@ -379,12 +376,12 @@ export default function AnalyticsPage() {
                     padding: '3px 10px',
                     borderRadius: 99,
                   }}>
-                    Conectado
+                    {t('analytics.connected')}
                   </span>
                 ) : (
                   <>
                     <span style={{ fontSize: 11, color: 'var(--txt3)' }}>
-                      Aguardando conexão
+                      {t('analytics.awaitingConnection')}
                     </span>
                     <button
                       onClick={() => connectInt(int.id)}
@@ -403,7 +400,7 @@ export default function AnalyticsPage() {
                         opacity: isConnecting ? 0.6 : 1,
                       }}
                     >
-                      {isConnecting ? 'Conectando…' : 'Conectar'}
+                      {isConnecting ? t('analytics.connecting') : t('analytics.connect')}
                     </button>
                   </>
                 )}
