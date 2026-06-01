@@ -9,6 +9,7 @@ import {
 import type { ApprovalItem, Comment } from '@/types'
 import { useApprovalsStore } from '@/store/useApprovalsStore'
 import { useTranslation } from '@/hooks/useTranslation'
+import { usePermission } from '@/hooks/usePermission'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ function ItemList({
 }) {
   const [hoverId, setHoverId] = useState<string | null>(null)
   const { t } = useTranslation()
+  const canApprove = usePermission('content.approve')
 
   return (
     <div style={{
@@ -94,7 +96,7 @@ function ItemList({
           const active = item.id === selectedId
           const status = item.status as ApprovalStatus
           const pendingComments = item.comments.filter(c => !c.resolved).length
-          const showQuick = hoverId === item.id && status === 'pending'
+          const showQuick = hoverId === item.id && status === 'pending' && canApprove
           return (
             <div
               key={item.id}
@@ -292,6 +294,7 @@ function DetailPanel({
   onRequestAdjust: () => void
 }) {
   const { t } = useTranslation()
+  const canApprove = usePermission('content.approve')
   const status = item.status as ApprovalStatus
   const channel = item.subtitle.split('·')[0].trim()
   const format = item.subtitle.split('·')[1]?.trim() ?? t('approvals.noFormat')
@@ -353,45 +356,56 @@ function DetailPanel({
         padding: '12px 20px', borderTop: '1px solid var(--border-subtle)', flexShrink: 0,
         background: 'var(--s1)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
       }}>
-        <button
-          onClick={onReject}
-          disabled={decided}
-          title={t('approvals.reject')}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0,
-            background: 'rgba(248,113,113,0.10)', color: 'var(--red)',
-            border: '1px solid rgba(248,113,113,0.25)', borderRadius: 8,
-            padding: '8px 14px', fontSize: 13, fontWeight: 600,
-            cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
-          }}
-        >
-          <XCircle size={14} /> {t('approvals.reject')}
-        </button>
-        <button
-          onClick={onRequestAdjust}
-          disabled={decided}
-          title={t('approvals.requestAdjust')}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap',
-            background: 'var(--s3)', color: 'var(--txt)', border: '1px solid var(--border-mid)',
-            borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600,
-            cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
-          }}
-        >
-          <RotateCcw size={14} /> {t('approvals.requestAdjust')}
-        </button>
-        <button
-          onClick={onApprove}
-          disabled={decided}
-          style={{
-            flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            background: 'var(--green)', color: '#000', border: 'none', borderRadius: 8,
-            padding: '8px 16px', fontSize: 13, fontWeight: 700,
-            cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
-          }}
-        >
-          <CheckCircle2 size={14} /> {t('approvals.approve')}
-        </button>
+        {canApprove ? (
+          <>
+            <button
+              onClick={onReject}
+              disabled={decided}
+              title={t('approvals.reject')}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0,
+                background: 'rgba(248,113,113,0.10)', color: 'var(--red)',
+                border: '1px solid rgba(248,113,113,0.25)', borderRadius: 8,
+                padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
+              }}
+            >
+              <XCircle size={14} /> {t('approvals.reject')}
+            </button>
+            <button
+              onClick={onRequestAdjust}
+              disabled={decided}
+              title={t('approvals.requestAdjust')}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flexShrink: 0, whiteSpace: 'nowrap',
+                background: 'var(--s3)', color: 'var(--txt)', border: '1px solid var(--border-mid)',
+                borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
+              }}
+            >
+              <RotateCcw size={14} /> {t('approvals.requestAdjust')}
+            </button>
+            <button
+              onClick={onApprove}
+              disabled={decided}
+              style={{
+                flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                background: 'var(--green)', color: '#000', border: 'none', borderRadius: 8,
+                padding: '8px 16px', fontSize: 13, fontWeight: 700,
+                cursor: decided ? 'not-allowed' : 'pointer', opacity: decided ? 0.5 : 1,
+              }}
+            >
+              <CheckCircle2 size={14} /> {t('approvals.approve')}
+            </button>
+          </>
+        ) : (
+          <div style={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            fontSize: 12, color: 'var(--txt3)', padding: '6px 0',
+          }}>
+            <CheckCircle2 size={13} /> {t('approvals.noApprovePermission')}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -746,6 +760,7 @@ export default function ApprovalsPage() {
         return
       }
       if (typing || reasonModal) return
+      if (!items.length || !selected) return
 
       const idx = items.findIndex((i) => i.id === selectedId)
       if (e.key === 'ArrowDown') { e.preventDefault(); switchItem(items[Math.min(idx + 1, items.length - 1)].id) }
@@ -767,30 +782,42 @@ export default function ApprovalsPage() {
         onQuickReject={(id) => setReasonModal({ mode: 'reject', itemId: id })}
       />
 
-      <DetailPanel
-        item={selected}
-        comments={selected.comments}
-        pendingPin={pendingPin}
-        onImageClick={handleImageClick}
-        onPinClick={scrollToComment}
-        onClearPin={() => setPendingPin(null)}
-        onApprove={() => approve(selected.id)}
-        onReject={() => setReasonModal({ mode: 'reject', itemId: selected.id })}
-        onRequestAdjust={() => setReasonModal({ mode: 'adjust', itemId: selected.id })}
-      />
+      {selected ? (
+        <>
+          <DetailPanel
+            item={selected}
+            comments={selected.comments}
+            pendingPin={pendingPin}
+            onImageClick={handleImageClick}
+            onPinClick={scrollToComment}
+            onClearPin={() => setPendingPin(null)}
+            onApprove={() => approve(selected.id)}
+            onReject={() => setReasonModal({ mode: 'reject', itemId: selected.id })}
+            onRequestAdjust={() => setReasonModal({ mode: 'adjust', itemId: selected.id })}
+          />
 
-      <CommentPanel
-        comments={selected.comments}
-        commentText={commentText}
-        pendingPin={pendingPin}
-        flashId={flashId}
-        inputRef={inputRef}
-        commentRefs={commentRefs}
-        onChangeText={setCommentText}
-        onSubmitComment={submitComment}
-        onResolve={resolveComment}
-        onClearPin={() => setPendingPin(null)}
-      />
+          <CommentPanel
+            comments={selected.comments}
+            commentText={commentText}
+            pendingPin={pendingPin}
+            flashId={flashId}
+            inputRef={inputRef}
+            commentRefs={commentRefs}
+            onChangeText={setCommentText}
+            onSubmitComment={submitComment}
+            onResolve={resolveComment}
+            onClearPin={() => setPendingPin(null)}
+          />
+        </>
+      ) : (
+        <div style={{
+          flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', gap: 10, color: 'var(--txt3)',
+        }}>
+          <CheckCircle2 size={28} style={{ opacity: 0.4 }} />
+          <span style={{ fontSize: 13 }}>{t('approvals.empty')}</span>
+        </div>
+      )}
 
       <AnimatePresence>
         {reasonModal && (

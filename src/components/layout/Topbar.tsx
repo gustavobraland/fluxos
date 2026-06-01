@@ -1,45 +1,32 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Search, Bell, Sun, Moon, Command, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
+import { useUserStore } from '@/store/useUserStore'
 import { PresenceAvatars } from './PresenceAvatars'
 import { FluxLogo } from './FluxLogo'
 import { LanguageSelector } from '@/components/ui/LanguageSelector'
 import { useTranslation } from '@/hooks/useTranslation'
 import { createClient } from '@/lib/supabase/client'
-
-interface SessionUser { email: string; name: string; avatar: string | null }
+import { ROLE_LABELS } from '@/lib/onboarding-config'
 
 export function Topbar() {
   const { theme, setTheme, toggleCmd, toggleNotif } = useAppStore()
+  const { name, email, role, avatarUrl } = useUserStore()
   const { t } = useTranslation()
   const router = useRouter()
   const [searchFocused, setSearchFocused] = useState(false)
   const [searchVal, setSearchVal] = useState('')
-  const [user, setUser] = useState<SessionUser | null>(null)
-
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      const u = data.user
-      if (!u) return
-      const meta = (u.user_metadata ?? {}) as { full_name?: string; name?: string; avatar_url?: string; picture?: string }
-      setUser({
-        email: u.email ?? '',
-        name: meta.full_name || meta.name || (u.email ?? '').split('@')[0],
-        avatar: meta.avatar_url || meta.picture || null,
-      })
-    })
-  }, [])
 
   const handleLogout = async () => {
     await createClient().auth.signOut()
+    useUserStore.getState().clearUser()
     router.push('/login')
   }
 
-  const initials = (user?.name || user?.email || 'FX').slice(0, 2).toUpperCase()
+  const initials = (name || email || 'FX').slice(0, 2).toUpperCase()
 
   return (
     <div
@@ -135,9 +122,9 @@ export function Topbar() {
 
         {/* User */}
         <div className="flex items-center gap-2 h-8 px-2.5 rounded-lg" style={{ color: 'var(--txt)' }}>
-          {user?.avatar ? (
+          {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatar} alt={user.name} className="w-6 h-6 rounded-full" style={{ objectFit: 'cover' }} />
+            <img src={avatarUrl} alt={name ?? ''} className="w-6 h-6 rounded-full" style={{ objectFit: 'cover' }} />
           ) : (
             <div
               className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold text-white"
@@ -146,14 +133,22 @@ export function Topbar() {
               {initials}
             </div>
           )}
-          <div className="flex flex-col items-start leading-none max-w-[140px]">
-            <span className="text-[12px] font-medium truncate" style={{ maxWidth: 140 }}>
-              {user?.name || (process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'Flux OS')}
+          <div className="flex flex-col items-start leading-none max-w-[160px]">
+            <span className="text-[12px] font-medium truncate" style={{ maxWidth: 160 }}>
+              {name || (process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'Flux OS')}
             </span>
-            <span className="text-[9px] truncate" style={{ color: 'var(--txt3)', maxWidth: 140 }}>
-              {user?.email || 'Pro'}
+            <span className="text-[9px] truncate" style={{ color: 'var(--txt3)', maxWidth: 160 }}>
+              {email || 'Pro'}
             </span>
           </div>
+          {role && (
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-[0.5px] shrink-0"
+              style={{ background: 'var(--red-s)', color: 'var(--red)' }}
+            >
+              {ROLE_LABELS[role]}
+            </span>
+          )}
         </div>
 
         {/* Logout */}

@@ -128,6 +128,8 @@ export interface NavItem {
   icon: string
   kbd?: string
   badge?: string
+  /** Permissão exigida para ver o item. `null`/ausente = visível a todos. */
+  permission?: import('@/lib/permissions').Permission | null
 }
 
 export interface NavSection {

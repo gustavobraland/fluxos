@@ -52,21 +52,9 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   campaign: FileText,
 }
 
-const mockEvents: DisplayEvent[] = [
-  { id: '1',  day: 26, month: 5, time: '16:00', type: 'match',    title: 'Flamengo x Botafogo' },
-  { id: '3',  day: 26, month: 5, time: '20:00', type: 'content',  title: 'Post recap rodada 8' },
-  { id: '4',  day: 27, month: 5, time: '10:00', type: 'content',  title: 'Carrossel tabela Brasileirão' },
-  { id: '5',  day: 27, month: 5, time: '14:00', type: 'trending', title: '#CopaDoBrasil recap' },
-  { id: '6',  day: 28, month: 5, time: '23:59', type: 'deadline', title: 'Deadline: Pack Copa' },
-  { id: '8',  day: 29, month: 5, time: '20:00', type: 'match',    title: 'Palmeiras x São Paulo' },
-  { id: '9',  day: 30, month: 5, time: '09:00', type: 'content',  title: 'Infográfico tabela' },
-  { id: '10', day: 31, month: 5, time: '18:00', type: 'match',    title: 'Botafogo x Athletico' },
-  { id: '11', day: 21, month: 5, time: '16:00', type: 'match',    title: 'Grêmio x Internacional' },
-  { id: '13', day: 10, month: 5, time: '09:00', type: 'content',  title: 'Story boas-vindas' },
-  { id: '14', day: 17, month: 5, time: '15:00', type: 'deadline', title: 'Deadline: Peças Libertadores' },
-  { id: '15', day: 3,  month: 5, time: '20:00', type: 'match',    title: 'Fluminense x River Plate' },
-  { id: '16', day: 7,  month: 5, time: '16:00', type: 'trending', title: '#Brasileirao trending' },
-]
+// Sem eventos de demonstração — o calendário inicia vazio e é populado por
+// jogos reais (API-Football via War Room) e eventos criados pela equipe.
+const mockEvents: DisplayEvent[] = []
 
 const WEEK_HOURS = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00']
 

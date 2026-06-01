@@ -576,6 +576,8 @@
     "reject": "拒绝",
     "approve": "通过",
     "requestAdjust": "请求修改",
+    "noApprovePermission": "您没有审批权限",
+    "empty": "暂无待审批项目",
     "previewHint": "预览 — 点击稿件以标记位置",
     "pendingPinHint": "待定标记 — 点击移除",
     "typeVideo": "视频",

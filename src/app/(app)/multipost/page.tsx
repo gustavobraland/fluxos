@@ -16,6 +16,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
 import { useTranslation } from '@/hooks/useTranslation'
+import { usePermission } from '@/hooks/usePermission'
 import type { PlatformId as TaskPlatformId } from '@/types'
 
 const TZ = 'America/Sao_Paulo'
@@ -59,6 +60,9 @@ const emptyCopies = (): Record<PlatformId, string> => ({
 
 export default function MultipostPage() {
   const { t } = useTranslation()
+  // Permissões de publicação: influencer publica direto; demais enviam para aprovação.
+  const canPublish = usePermission('content.publish')
+  const canPublishDirect = usePermission('content.publish_without_approval')
   const [media, setMedia] = useState<MediaState | null>(null)
   const [selected, setSelected] = useState<PlatformId[]>(['instagram', 'twitter'])
   const [baseCopy, setBaseCopy] = useState('')
@@ -497,51 +501,55 @@ export default function MultipostPage() {
             >
               {t('multipost.saveDraftBtn')}
             </button>
-            <button
-              onClick={sendToApproval}
-              className="flex items-center justify-center transition-all"
-              style={{
-                height: 32,
-                flex: 1,
-                borderRadius: 8,
-                fontSize: 12,
-                fontWeight: 500,
-                background: 'transparent',
-                color: 'var(--blue)',
-                border: '1px solid rgba(37,99,235,.3)',
-                cursor: 'pointer',
-              }}
-            >
-              {t('multipost.sendToApprovalBtn')}
-            </button>
-            <motion.button
-              whileTap={{ scale: 0.97 }}
-              onClick={scheduledAt ? schedulePost : publishNow}
-              disabled={publishing || published}
-              className="flex items-center justify-center shrink-0 transition-all"
-              style={{
-                height: 32,
-                padding: '0 16px',
-                gap: 6,
-                borderRadius: 8,
-                fontSize: 12,
-                fontWeight: 600,
-                background: published ? 'var(--green)' : 'var(--grad)',
-                color: '#fff',
-                border: 'none',
-                cursor: publishing || published ? 'default' : 'pointer',
-                opacity: publishing ? 0.8 : 1,
-              }}
-            >
-              {publishing ? (
-                <Loader2 size={13} className="animate-spin" />
-              ) : published ? (
-                <CheckCircle2 size={13} />
-              ) : (
-                <Zap size={13} />
-              )}
-              {publishing ? t('multipost.publishingBtn') : published ? t('multipost.publishedBtn') : scheduledAt ? t('multipost.scheduleBtn') : t('multipost.publishNowBtn')}
-            </motion.button>
+            {!canPublishDirect && (
+              <button
+                onClick={sendToApproval}
+                className="flex items-center justify-center transition-all"
+                style={{
+                  height: 32,
+                  flex: 1,
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  background: 'transparent',
+                  color: 'var(--blue)',
+                  border: '1px solid rgba(37,99,235,.3)',
+                  cursor: 'pointer',
+                }}
+              >
+                {t('multipost.sendToApprovalBtn')}
+              </button>
+            )}
+            {(canPublish || canPublishDirect) && (
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                onClick={scheduledAt ? schedulePost : publishNow}
+                disabled={publishing || published}
+                className="flex items-center justify-center shrink-0 transition-all"
+                style={{
+                  height: 32,
+                  padding: '0 16px',
+                  gap: 6,
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  background: published ? 'var(--green)' : 'var(--grad)',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: publishing || published ? 'default' : 'pointer',
+                  opacity: publishing ? 0.8 : 1,
+                }}
+              >
+                {publishing ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : published ? (
+                  <CheckCircle2 size={13} />
+                ) : (
+                  <Zap size={13} />
+                )}
+                {publishing ? t('multipost.publishingBtn') : published ? t('multipost.publishedBtn') : scheduledAt ? t('multipost.scheduleBtn') : t('multipost.publishNowBtn')}
+              </motion.button>
+            )}
           </div>
         </div>
       </div>

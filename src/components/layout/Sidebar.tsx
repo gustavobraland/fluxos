@@ -7,7 +7,10 @@ import {
   Settings, HelpCircle, ClipboardList, Sparkles, Scissors,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
+import { useUserStore } from '@/store/useUserStore'
 import { NAV_ITEMS } from '@/lib/constants'
+import { ROLE_LABELS } from '@/lib/onboarding-config'
+import { roleCan } from '@/lib/permissions'
 import { useTranslation } from '@/hooks/useTranslation'
 
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -19,12 +22,24 @@ export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const { closeCmd } = useAppStore()
+  const { name, role } = useUserStore()
   const { t } = useTranslation()
 
   const navigate = (id: string) => {
     closeCmd()
     router.push('/' + id)
   }
+
+  // Mostra só os itens que o papel do usuário pode acessar (permission null = todos).
+  // Enquanto o papel não carrega (role === null), mostramos tudo para evitar flash vazio.
+  const visibleSections = NAV_ITEMS
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) => !role || item.permission == null || roleCan(role, item.permission)
+      ),
+    }))
+    .filter((section) => section.items.length > 0)
 
   return (
     <div
@@ -36,7 +51,7 @@ export function Sidebar() {
       }}
     >
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 no-scrollbar">
-        {NAV_ITEMS.map((section) => (
+        {visibleSections.map((section) => (
           <div key={section.section} className="mb-1">
             <div
               className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[1px]"
@@ -124,13 +139,15 @@ export function Sidebar() {
           className="w-7 h-7 rounded-md flex items-center justify-center text-[11px] font-bold text-white shrink-0"
           style={{ background: 'var(--grad)' }}
         >
-          {(process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'FX').slice(0, 2).toUpperCase()}
+          {(name || process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'FX').slice(0, 2).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-[12px] font-semibold truncate" style={{ color: 'var(--txt)' }}>
-            {process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'Meu Workspace'}
+            {name || process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'Meu Workspace'}
           </div>
-          <div className="text-[10px]" style={{ color: 'var(--txt3)' }}>Admin · Pro</div>
+          <div className="text-[10px]" style={{ color: 'var(--txt3)' }}>
+            {role ? ROLE_LABELS[role] : '—'}
+          </div>
         </div>
         <ChevronRight size={12} style={{ color: 'var(--txt3)' }} />
       </div>

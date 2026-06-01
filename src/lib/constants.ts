@@ -2,25 +2,25 @@ import type { NavSection, CmdAction, Platform, TaskStatus, IntegrationCategory }
 
 export const NAV_ITEMS: NavSection[] = [
   { section: 'Principal', items: [
-    { id: 'dashboard',    label: 'Dashboard',   icon: 'LayoutDashboard', kbd: 'G D' },
-    { id: 'timeline',     label: 'Timeline',    icon: 'Activity',        kbd: 'G T' },
-    { id: 'warroom',      label: 'War Room',    icon: 'Zap',             kbd: 'G W', badge: 'LIVE' },
+    { id: 'dashboard',    label: 'Dashboard',   icon: 'LayoutDashboard', kbd: 'G D', permission: null },
+    { id: 'timeline',     label: 'Timeline',    icon: 'Activity',        kbd: 'G T', permission: 'warroom.open' },
+    { id: 'warroom',      label: 'War Room',    icon: 'Zap',             kbd: 'G W', badge: 'LIVE', permission: 'warroom.open' },
   ]},
   { section: 'Produção', items: [
-    { id: 'pipeline',     label: 'Pipeline',    icon: 'KanbanSquare',    kbd: 'G P' },
-    { id: 'calendar',     label: 'Calendar',    icon: 'CalendarDays',    kbd: 'G C' },
-    { id: 'multipost',    label: 'Multipost',   icon: 'Send',            kbd: 'G M' },
-    { id: 'clipador',     label: 'Clipador',    icon: 'Scissors',        kbd: 'G L' },
-    { id: 'prompts',      label: 'Prompts',     icon: 'Sparkles',        kbd: 'G O' },
-    { id: 'assets',       label: 'Assets',      icon: 'FolderOpen',      kbd: 'G A' },
-    { id: 'approvals',    label: 'Aprovações',  icon: 'CheckSquare' },
+    { id: 'pipeline',     label: 'Pipeline',    icon: 'KanbanSquare',    kbd: 'G P', permission: 'pipeline.view' },
+    { id: 'calendar',     label: 'Calendar',    icon: 'CalendarDays',    kbd: 'G C', permission: 'multipost.upload' },
+    { id: 'multipost',    label: 'Multipost',   icon: 'Send',            kbd: 'G M', permission: 'multipost.upload' },
+    { id: 'clipador',     label: 'Clipador',    icon: 'Scissors',        kbd: 'G L', permission: 'clipador.use' },
+    { id: 'prompts',      label: 'Prompts',     icon: 'Sparkles',        kbd: 'G O', permission: null },
+    { id: 'assets',       label: 'Assets',      icon: 'FolderOpen',      kbd: 'G A', permission: 'multipost.upload' },
+    { id: 'approvals',    label: 'Aprovações',  icon: 'CheckSquare',     permission: 'content.submit_approval' },
   ]},
   { section: 'Inteligência', items: [
-    { id: 'analytics',    label: 'Analytics',   icon: 'BarChart3' },
-    { id: 'integrations', label: 'Integrações', icon: 'Plug' },
+    { id: 'analytics',    label: 'Analytics',   icon: 'BarChart3',       permission: 'analytics.view' },
+    { id: 'integrations', label: 'Integrações', icon: 'Plug',            permission: 'integrations.manage' },
   ]},
   { section: 'Operações', items: [
-    { id: 'reports',      label: 'Daily Reports', icon: 'ClipboardList' },
+    { id: 'reports',      label: 'Daily Reports', icon: 'ClipboardList', permission: 'content.submit_approval' },
   ]},
 ]
 

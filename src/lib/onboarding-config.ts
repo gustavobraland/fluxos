@@ -7,6 +7,20 @@ export type Role =
 
 export interface TeamMember { email: string; role: Role; name: string }
 
+// Rótulo curto do papel, exibido em badges (Topbar / Sidebar).
+export const ROLE_LABELS: Record<Role, string> = {
+  ceo: 'CEO',
+  admin: 'Admin',
+  project_manager: 'Gerente de Projetos',
+  redator: 'Redator',
+  produtor: 'Produtor',
+  social_media: 'Social Media',
+  designer_lider: 'Designer Líder',
+  designer: 'Designer',
+  influencer: 'Influencer',
+  rh: 'RH',
+}
+
 export const TEAM: TeamMember[] = [
   { email: 'jaden@braland.com.br',    role: 'ceo',             name: 'Jaden' },
   { email: 'gustavo@braland.com.br',  role: 'admin',           name: 'Gustavo' },

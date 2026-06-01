@@ -1,14 +1,12 @@
 'use client'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Bell, CheckSquare, Zap, Send } from 'lucide-react'
+import { X, Bell } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 
-const NOTIFS = [
-  { id: '1', icon: CheckSquare, color: '#3ECF8E', title: 'Post aprovado', desc: 'Highlights rodada 8 foi aprovado por Carlos', time: '2min' },
-  { id: '2', icon: Zap, color: '#E0201A', title: 'War Room ativo', desc: 'Flamengo x Botafogo — Minuto 34', time: '5min' },
-  { id: '3', icon: Send, color: '#2563EB', title: 'Post publicado', desc: 'Carrossel de odds publicado no Instagram', time: '12min' },
-  { id: '4', icon: Bell, color: '#F5C842', title: 'Revisão pendente', desc: 'Motion reel Copa do Brasil aguarda revisão', time: '1h' },
-]
+type Notif = { id: string; icon: typeof Bell; color: string; title: string; desc: string; time: string }
+
+// Inicia sem notificações — preenchido por eventos reais do sistema.
+const NOTIFS: Notif[] = []
 
 export function NotifPanel() {
   const { notifOpen, closeNotif } = useAppStore()
@@ -45,6 +43,13 @@ export function NotifPanel() {
                 </button>
               </div>
             </div>
+
+            {NOTIFS.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
+                <Bell size={18} style={{ color: 'var(--txt3)', opacity: 0.5 }} />
+                <span className="text-[12px] mt-2" style={{ color: 'var(--txt3)' }}>Nenhuma notificação</span>
+              </div>
+            )}
 
             <div className="divide-y" style={{ '--tw-divide-color': 'var(--border-subtle)' } as React.CSSProperties}>
               {NOTIFS.map((n, i) => {

@@ -576,6 +576,8 @@
     "reject": "Rejeitar",
     "approve": "Aprovar",
     "requestAdjust": "Pedir ajuste",
+    "noApprovePermission": "Você não tem permissão para aprovar",
+    "empty": "Nenhum item para aprovação",
     "previewHint": "Pré-visualização — clique na arte para marcar um ponto",
     "pendingPinHint": "Pin pendente — clique para remover",
     "typeVideo": "Vídeo",
