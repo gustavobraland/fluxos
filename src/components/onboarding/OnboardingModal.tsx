@@ -6,7 +6,7 @@ import { FluxLogo } from '@/components/layout/FluxLogo'
 import { createClient } from '@/lib/supabase/client'
 import { useUserStore } from '@/store/useUserStore'
 import {
-  ONBOARDING_CONTENT, ROLE_LABELS, ROLE_ORDER, type Role,
+  ONBOARDING_CONTENT, ROLE_LABELS, ROLE_ORDER, onboardingRoleForEmail, type Role,
 } from '@/lib/onboarding-config'
 
 // First-login onboarding. Shows once per user, then never again.
@@ -19,6 +19,8 @@ export function OnboardingModal() {
   const [show, setShow] = useState(false)
   const [step, setStep] = useState<'role' | 'welcome'>('role')
   const [selectedRole, setSelectedRole] = useState<Role | null>(null)
+  // Papel travado: só liderança (CEO/Admin/PM) escolhe; os demais já vêm definidos.
+  const [locked, setLocked] = useState(false)
   const [email, setEmail] = useState('')
   const [firstName, setFirstName] = useState('')
 
@@ -51,7 +53,13 @@ export function OnboardingModal() {
       const fullName = meta.full_name || meta.name || mail.split('@')[0]
       setFirstName(fullName.split(' ')[0])
       setEmail(mail)
-      setStep('role')
+
+      // Liderança escolhe (com o papel pré-selecionado); demais já vêm travados
+      // e pulam direto para as boas-vindas com o papel correto.
+      const { role: initialRole, locked: isLocked } = onboardingRoleForEmail(mail)
+      setLocked(isLocked)
+      if (initialRole) setSelectedRole(initialRole)
+      setStep(isLocked ? 'welcome' : 'role')
       setShow(true)
     }
     void check()
@@ -185,16 +193,18 @@ export function OnboardingModal() {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button
-                      onClick={() => setStep('role')}
-                      style={{
-                        background: 'transparent', color: 'var(--txt2)', border: '1px solid var(--border-subtle)',
-                        borderRadius: 8, padding: '12px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
-                      }}
-                    >
-                      <ChevronLeft size={16} /> Trocar papel
-                    </button>
+                    {!locked && (
+                      <button
+                        onClick={() => setStep('role')}
+                        style={{
+                          background: 'transparent', color: 'var(--txt2)', border: '1px solid var(--border-subtle)',
+                          borderRadius: 8, padding: '12px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0,
+                        }}
+                      >
+                        <ChevronLeft size={16} /> Trocar papel
+                      </button>
+                    )}
                     <button
                       onClick={handleComplete}
                       style={{

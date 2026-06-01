@@ -13,6 +13,22 @@ export const ROLE_ORDER: Role[] = [
   'social_media', 'designer', 'designer_lider', 'influencer', 'rh',
 ]
 
+// Liderança: pode escolher livremente o próprio papel no onboarding.
+// Os demais membros do TEAM têm o papel travado (evita seleção errada).
+export const ROLES_CAN_CHOOSE: Role[] = ['ceo', 'admin', 'project_manager']
+
+/**
+ * Resolve o papel inicial de um email + se a escolha está travada.
+ * - Membro do TEAM com papel de liderança → pré-seleciona, mas pode trocar.
+ * - Membro do TEAM com outro papel → travado no papel do TEAM.
+ * - Fora do TEAM → sem pré-seleção, escolhe livremente.
+ */
+export function onboardingRoleForEmail(email: string): { role: Role | null; locked: boolean } {
+  const member = TEAM.find((m) => m.email.toLowerCase() === email.toLowerCase())
+  if (!member) return { role: null, locked: false }
+  return { role: member.role, locked: !ROLES_CAN_CHOOSE.includes(member.role) }
+}
+
 // Rótulo curto do papel, exibido em badges (Topbar / Sidebar).
 export const ROLE_LABELS: Record<Role, string> = {
   ceo: 'CEO',
