@@ -2,6 +2,7 @@
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useUserStore } from '@/store/useUserStore'
+import type { Role } from '@/lib/permissions'
 
 // Bump quando precisar invalidar dados locais antigos de todos os clientes.
 const CURRENT_VERSION = '2.0.0'
@@ -34,11 +35,22 @@ export function UserSync() {
     } catch { /* localStorage indisponível — segue sem limpeza */ }
 
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       const u = data.user
       if (!u?.email) return
       const meta = (u.user_metadata ?? {}) as { avatar_url?: string; picture?: string }
+      // Papel inicial (fallback pelo email); sobreposto pelo papel ESCOLHIDO abaixo.
       useUserStore.getState().setUser(u.email, meta.avatar_url || meta.picture || null)
+
+      // Papel autoritativo = o escolhido no onboarding (Supabase), não o email.
+      try {
+        const { data: ob } = await supabase
+          .from('user_onboarding')
+          .select('role')
+          .eq('user_email', u.email)
+          .maybeSingle()
+        if (ob?.role) useUserStore.getState().setRole(ob.role as Role)
+      } catch { /* tabela ausente → mantém o papel-fallback do email */ }
     })
   }, [])
 

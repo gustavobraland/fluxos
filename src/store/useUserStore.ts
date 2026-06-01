@@ -11,6 +11,8 @@ interface UserState {
   avatarUrl: string | null
   /** Popula o usuário logado (email do Google) e resolve o papel pela TEAM. */
   setUser: (email: string, avatarUrl?: string | null) => void
+  /** Define o papel escolhido pela pessoa (onboarding) — sobrepõe o do email. */
+  setRole: (role: Role) => void
   clearUser: () => void
 }
 
@@ -32,6 +34,7 @@ export const useUserStore = create<UserState>()(
           avatarUrl: avatarUrl ?? null,
         })
       },
+      setRole: (role) => set({ role }),
       clearUser: () => set({ email: null, name: null, role: null, avatarUrl: null }),
     }),
     { name: 'flux-user' }

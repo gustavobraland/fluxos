@@ -7,6 +7,12 @@ export type Role =
 
 export interface TeamMember { email: string; role: Role; name: string }
 
+// Ordem de exibição dos papéis na seleção do onboarding.
+export const ROLE_ORDER: Role[] = [
+  'ceo', 'admin', 'project_manager', 'redator', 'produtor',
+  'social_media', 'designer', 'designer_lider', 'influencer', 'rh',
+]
+
 // Rótulo curto do papel, exibido em badges (Topbar / Sidebar).
 export const ROLE_LABELS: Record<Role, string> = {
   ceo: 'CEO',
