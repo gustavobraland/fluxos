@@ -82,7 +82,6 @@ export default function TimelinePage() {
         filter={filter}
         onFilter={setFilter}
         liveCount={liveCount}
-        requestsUsed={requestsUsed}
         loading={loading}
         lastFetched={lastFetched}
         onRefresh={fetchAll}
@@ -115,6 +114,22 @@ export default function TimelinePage() {
             onSelect={selectFixture}
             onOpenWarRoom={setModalFixture}
           />
+        )}
+
+        {/* Requisições de API hoje — abaixo dos jogos */}
+        {fixtures.length > 0 && (
+          <div style={{
+            marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border-subtle)',
+            display: 'flex', justifyContent: 'center',
+          }}>
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: 'var(--txt3)', fontFamily: 'var(--font-mono)',
+              background: 'var(--s2)', border: '1px solid var(--border-subtle)',
+              borderRadius: 99, padding: '3px 12px',
+            }}>
+              {t('timeline.requestsToday', { count: requestsUsed })}
+            </span>
+          </div>
         )}
       </div>
 

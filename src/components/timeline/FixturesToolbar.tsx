@@ -11,7 +11,6 @@ export function FixturesToolbar({
   filter,
   onFilter,
   liveCount,
-  requestsUsed,
   loading,
   lastFetched,
   onRefresh,
@@ -19,7 +18,6 @@ export function FixturesToolbar({
   filter: FixtureFilter
   onFilter: (f: FixtureFilter) => void
   liveCount: number
-  requestsUsed: number
   loading: boolean
   lastFetched: number | null
   onRefresh: () => void
@@ -78,14 +76,6 @@ export function FixturesToolbar({
             {t('timeline.updatedAt', { time: updatedLabel })}
           </span>
         )}
-        <span style={{
-          fontSize: 10, fontWeight: 700, color: 'var(--txt3)',
-          fontFamily: 'var(--font-mono)',
-          background: 'var(--s2)', border: '1px solid var(--border-subtle)',
-          borderRadius: 99, padding: '2px 9px',
-        }}>
-          {t('timeline.requestsToday', { count: requestsUsed })}
-        </span>
         <button
           onClick={onRefresh}
           disabled={loading}
