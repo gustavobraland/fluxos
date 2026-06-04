@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Send, KanbanSquare, Activity, Zap, Plus, Upload, ClipboardList, FilePlus } from 'lucide-react'
 import { useUserStore } from '@/store/useUserStore'
+import { useWarRoomStore } from '@/store/useWarRoomStore'
 import { roleCan, type Permission } from '@/lib/permissions'
 import { useTranslation } from '@/hooks/useTranslation'
 import { BottomSheet } from '@/components/mobile/BottomSheet'
@@ -25,6 +26,9 @@ export function BottomNav() {
   const router = useRouter()
   const pathname = usePathname()
   const role = useUserStore((s) => s.role)
+  const liveCount = useWarRoomStore((s) => s.activeFixtures.length)
+  const isPolling = useWarRoomStore((s) => s.isPolling)
+  const hasLiveGame = liveCount > 0 && isPolling
   const { t } = useTranslation()
   const [sheetOpen, setSheetOpen] = useState(false)
 
@@ -45,14 +49,18 @@ export function BottomNav() {
   const Tab = ({ item }: { item: Item }) => {
     const Icon = item.icon
     const active = pathname === '/' + item.id
-    const isWarRoom = item.id === 'warroom'
+    // War Room só fica vermelho pulsando quando há jogo AO VIVO (independe de seleção).
+    const live = item.id === 'warroom' && hasLiveGame
+    const iconColor = live ? 'var(--red)' : active ? 'var(--red)' : 'var(--txt2)'
     return (
       <button
         onClick={() => router.push('/' + item.id)}
         className="flex-1 flex flex-col items-center justify-center gap-1"
-        style={{ color: active ? 'var(--red)' : 'var(--txt3)' }}
+        style={{ color: active || live ? 'var(--red)' : 'var(--txt3)' }}
       >
-        <Icon size={20} style={{ color: active ? 'var(--red)' : (isWarRoom ? 'var(--red)' : 'var(--txt2)') }} />
+        <span className={live ? 'animate-pulse' : ''} style={{ display: 'flex' }}>
+          <Icon size={20} style={{ color: iconColor }} />
+        </span>
         <span className="text-[10px] font-medium">{t(`nav.${item.id}`)}</span>
       </button>
     )
