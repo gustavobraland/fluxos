@@ -177,6 +177,8 @@
       "deleted": "Task removida"
     },
     "boardTitle": "Pipeline",
+    "filterAll": "Todos",
+    "details": "Detalhes",
     "taskCount": "{{count}} tasks",
     "filter": "Filtrar",
     "sort": "Ordenar",

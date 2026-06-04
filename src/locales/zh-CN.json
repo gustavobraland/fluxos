@@ -177,6 +177,8 @@
       "deleted": "任务已删除"
     },
     "boardTitle": "流程看板",
+    "filterAll": "全部",
+    "details": "详情",
     "taskCount": "{{count}} 个任务",
     "filter": "筛选",
     "sort": "排序",

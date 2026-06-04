@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   DndContext, DragOverlay, pointerWithin, rectIntersection, PointerSensor,
   useSensor, useSensors,
@@ -14,6 +14,8 @@ import { PipelineColumn } from './PipelineColumn'
 import { TaskCard } from './TaskCard'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { PipelineMobile } from './PipelineMobile'
 import type { Task, TaskStatus, TaskType, PlatformId } from '@/types'
 
 const TASK_TYPES: TaskType[] = ['Copy', 'Design', 'Motion', 'Copy + Design', 'Estratégia']
@@ -478,9 +480,18 @@ export function PipelineBoard() {
   const [createStatus, setCreateStatus] = useState<TaskStatus>('backlog')
   const [editTask, setEditTask]       = useState<Task | null>(null)
 
+  const isMobile = useMediaQuery('(max-width: 768px)')
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
+
+  // Atalho/Command/ActionSheet "Nova Task" → abre o modal de criação (desktop).
+  useEffect(() => {
+    const onNew = () => { setCreateStatus('backlog'); setShowCreate(true) }
+    window.addEventListener('flux:newTask', onNew)
+    return () => window.removeEventListener('flux:newTask', onNew)
+  }, [])
 
   const tasksByStatus = PIPELINE_COLUMNS.reduce((acc, col) => {
     acc[col.id] = tasks.filter(task => task.status === col.id)
@@ -517,6 +528,9 @@ export function PipelineBoard() {
       reorderTasks(active.id as string, over.id as string)
     }
   }
+
+  // Mobile: lista vertical + bottom sheets (drag & drop não funciona bem no toque)
+  if (isMobile) return <PipelineMobile />
 
   return (
     <div className="flex flex-col h-full">
