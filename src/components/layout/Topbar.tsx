@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Search, Bell, Sun, Moon, Command, LogOut, Menu, Zap } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Command, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
@@ -30,7 +30,7 @@ export function Topbar() {
 
   return (
     <div
-      className="flex items-center gap-3 px-4 border-b shrink-0"
+      className="topbar-root flex items-center gap-3 px-4 border-b shrink-0"
       style={{
         height: 'var(--topbar-h)',
         background: 'var(--topbar-bg)',
@@ -41,15 +41,17 @@ export function Topbar() {
         zIndex: 20,
       }}
     >
-      {/* Hamburger (mobile) */}
-      <TopBtn onClick={toggleMobileNav} title="Menu" className="mobile-only">
-        <Menu size={18} />
-      </TopBtn>
-
-      {/* Logo */}
-      <div className="shrink-0">
+      {/* Logo — desktop com wordmark; mobile só o ícone e abre o drawer ao tocar */}
+      <div className="shrink-0 desktop-only">
         <FluxLogo size="sm" showWordmark />
       </div>
+      <button
+        onClick={toggleMobileNav}
+        aria-label="Menu"
+        className="shrink-0 mobile-only flex items-center"
+      >
+        <FluxLogo size="sm" />
+      </button>
 
       {/* Spacer (mobile) — empurra ações p/ direita já que a busca some */}
       <div className="mobile-only flex-1" />
@@ -95,11 +97,6 @@ export function Topbar() {
 
       {/* Right actions */}
       <div className="flex items-center gap-1 shrink-0">
-        {/* War Room rápido (mobile) */}
-        <TopBtn onClick={() => router.push('/warroom')} title="War Room" className="mobile-only relative">
-          <Zap size={16} style={{ color: 'var(--red)' }} />
-        </TopBtn>
-
         {/* Language selector (desktop) */}
         <div className="desktop-only">
           <LanguageSelector />
@@ -160,7 +157,7 @@ export function Topbar() {
           </div>
           {role && (
             <span
-              className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-[0.5px] shrink-0"
+              className="desktop-only text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-[0.5px] shrink-0"
               style={{ background: 'var(--red-s)', color: 'var(--red)' }}
             >
               {ROLE_LABELS[role]}
@@ -168,8 +165,8 @@ export function Topbar() {
           )}
         </div>
 
-        {/* Logout */}
-        <TopBtn onClick={handleLogout} title={t('topbar.logout')}>
+        {/* Logout (desktop — no mobile fica no drawer) */}
+        <TopBtn onClick={handleLogout} title={t('topbar.logout')} className="desktop-only">
           <LogOut size={14} />
         </TopBtn>
       </div>

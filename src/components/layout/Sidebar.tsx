@@ -4,10 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays,
   Send, FolderOpen, CheckSquare, BarChart3, Plug, ChevronRight,
-  Settings, HelpCircle, ClipboardList, Sparkles, Scissors,
+  Settings, HelpCircle, ClipboardList, Sparkles, Scissors, LogOut,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { useUserStore } from '@/store/useUserStore'
+import { createClient } from '@/lib/supabase/client'
 import { NAV_ITEMS } from '@/lib/constants'
 import { ROLE_LABELS } from '@/lib/onboarding-config'
 import { roleCan } from '@/lib/permissions'
@@ -34,6 +35,13 @@ export function Sidebar() {
   const goSys = (path: string) => {
     closeMobileNav()
     router.push(path)
+  }
+
+  const handleLogout = async () => {
+    closeMobileNav()
+    await createClient().auth.signOut()
+    useUserStore.getState().clearUser()
+    router.push('/login')
   }
 
   // Mostra só os itens que o papel do usuário pode acessar (permission null = todos).
@@ -130,6 +138,9 @@ export function Sidebar() {
       <div className="border-t px-2 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
         <SysBtn icon={<Settings size={13} />} label={t('nav.settings')} onClick={() => goSys('/settings')} />
         <SysBtn icon={<HelpCircle size={13} />} label={t('nav.help')} onClick={() => goSys('/help')} />
+        <div className="mobile-only">
+          <SysBtn icon={<LogOut size={13} />} label={t('topbar.logout')} onClick={handleLogout} />
+        </div>
       </div>
 
       <div

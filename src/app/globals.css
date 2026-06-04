@@ -336,3 +336,18 @@ html, body { height: 100%; }
 @media (max-width: 768px) {
   .app-main { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
 }
+
+/* Topbar mais baixa no mobile. */
+@media (max-width: 768px) {
+  .topbar-root { height: 52px !important; }
+}
+
+/* Forms/sheets: rodapé acima da safe-area do iPhone. */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .bottom-sheet-content { padding-bottom: calc(env(safe-area-inset-bottom) + 16px); }
+}
+
+/* Bottom nav agora tem 64px — reserva espaço atualizado. */
+@media (max-width: 768px) {
+  .app-main { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+}
