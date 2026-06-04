@@ -11,6 +11,7 @@ import { useCalendarStore } from '@/store/useCalendarStore'
 import { computeInsights } from '@/lib/insights'
 import { PlatformIcon, IntegrationIcon } from '@/components/ui/PlatformIcon'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 const SOCIAL_IDS = ['instagram', 'twitter', 'tiktok', 'youtube', 'facebook', 'linkedin']
 
@@ -18,6 +19,7 @@ const DATE_RANGE_IDS = ['7d', '30d', '90d'] as const
 
 export default function AnalyticsPage() {
   const { t } = useTranslation()
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const router = useRouter()
   const { integrations, connectInt, connecting } = useIntegrationsStore()
   const tasks = usePipelineStore((s) => s.tasks)
@@ -185,7 +187,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Stat cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: 12 }}>
             {[
               { icon: <Workflow size={14} />, label: t('analytics.inPipeline'), value: ins.pipelineTotal, sub: t('analytics.createdToday', { count: ins.createdToday }), color: 'var(--blue)' },
               { icon: <CheckSquare size={14} />, label: t('analytics.approvalsPending'), value: ins.approvals.pending, sub: t('analytics.approvalsApproved', { count: ins.approvals.approved }), color: 'var(--yellow)' },
@@ -202,7 +204,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* 7-day created + top prompts */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.4fr 1fr', gap: 10 }}>
             {/* 7-day bar chart */}
             <div style={{ background: 'var(--s1)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '14px 16px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 14 }}>
@@ -312,7 +314,7 @@ export default function AnalyticsPage() {
         {/* Platform cards grid */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 200px)',
+          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 200px)',
           gap: 12,
         }}>
           {filteredIntegrations.map(int => {

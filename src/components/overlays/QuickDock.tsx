@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Command, Zap, Plus } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 const DOCK_ITEMS = [
   { icon: Command, label: 'Command Palette (⌘K)', action: 'cmd' },
@@ -14,7 +15,11 @@ const DOCK_ITEMS = [
 export function QuickDock() {
   const { toggleCmd, toggleAiBar } = useAppStore()
   const router = useRouter()
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
+
+  // No mobile o botão + da bottom nav substitui o dock flutuante.
+  if (isMobile) return null
 
   const handleAction = (action: string) => {
     if (action === 'cmd') toggleCmd()

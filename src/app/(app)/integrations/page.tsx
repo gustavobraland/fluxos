@@ -6,6 +6,7 @@ import { Search, Plug } from 'lucide-react'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
 import { INTEGRATION_CATEGORIES, INTEGRATIONS } from '@/lib/constants'
 import { IntegrationIcon } from '@/components/ui/PlatformIcon'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import type { IntegrationCategory } from '@/types'
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
@@ -183,6 +184,7 @@ type CategoryFilter = 'Todos' | IntegrationCategory
 
 export default function IntegrationsPage() {
   const { integrations, connecting, connectInt, disconnectInt } = useIntegrationsStore()
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('Todos')
 
@@ -348,7 +350,7 @@ export default function IntegrationsPage() {
             layout
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
               gap: 12,
             }}
           >

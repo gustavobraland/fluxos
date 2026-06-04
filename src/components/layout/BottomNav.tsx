@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { CalendarDays, KanbanSquare, Activity, Zap, Plus, Upload, ClipboardList, FilePlus } from 'lucide-react'
+import { Send, KanbanSquare, Activity, Zap, Plus, Upload, ClipboardList, FilePlus } from 'lucide-react'
 import { useUserStore } from '@/store/useUserStore'
 import { roleCan, type Permission } from '@/lib/permissions'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -10,13 +10,14 @@ import { BottomSheet } from '@/components/mobile/BottomSheet'
 interface Item { id: string; icon: React.ElementType; permission: Permission | null }
 
 // Ordem por frequência de uso, com o botão + no centro.
+// Calendar/Dashboard/etc. ficam só no drawer lateral.
 const LEFT: Item[] = [
-  { id: 'calendar', icon: CalendarDays, permission: 'multipost.upload' },
   { id: 'pipeline', icon: KanbanSquare, permission: 'pipeline.view' },
+  { id: 'timeline', icon: Activity,     permission: 'warroom.open' },
 ]
 const RIGHT: Item[] = [
-  { id: 'timeline', icon: Activity, permission: 'warroom.open' },
-  { id: 'warroom',  icon: Zap,      permission: 'warroom.open' },
+  { id: 'warroom',   icon: Zap,  permission: 'warroom.open' },
+  { id: 'multipost', icon: Send, permission: 'multipost.upload' },
 ]
 
 // Barra de navegação fixa no rodapé — só mobile (escondida no desktop via CSS).
