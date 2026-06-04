@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3100](http://localhost:3100) with your browser to see the result. (Flux OS uses a dedicated port — `3100` — so it never shares a browser origin / localStorage with other local apps that default to `3000`.)
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

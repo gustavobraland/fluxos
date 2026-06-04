@@ -20,7 +20,7 @@ export const apiFootballProvider: SportsProvider = {
       if (!active) return
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/api/football/live`,
+          `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3100'}/api/football/live`,
           { cache: 'no-store' },
         )
         if (!res.ok) return
