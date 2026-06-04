@@ -84,7 +84,7 @@ export function BottomSheet({ isOpen, onClose, title, children, footer, height =
               </div>
             )}
 
-            <div className="overflow-y-auto px-5 pb-2" style={{ flex: 1 }}>
+            <div className="overflow-y-auto px-5 pb-2" style={{ flex: 1, minHeight: 0 }}>
               {children}
             </div>
 
