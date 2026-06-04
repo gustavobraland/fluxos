@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Search, Bell, Sun, Moon, Command, LogOut } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Command, LogOut, Menu, Zap } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
@@ -13,7 +13,7 @@ import { createClient } from '@/lib/supabase/client'
 import { ROLE_LABELS } from '@/lib/onboarding-config'
 
 export function Topbar() {
-  const { theme, setTheme, toggleCmd, toggleNotif } = useAppStore()
+  const { theme, setTheme, toggleCmd, toggleNotif, toggleMobileNav } = useAppStore()
   const { name, email, role, avatarUrl } = useUserStore()
   const { t } = useTranslation()
   const router = useRouter()
@@ -41,13 +41,21 @@ export function Topbar() {
         zIndex: 20,
       }}
     >
+      {/* Hamburger (mobile) */}
+      <TopBtn onClick={toggleMobileNav} title="Menu" className="mobile-only">
+        <Menu size={18} />
+      </TopBtn>
+
       {/* Logo */}
       <div className="shrink-0">
         <FluxLogo size="sm" showWordmark />
       </div>
 
-      {/* Search — center */}
-      <div className="flex-1 flex justify-center px-4">
+      {/* Spacer (mobile) — empurra ações p/ direita já que a busca some */}
+      <div className="mobile-only flex-1" />
+
+      {/* Search — center (desktop) */}
+      <div className="desktop-only flex-1 flex justify-center px-4">
         <motion.div
           animate={{ width: searchFocused ? 420 : 340 }}
           transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
@@ -80,16 +88,25 @@ export function Topbar() {
         </motion.div>
       </div>
 
-      {/* Presence */}
-      <PresenceAvatars />
+      {/* Presence (desktop) */}
+      <div className="desktop-only">
+        <PresenceAvatars />
+      </div>
 
       {/* Right actions */}
       <div className="flex items-center gap-1 shrink-0">
-        {/* Language selector */}
-        <LanguageSelector />
+        {/* War Room rápido (mobile) */}
+        <TopBtn onClick={() => router.push('/warroom')} title="War Room" className="mobile-only relative">
+          <Zap size={16} style={{ color: 'var(--red)' }} />
+        </TopBtn>
 
-        {/* Command */}
-        <TopBtn onClick={toggleCmd} title={t('topbar.cmdPalette')}>
+        {/* Language selector (desktop) */}
+        <div className="desktop-only">
+          <LanguageSelector />
+        </div>
+
+        {/* Command (desktop) */}
+        <TopBtn onClick={toggleCmd} title={t('topbar.cmdPalette')} className="desktop-only">
           <Command size={14} />
         </TopBtn>
 
@@ -133,7 +150,7 @@ export function Topbar() {
               {initials}
             </div>
           )}
-          <div className="flex flex-col items-start leading-none max-w-[160px]">
+          <div className="desktop-only flex flex-col items-start leading-none max-w-[160px]">
             <span className="text-[12px] font-medium truncate" style={{ maxWidth: 160 }}>
               {name || (process.env.NEXT_PUBLIC_WORKSPACE_NAME || 'Flux OS')}
             </span>

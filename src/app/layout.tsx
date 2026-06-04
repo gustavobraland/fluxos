@@ -1,10 +1,26 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Flux OS',
   description: 'Plataforma operacional AI-native para times de conteúdo esportivo e iGaming',
-  icons: { icon: '/favicon.svg' },
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon.svg',
+    apple: '/icon-192.png',
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'Flux OS',
+    statusBarStyle: 'default',
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#E0201A',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="h-screen overflow-hidden">
+      <body className="overflow-hidden">
         {children}
       </body>
     </html>

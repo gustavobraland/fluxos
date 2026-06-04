@@ -5,6 +5,7 @@ import { Toaster } from 'sonner'
 import { Topbar } from './Topbar'
 import { Sidebar } from './Sidebar'
 import { StatusBar } from './StatusBar'
+import { BottomNav } from './BottomNav'
 import { CommandPalette } from '@/components/overlays/CommandPalette'
 import { AIBar } from '@/components/overlays/AIBar'
 import { QuickDock } from '@/components/overlays/QuickDock'
@@ -117,7 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar />
         <main
           key={pathname}
-          className="flex-1 overflow-hidden flex flex-col animate-view-enter"
+          className="app-main flex-1 overflow-hidden flex flex-col animate-view-enter"
           style={{ background: 'var(--bg)' }}
         >
           <div className="flex-1 overflow-hidden">
@@ -126,7 +127,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      <StatusBar />
+      <div className="desktop-only">
+        <StatusBar />
+      </div>
+      <BottomNav />
 
       <CommandPalette />
       <AIBar />

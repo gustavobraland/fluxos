@@ -9,6 +9,7 @@ interface AppState {
   cmdOpen: boolean
   aiBarOpen: boolean
   notifOpen: boolean
+  mobileNavOpen: boolean
 
   // Football → Multipost bridge (session-only, no persist)
   activeQueueItem: ContentQueueItem | null
@@ -23,6 +24,8 @@ interface AppState {
   closeAiBar: () => void
   toggleNotif: () => void
   closeNotif: () => void
+  toggleMobileNav: () => void
+  closeMobileNav: () => void
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -31,6 +34,7 @@ export const useAppStore = create<AppState>((set) => ({
   cmdOpen: false,
   aiBarOpen: false,
   notifOpen: false,
+  mobileNavOpen: false,
 
   activeQueueItem: null,
   setActiveQueueItem: (activeQueueItem) => set({ activeQueueItem }),
@@ -50,4 +54,6 @@ export const useAppStore = create<AppState>((set) => ({
   closeAiBar: () => set({ aiBarOpen: false }),
   toggleNotif:() => set((s) => ({ notifOpen: !s.notifOpen })),
   closeNotif: () => set({ notifOpen: false }),
+  toggleMobileNav: () => set((s) => ({ mobileNavOpen: !s.mobileNavOpen })),
+  closeMobileNav: () => set({ mobileNavOpen: false }),
 }))

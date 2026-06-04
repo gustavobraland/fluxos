@@ -21,13 +21,19 @@ const ICON_MAP: Record<string, React.ElementType> = {
 export function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { closeCmd } = useAppStore()
+  const { closeCmd, mobileNavOpen, closeMobileNav } = useAppStore()
   const { name, role } = useUserStore()
   const { t } = useTranslation()
 
   const navigate = (id: string) => {
     closeCmd()
+    closeMobileNav()
     router.push('/' + id)
+  }
+
+  const goSys = (path: string) => {
+    closeMobileNav()
+    router.push(path)
   }
 
   // Mostra só os itens que o papel do usuário pode acessar (permission null = todos).
@@ -41,15 +47,10 @@ export function Sidebar() {
     }))
     .filter((section) => section.items.length > 0)
 
-  return (
-    <div
-      className="flex flex-col shrink-0 border-r h-full overflow-hidden"
-      style={{
-        width: 'var(--sidebar-w)',
-        background: 'var(--s1)',
-        borderColor: 'var(--border-subtle)',
-      }}
-    >
+  // Conteúdo compartilhado entre a sidebar fixa (desktop) e o drawer (mobile).
+  // `variant` separa o layoutId para não conflitar entre as duas instâncias no DOM.
+  const panelContent = (variant: 'desktop' | 'mobile') => (
+    <>
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 no-scrollbar">
         {visibleSections.map((section) => (
           <div key={section.section} className="mb-1">
@@ -68,7 +69,7 @@ export function Sidebar() {
                 <div key={item.id} className="relative px-2">
                   {isActive && (
                     <motion.div
-                      layoutId="sidebar-active"
+                      layoutId={`sidebar-active-${variant}`}
                       className="absolute inset-0 rounded-lg"
                       style={{ background: 'var(--s2)' }}
                       transition={{ type: 'spring', stiffness: 500, damping: 40 }}
@@ -127,8 +128,8 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t px-2 py-2" style={{ borderColor: 'var(--border-subtle)' }}>
-        <SysBtn icon={<Settings size={13} />} label={t('nav.settings')} onClick={() => router.push('/settings')} />
-        <SysBtn icon={<HelpCircle size={13} />} label={t('nav.help')} onClick={() => router.push('/help')} />
+        <SysBtn icon={<Settings size={13} />} label={t('nav.settings')} onClick={() => goSys('/settings')} />
+        <SysBtn icon={<HelpCircle size={13} />} label={t('nav.help')} onClick={() => goSys('/help')} />
       </div>
 
       <div
@@ -151,7 +152,53 @@ export function Sidebar() {
         </div>
         <ChevronRight size={12} style={{ color: 'var(--txt3)' }} />
       </div>
-    </div>
+    </>
+  )
+
+  return (
+    <>
+      {/* Desktop: sidebar fixa (escondida no mobile via CSS) */}
+      <div
+        className="desktop-only flex flex-col shrink-0 border-r h-full overflow-hidden"
+        style={{
+          width: 'var(--sidebar-w)',
+          background: 'var(--s1)',
+          borderColor: 'var(--border-subtle)',
+        }}
+      >
+        {panelContent('desktop')}
+      </div>
+
+      {/* Mobile: drawer com overlay (só renderiza quando aberto) */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeMobileNav}
+              className="mobile-only fixed inset-0 z-[60]"
+              style={{ background: 'rgba(0,0,0,0.5)' }}
+            />
+            <motion.div
+              initial={{ x: -300 }}
+              animate={{ x: 0 }}
+              exit={{ x: -300 }}
+              transition={{ type: 'spring', stiffness: 360, damping: 36 }}
+              className="mobile-only fixed left-0 top-0 bottom-0 z-[70] flex flex-col border-r overflow-hidden"
+              style={{
+                width: 280,
+                background: 'var(--s1)',
+                borderColor: 'var(--border-subtle)',
+              }}
+            >
+              {panelContent('mobile')}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   )
 }
 

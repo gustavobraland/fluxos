@@ -295,3 +295,44 @@
     scrollbar-width: none;
   }
 }
+
+/* ─── Mobile / PWA ────────────────────────────────────────────────────────── */
+
+/* Usa a altura real do viewport (evita corte com a barra do Safari iOS). */
+html, body { height: 100%; }
+@supports (height: 100dvh) {
+  body { min-height: 100dvh; }
+}
+
+/* Respeita os recortes (notch) quando instalado como PWA. */
+@media (display-mode: standalone) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+/* iOS: campos com <16px disparam zoom automático ao focar. Trava em 16px no mobile. */
+@media (max-width: 768px) {
+  input, textarea, select { font-size: 16px; }
+  /* Sem overflow horizontal: nada cortado/empurrando a tela. */
+  html, body { overflow-x: hidden; max-width: 100%; }
+}
+
+/* Alvos de toque confortáveis em telas touch (sem quebrar ícones inline no desktop). */
+@media (pointer: coarse) {
+  button, a[role="button"], [role="button"] { min-height: 44px; }
+}
+
+/* Scroll suave/inercial em listas. */
+* { -webkit-overflow-scrolling: touch; }
+
+/* Esconde elementos só-desktop / só-mobile. */
+@media (max-width: 768px)  { .desktop-only { display: none !important; } }
+@media (min-width: 769px)  { .mobile-only  { display: none !important; } }
+
+/* Safe-area helper para barras fixas (bottom nav / topbar). */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* Reserva espaço para a bottom nav fixa no mobile (evita conteúdo escondido). */
+@media (max-width: 768px) {
+  .app-main { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+}
