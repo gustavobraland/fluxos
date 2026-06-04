@@ -3,7 +3,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Scissors, Upload, Loader2, Check, X, Send, KanbanSquare, Download, SlidersHorizontal, Play } from 'lucide-react'
+import { Scissors, Upload, Loader2, Check, X, Send, KanbanSquare, Download, SlidersHorizontal, Play, Paperclip, Info } from 'lucide-react'
 import { useClipadorStore } from '@/store/useClipadorStore'
 import { useMultipostStore } from '@/store/useMultipostStore'
 import { usePipelineStore } from '@/store/usePipelineStore'
@@ -148,10 +148,10 @@ export default function ClipadorPage() {
             </button>
           </div>
           {fileName && (
-            <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 8 }}>📎 {fileName} · {t('clipador.fileHint')}</div>
+            <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 8, display: 'flex', alignItems: 'center', gap: 5 }}><Paperclip size={11} /> {fileName} · {t('clipador.fileHint')}</div>
           )}
-          <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 10, lineHeight: 1.5 }}>
-            ⓘ {t('clipador.demoNote')}
+          <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 10, lineHeight: 1.5, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <Info size={11} /> {t('clipador.demoNote')}
           </div>
         </div>
 

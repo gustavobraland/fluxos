@@ -1,5 +1,5 @@
 'use client'
-import { X } from 'lucide-react'
+import { X, Radio } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { useFootballStore } from '@/store/useFootballStore'
 
@@ -28,7 +28,7 @@ export function FootballContextBanner() {
         marginBottom: 8,
       }}
     >
-      <span style={{ fontSize: 14, flexShrink: 0 }}>📡</span>
+      <Radio size={14} style={{ flexShrink: 0, color: '#E0201A' }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <span style={{ fontSize: 11, fontWeight: 600, color: '#E0201A' }}>
           {activeQueueItem.triggeredBy}

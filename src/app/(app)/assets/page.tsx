@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Flag, Globe, Shield, Sparkles, type LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { TEAMS, BRAND_ASSETS, type TeamCategory } from '@/lib/teams'
@@ -11,7 +11,7 @@ import { TeamAssetCard, type AssetCardItem } from '@/components/assets/TeamAsset
 type Filter = 'all' | TeamCategory | 'brand'
 
 const FILTER_IDS: Filter[] = ['all', 'BR', 'EU', 'NT', 'brand']
-const SECTION_EMOJI: Record<TeamCategory, string> = { BR: '🇧🇷', EU: '🌍', NT: '🏳' }
+const SECTION_ICON: Record<TeamCategory, LucideIcon> = { BR: Flag, EU: Globe, NT: Shield }
 
 const GRID: React.CSSProperties = {
   display: 'grid',
@@ -144,8 +144,8 @@ export default function AssetsPage() {
 
         {cats.map(c => showCat(c) && (
           <section key={c} style={{ marginBottom: 26 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 10 }}>
-              {SECTION_EMOJI[c]} {t(`assets.sections.${c}`)}
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              {(() => { const I = SECTION_ICON[c]; return <I size={14} style={{ color: 'var(--txt3)' }} /> })()} {t(`assets.sections.${c}`)}
             </h2>
             <div style={GRID}>
               {teams.filter(t => t.category === c).map(t => (
@@ -157,8 +157,8 @@ export default function AssetsPage() {
 
         {showBrand && (
           <section style={{ marginBottom: 26 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 10 }}>
-              ✦ {t('assets.sections.brand')}
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Sparkles size={14} style={{ color: 'var(--red)' }} /> {t('assets.sections.brand')}
             </h2>
             <div style={GRID}>
               {brand.map(b => (

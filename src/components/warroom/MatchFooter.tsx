@@ -1,4 +1,5 @@
 'use client'
+import { Goal } from 'lucide-react'
 import { useWarRoomStore } from '@/store/useWarRoomStore'
 import { isLiveStatus, isFinishedStatus, type FixtureStatus } from '@/types/fixtures'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
@@ -64,7 +65,7 @@ export function MatchFooter() {
               background: 'var(--s2)', border: '1px solid var(--border-subtle)',
               borderRadius: 99, padding: '3px 10px 3px 8px',
             }}>
-              <span style={{ fontSize: 12 }}>⚽</span>
+              <Goal size={13} style={{ color: 'var(--red)' }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt)' }}>
                 {g.scorer ?? g.team}
               </span>
