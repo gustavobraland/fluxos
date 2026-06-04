@@ -11,6 +11,7 @@ import { useApprovalsStore } from '@/store/useApprovalsStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import { usePermission } from '@/hooks/usePermission'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { SwipeableCard } from '@/components/mobile/SwipeableCard'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -102,15 +103,15 @@ function ItemList({
           const status = item.status as ApprovalStatus
           const pendingComments = item.comments.filter(c => !c.resolved).length
           const showQuick = hoverId === item.id && status === 'pending' && canApprove
-          return (
+          const swipeable = isMobile && canApprove && status === 'pending'
+          const row = (
             <div
-              key={item.id}
               onMouseEnter={() => setHoverId(item.id)}
               onMouseLeave={() => setHoverId((h) => (h === item.id ? null : h))}
               onClick={() => onSelect(item.id)}
               style={{
                 position: 'relative',
-                background: active ? 'var(--s2)' : 'transparent',
+                background: active ? 'var(--s2)' : 'var(--s1)',
                 borderBottom: '1px solid var(--border-subtle)',
                 borderLeft: active ? '2px solid var(--blue)' : '2px solid transparent',
                 padding: '12px 16px', cursor: 'pointer',
@@ -182,6 +183,19 @@ function ItemList({
                 </div>
               )}
             </div>
+          )
+
+          // Mobile: swipe → = aprovar, swipe ← = rejeitar (sem abrir o item)
+          return swipeable ? (
+            <SwipeableCard
+              key={item.id}
+              rightAction={{ label: t('approvals.approve'), color: '#3ECF8E', onAction: () => onQuickApprove(item.id) }}
+              leftAction={{ label: t('approvals.reject'), color: '#E0201A', onAction: () => onQuickReject(item.id) }}
+            >
+              {row}
+            </SwipeableCard>
+          ) : (
+            <div key={item.id}>{row}</div>
           )
         })}
       </div>
