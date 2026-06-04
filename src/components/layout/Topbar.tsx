@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Search, Bell, Sun, Moon, Command, LogOut } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Command, LogOut, Menu } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
@@ -41,17 +41,30 @@ export function Topbar() {
         zIndex: 20,
       }}
     >
+      {/* Mobile: menu (3 barras) no canto esquerdo → abre o drawer */}
+      <button
+        onClick={toggleMobileNav}
+        aria-label="Menu"
+        className="mobile-only shrink-0 flex items-center justify-center"
+        style={{ width: 36, height: 36, marginLeft: -6, color: 'var(--txt2)' }}
+      >
+        <Menu size={20} />
+      </button>
+
       {/* Logo — desktop: wordmark à esquerda */}
       <div className="shrink-0 desktop-only">
         <FluxLogo size="sm" showWordmark />
       </div>
 
-      {/* Mobile: "FLUX os" centralizado (toca → abre o drawer) */}
+      {/* Mobile: "FLUX os" centralizado (vertical+horizontal) → Pipeline */}
       <button
-        onClick={toggleMobileNav}
-        aria-label="Menu"
+        onClick={() => router.push('/pipeline')}
+        aria-label="Flux OS — Pipeline"
         className="mobile-only"
-        style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', alignItems: 'baseline', gap: 2 }}
+        style={{
+          position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+          display: 'inline-flex', alignItems: 'baseline', gap: 2,
+        }}
       >
         <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--txt)', lineHeight: 1 }}>FLUX</span>
         <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: '0.04em', color: '#E0201A', lineHeight: 1 }}>os</span>
