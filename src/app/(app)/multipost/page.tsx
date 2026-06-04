@@ -280,10 +280,10 @@ export default function MultipostPage() {
   // ─── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full" style={{ background: 'var(--bg)' }}>
-      {/* LEFT COLUMN */}
+      {/* LEFT COLUMN (editor) — largura total no mobile */}
       <div
-        className="flex flex-col shrink-0 border-r overflow-y-auto"
-        style={{ width: 460, borderColor: 'var(--border-subtle)' }}
+        className="flex flex-col shrink-0 border-r overflow-y-auto w-full md:w-[460px]"
+        style={{ borderColor: 'var(--border-subtle)' }}
       >
         {/* Header */}
         <div
@@ -554,8 +554,8 @@ export default function MultipostPage() {
         </div>
       </div>
 
-      {/* RIGHT COLUMN — PREVIEW */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* RIGHT COLUMN — PREVIEW (só desktop; escondido no mobile) */}
+      <div className="desktop-only flex-1 flex flex-col overflow-hidden">
         {/* Preview tabs */}
         <div
           className="flex items-center border-b"

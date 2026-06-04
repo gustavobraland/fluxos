@@ -15,6 +15,7 @@ import { startPolling, stopPolling } from '@/services/warroom-polling'
 import { fetchLineup } from '@/services/warroom-lineup'
 import { startMockMatch, stopMockMatch, isMockRunning } from '@/services/warroom-mock'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 const KICKOFF_WINDOW_MS = 10 * 60_000  // begin polling 10 min before kickoff
 const IS_DEV = process.env.NODE_ENV === 'development'
@@ -56,6 +57,7 @@ function EmptyState() {
 
 export default function WarRoomPage() {
   const { t } = useTranslation()
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const fixture = useWarRoomStore(s => s.activeFixture)
   const liveData = useWarRoomStore(s => s.liveData)
   const queue = useWarRoomStore(s => s.queue)
@@ -146,11 +148,17 @@ export default function WarRoomPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Main column — live content */}
+      <div style={{
+        display: 'flex', flex: 1, overflow: 'hidden',
+        flexDirection: isMobile ? 'column' : 'row',
+        overflowY: isMobile ? 'auto' : 'hidden',
+      }}>
+        {/* Main column — live content (fila) */}
         <div style={{
-          flex: '0 0 58%', display: 'flex', flexDirection: 'column', gap: 10,
-          padding: '12px 8px 12px 12px', overflowY: 'auto',
+          flex: isMobile ? 'none' : '0 0 58%', width: isMobile ? '100%' : undefined,
+          display: 'flex', flexDirection: 'column', gap: 10,
+          padding: '12px 8px 12px 12px',
+          overflowY: isMobile ? 'visible' : 'auto',
         }}>
           {showQueue ? (
             <ContentQueue />
@@ -184,8 +192,10 @@ export default function WarRoomPage() {
 
         {/* Side column — lineup, pre-packs, quota */}
         <div style={{
-          flex: '0 0 42%', display: 'flex', flexDirection: 'column', gap: 10,
-          padding: '12px 12px 12px 4px', overflowY: 'auto',
+          flex: isMobile ? 'none' : '0 0 42%', width: isMobile ? '100%' : undefined,
+          display: 'flex', flexDirection: 'column', gap: 10,
+          padding: '12px 12px 12px 4px',
+          overflowY: isMobile ? 'visible' : 'auto',
         }}>
           <LineupPanel />
           <PrePackPanel />

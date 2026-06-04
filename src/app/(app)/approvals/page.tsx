@@ -10,6 +10,7 @@ import type { ApprovalItem, Comment } from '@/types'
 import { useApprovalsStore } from '@/store/useApprovalsStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import { usePermission } from '@/hooks/usePermission'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -75,10 +76,14 @@ function ItemList({
   const [hoverId, setHoverId] = useState<string | null>(null)
   const { t } = useTranslation()
   const canApprove = usePermission('content.approve')
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   return (
     <div style={{
-      width: 220, flexShrink: 0, borderRight: '1px solid var(--border-subtle)',
+      width: isMobile ? '100%' : 220, flexShrink: 0,
+      maxHeight: isMobile ? '38vh' : undefined,
+      borderRight: isMobile ? 'none' : '1px solid var(--border-subtle)',
+      borderBottom: isMobile ? '1px solid var(--border-subtle)' : undefined,
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
     }}>
       <div style={{
@@ -299,11 +304,14 @@ function DetailPanel({
   const channel = item.subtitle.split('·')[0].trim()
   const format = item.subtitle.split('·')[1]?.trim() ?? t('approvals.noFormat')
   const decided = item.status !== 'pending'
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   return (
     <div style={{
-      flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      borderRight: '1px solid var(--border-subtle)',
+      flex: isMobile ? 'none' : 1, width: isMobile ? '100%' : undefined,
+      minWidth: 0, minHeight: isMobile ? '70vh' : undefined,
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      borderRight: isMobile ? 'none' : '1px solid var(--border-subtle)',
     }}>
       {/* Header */}
       <div style={{
@@ -430,9 +438,16 @@ function CommentPanel({
 }) {
   const { t } = useTranslation()
   const open = comments.filter(c => !c.resolved)
+  const isMobile = useMediaQuery('(max-width: 768px)')
 
   return (
-    <div style={{ width: 280, flexShrink: 0, borderLeft: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{
+      width: isMobile ? '100%' : 280, flexShrink: 0,
+      maxHeight: isMobile ? '50vh' : undefined,
+      borderLeft: isMobile ? 'none' : '1px solid var(--border-subtle)',
+      borderTop: isMobile ? '1px solid var(--border-subtle)' : undefined,
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
       {/* Header */}
       <div style={{
         padding: '14px 16px', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0,
@@ -668,6 +683,7 @@ function ReasonModal({
 
 export default function ApprovalsPage() {
   const { t } = useTranslation()
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const items = useApprovalsStore((s) => s.items)
   const setStatus = useApprovalsStore((s) => s.setStatus)
   const addCommentToItem = useApprovalsStore((s) => s.addComment)
@@ -773,7 +789,11 @@ export default function ApprovalsPage() {
   }, [items, selectedId, reasonModal, pendingPin, selected, approve])
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden', background: 'var(--bg)' }}>
+    <div style={{
+      display: 'flex', height: '100%', background: 'var(--bg)',
+      flexDirection: isMobile ? 'column' : 'row',
+      overflow: isMobile ? 'auto' : 'hidden',
+    }}>
       <ItemList
         items={items}
         selectedId={selectedId}

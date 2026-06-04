@@ -10,6 +10,7 @@ import { Plus, Zap, Radio, BarChart3, CheckSquare, Trophy } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useShallow } from 'zustand/shallow'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
 import { formatTimeBRT, dayLabelBRT } from '@/lib/fixtures-client'
 import { isLiveStatus } from '@/types/fixtures'
@@ -51,6 +52,7 @@ function relativeTime(isoDate: string): string {
 }
 
 export default function DashboardPage() {
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const { tasks } = usePipelineStore()
   const { integrations } = useIntegrationsStore()
   const { t, locale } = useTranslation()
@@ -178,7 +180,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ─ METRICS ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 8 }}>
         {metrics.map(m => (
           <div key={m.label} style={card}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 7 }}>
@@ -200,7 +202,7 @@ export default function DashboardPage() {
       {/* ─ BODY GRID ── */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 260px',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 260px',
         gap: 10,
         flex: 1,
         minHeight: 0,
@@ -353,7 +355,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ─ APROVAÇÕES + PRÓXIMOS JOGOS ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 10 }}>
 
         {/* Aprovações pendentes */}
         <div style={card}>
@@ -438,7 +440,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ─ BOTTOM ROW ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 200px', gap: 10 }}>
 
         {/* Deadlines */}
         <div style={card}>
