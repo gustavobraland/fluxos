@@ -3,13 +3,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { useShallow } from 'zustand/shallow'
 import { useRouter } from 'next/navigation'
+import { Loader2, AlertTriangle, CalendarX, type LucideIcon } from 'lucide-react'
 import { useFixturesStore } from '@/store/useFixturesStore'
 import { useWarRoomStore, type WarRoomSetup } from '@/store/useWarRoomStore'
 import { isLiveStatus } from '@/types/fixtures'
 import type { Fixture } from '@/types/fixtures'
 import { FixturesToolbar, type FixtureFilter } from '@/components/timeline/FixturesToolbar'
 import { FixturesDayGroups } from '@/components/timeline/FixturesDayGroups'
-import { FixtureSelectedBar } from '@/components/timeline/FixtureSelectedBar'
 import { WarRoomSetupModal } from '@/components/timeline/WarRoomSetupModal'
 import { useTranslation } from '@/hooks/useTranslation'
 
@@ -89,21 +89,20 @@ export default function TimelinePage() {
 
       {/* Body */}
       <div style={{
-        flex: 1, overflowY: 'auto',
-        padding: '16px', paddingBottom: selectedFixture ? 90 : 16,
+        flex: 1, overflowY: 'auto', padding: '16px',
       }}>
         {loading && fixtures.length === 0 ? (
-          <CenteredState emoji="⏳" text={t('timeline.loading')} />
+          <CenteredState Icon={Loader2} spin text={t('timeline.loading')} />
         ) : error && fixtures.length === 0 ? (
           <CenteredState
-            emoji="⚠"
+            Icon={AlertTriangle}
             text={connected ? t('timeline.errorLoad') : t('timeline.apiUnavailable')}
             sub={error}
             action={{ label: t('timeline.tryAgain'), onClick: fetchAll }}
           />
         ) : filtered.length === 0 ? (
           <CenteredState
-            emoji="🏟"
+            Icon={CalendarX}
             text={t('timeline.noFixtures')}
             sub={filter === 'ALL' ? t('timeline.noFixturesAll') : t('timeline.noFixturesFilter')}
           />
@@ -133,18 +132,6 @@ export default function TimelinePage() {
         )}
       </div>
 
-      {/* Selected bar */}
-      <AnimatePresence>
-        {selectedFixture && (
-          <FixtureSelectedBar
-            key={selectedFixture.fixture.id}
-            fixture={selectedFixture}
-            onOpenWarRoom={() => setModalFixture(selectedFixture)}
-            onClear={() => selectFixture(null)}
-          />
-        )}
-      </AnimatePresence>
-
       {/* Setup modal */}
       <AnimatePresence>
         {modalFixture && (
@@ -162,9 +149,10 @@ export default function TimelinePage() {
 // ─── Centered empty / loading / error state ────────────────────────────────────
 
 function CenteredState({
-  emoji, text, sub, action,
+  Icon, spin, text, sub, action,
 }: {
-  emoji: string
+  Icon: LucideIcon
+  spin?: boolean
   text: string
   sub?: string | null
   action?: { label: string; onClick: () => void }
@@ -172,9 +160,9 @@ function CenteredState({
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', height: 280, gap: 8, textAlign: 'center',
+      justifyContent: 'center', height: 280, gap: 10, textAlign: 'center',
     }}>
-      <span style={{ fontSize: 32, opacity: 0.28 }}>{emoji}</span>
+      <Icon size={30} style={{ opacity: 0.35, color: 'var(--txt3)', animation: spin ? 'spin 1s linear infinite' : undefined }} />
       <span style={{ fontSize: 13, color: 'var(--txt2)', fontWeight: 600 }}>{text}</span>
       {sub && <span style={{ fontSize: 11, color: 'var(--txt3)', fontFamily: 'var(--font-mono)' }}>{sub}</span>}
       {action && (

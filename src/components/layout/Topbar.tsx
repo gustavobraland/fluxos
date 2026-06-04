@@ -41,19 +41,23 @@ export function Topbar() {
         zIndex: 20,
       }}
     >
-      {/* Logo — desktop com wordmark; mobile só o ícone e abre o drawer ao tocar */}
+      {/* Logo — desktop: wordmark à esquerda */}
       <div className="shrink-0 desktop-only">
         <FluxLogo size="sm" showWordmark />
       </div>
+
+      {/* Mobile: "FLUX os" centralizado (toca → abre o drawer) */}
       <button
         onClick={toggleMobileNav}
         aria-label="Menu"
-        className="shrink-0 mobile-only flex items-center"
+        className="mobile-only"
+        style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'inline-flex', alignItems: 'baseline', gap: 2 }}
       >
-        <FluxLogo size="sm" />
+        <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--txt)', lineHeight: 1 }}>FLUX</span>
+        <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: '0.04em', color: '#E0201A', lineHeight: 1 }}>os</span>
       </button>
 
-      {/* Spacer (mobile) — empurra ações p/ direita já que a busca some */}
+      {/* Spacer (mobile) — empurra ações p/ direita */}
       <div className="mobile-only flex-1" />
 
       {/* Search — center (desktop) */}
@@ -97,10 +101,8 @@ export function Topbar() {
 
       {/* Right actions */}
       <div className="flex items-center gap-1 shrink-0">
-        {/* Language selector (desktop) */}
-        <div className="desktop-only">
-          <LanguageSelector />
-        </div>
+        {/* Language selector (bandeira BR/CN) — desktop e mobile */}
+        <LanguageSelector />
 
         {/* Command (desktop) */}
         <TopBtn onClick={toggleCmd} title={t('topbar.cmdPalette')} className="desktop-only">
@@ -131,11 +133,11 @@ export function Topbar() {
           />
         </TopBtn>
 
-        {/* Divider */}
-        <div className="w-px h-5 mx-1" style={{ background: 'var(--border-subtle)' }} />
+        {/* Divider (desktop) */}
+        <div className="desktop-only w-px h-5 mx-1" style={{ background: 'var(--border-subtle)' }} />
 
-        {/* User */}
-        <div className="flex items-center gap-2 h-8 px-2.5 rounded-lg" style={{ color: 'var(--txt)' }}>
+        {/* User (desktop — no mobile o perfil sai; logout fica no drawer) */}
+        <div className="desktop-only flex items-center gap-2 h-8 px-2.5 rounded-lg" style={{ color: 'var(--txt)' }}>
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarUrl} alt={name ?? ''} className="w-6 h-6 rounded-full" style={{ objectFit: 'cover' }} />

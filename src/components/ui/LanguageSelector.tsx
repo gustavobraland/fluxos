@@ -36,8 +36,8 @@ export function LanguageSelector() {
           background: directorMode ? 'rgba(37,99,235,.08)' : 'transparent',
         }}
       >
-        <span style={{ fontSize: 14, lineHeight: 1 }}>{current.flag}</span>
-        <span style={{ fontSize: 11, fontWeight: 500 }}>
+        <span style={{ fontSize: 16, lineHeight: 1 }}>{current.flag}</span>
+        <span className="desktop-only" style={{ fontSize: 11, fontWeight: 500 }}>
           {directorMode ? t('languageSelector.directorModeOn') : current.nativeLabel}
         </span>
         <ChevronDown

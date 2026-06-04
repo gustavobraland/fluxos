@@ -1,16 +1,16 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Zap } from 'lucide-react'
+import { Zap, Globe, Flag, Shield, Calendar, MapPin, type LucideIcon } from 'lucide-react'
 import type { Fixture, MatchCategory } from '@/types/fixtures'
 import { isLiveStatus, isFinishedStatus } from '@/types/fixtures'
 import { formatTimeBRT, formatDateShortBRT } from '@/lib/fixtures-client'
 import { TeamLogo } from './TeamLogo'
 import { useTranslation } from '@/hooks/useTranslation'
 
-const CATEGORY_META: Record<MatchCategory, { emoji: string; color: string }> = {
-  BR: { emoji: '🇧🇷', color: 'var(--green)' },
-  EU: { emoji: '🌍', color: 'var(--blue)' },
-  NT: { emoji: '🏳', color: 'var(--orange)' },
+const CATEGORY_META: Record<MatchCategory, { Icon: LucideIcon; color: string }> = {
+  BR: { Icon: Flag,   color: 'var(--green)' },
+  EU: { Icon: Globe,  color: 'var(--blue)' },
+  NT: { Icon: Shield, color: 'var(--orange)' },
 }
 
 export function FixtureCard({
@@ -83,8 +83,9 @@ export function FixtureCard({
             fontSize: 9, fontWeight: 700, color: cat.color,
             background: `${cat.color}1a`, border: `1px solid ${cat.color}33`,
             borderRadius: 99, padding: '1px 7px', letterSpacing: '0.04em',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
           }}>
-            {cat.emoji} {t(`timeline.category.${fixture._category}`)}
+            <cat.Icon size={9} /> {t(`timeline.category.${fixture._category}`)}
           </span>
           {live ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -151,14 +152,14 @@ export function FixtureCard({
         padding: '0 14px 10px', fontSize: 10, color: 'var(--txt3)',
       }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'var(--font-mono)' }}>
-          📅 {formatDateShortBRT(f.timestamp)} · {formatTimeBRT(f.timestamp)} BRT
+          <Calendar size={11} /> {formatDateShortBRT(f.timestamp)} · {formatTimeBRT(f.timestamp)} BRT
         </span>
         {f.venue?.name && (
           <span style={{
             display: 'flex', alignItems: 'center', gap: 4, minWidth: 0,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
-            📍 {f.venue.name}
+            <MapPin size={11} /> {f.venue.name}
           </span>
         )}
       </div>

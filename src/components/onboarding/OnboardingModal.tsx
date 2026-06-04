@@ -1,13 +1,24 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft } from 'lucide-react'
+import {
+  ChevronLeft, LayoutDashboard, Zap, KanbanSquare, ClipboardList, Send,
+  Sparkles, CheckSquare, FolderOpen, CalendarDays, Scissors, Plug, BarChart3,
+  type LucideIcon,
+} from 'lucide-react'
 import { FluxLogo } from '@/components/layout/FluxLogo'
 import { createClient } from '@/lib/supabase/client'
 import { useUserStore } from '@/store/useUserStore'
 import {
   ONBOARDING_CONTENT, ROLE_LABELS, ROLE_ORDER, onboardingRoleForEmail, type Role,
 } from '@/lib/onboarding-config'
+
+// Mapeia os símbolos usados no ONBOARDING_CONTENT para ícones da identidade.
+const MODULE_ICONS: Record<string, LucideIcon> = {
+  '◎': BarChart3, '⚡': Zap, '◫': KanbanSquare, '📋': ClipboardList, '📤': Send,
+  '✦': Sparkles, '✅': CheckSquare, '🗂': FolderOpen, '📅': CalendarDays,
+  '✂': Scissors, '⬡': Plug, '◉': LayoutDashboard,
+}
 
 // First-login onboarding. Shows once per user, then never again.
 // Fluxo: (1) a pessoa escolhe o próprio papel; (2) vê as boas-vindas e os
@@ -180,16 +191,19 @@ export function OnboardingModal() {
                   </p>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 32 }}>
-                    {content?.modules.map((mod, i) => (
-                      <div key={i} style={{
-                        background: 'var(--s2)', border: '1px solid var(--border-subtle)',
-                        borderRadius: 10, padding: 16, textAlign: 'left',
-                      }}>
-                        <div style={{ fontSize: 22, marginBottom: 8, color: 'var(--red)' }}>{mod.icon}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{mod.title}</div>
-                        <div style={{ fontSize: 12, color: 'var(--txt2)', lineHeight: 1.5 }}>{mod.desc}</div>
-                      </div>
-                    ))}
+                    {content?.modules.map((mod, i) => {
+                      const Icon = MODULE_ICONS[mod.icon] ?? Sparkles
+                      return (
+                        <div key={i} style={{
+                          background: 'var(--s2)', border: '1px solid var(--border-subtle)',
+                          borderRadius: 10, padding: 16, textAlign: 'left',
+                        }}>
+                          <Icon size={22} style={{ marginBottom: 8, color: 'var(--red)' }} />
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{mod.title}</div>
+                          <div style={{ fontSize: 12, color: 'var(--txt2)', lineHeight: 1.5 }}>{mod.desc}</div>
+                        </div>
+                      )
+                    })}
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
