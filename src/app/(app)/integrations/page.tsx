@@ -11,7 +11,7 @@ import { fetchSocialConnections, deleteSocialConnection, type SocialConnection }
 import type { IntegrationCategory } from '@/types'
 
 // Plataformas com OAuth real (popup + social_connections no Supabase).
-const OAUTH_PLATFORMS = new Set(['instagram', 'tiktok', 'youtube'])
+const OAUTH_PLATFORMS = new Set(['instagram', 'facebook', 'tiktok', 'youtube'])
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 

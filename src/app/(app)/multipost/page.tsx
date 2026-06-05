@@ -24,6 +24,7 @@ import type { PlatformId as TaskPlatformId } from '@/types'
 // Plataforma do Multipost → plataforma salva em social_connections.
 const CONN_PLATFORM: Partial<Record<PlatformId, string>> = {
   instagram: 'instagram',
+  facebook: 'facebook',
   youtube_shorts: 'youtube',
   tiktok: 'tiktok',
 }
@@ -268,7 +269,7 @@ export default function MultipostPage() {
   // no Supabase Storage e chama as rotas /api/publish/*. Retorna nº de sucessos.
   const publishToConnected = useCallback(async (): Promise<number> => {
     const targets = selected.filter(
-      (id) => (id === 'tiktok' || id === 'youtube_shorts' || id === 'instagram') && isPlatformConnected(id),
+      (id) => (id === 'tiktok' || id === 'youtube_shorts' || id === 'instagram' || id === 'facebook') && isPlatformConnected(id),
     )
     if (targets.length === 0) return 0
     if (!media) {
@@ -296,8 +297,10 @@ export default function MultipostPage() {
     // 2. Publica em cada plataforma conectada.
     let ok = 0
     for (const id of targets) {
-      const platform = CONN_PLATFORM[id]! // 'tiktok' | 'youtube' | 'instagram'
-      const label = platform === 'tiktok' ? 'TikTok' : platform === 'youtube' ? 'YouTube' : 'Instagram'
+      const platform = CONN_PLATFORM[id]! // 'tiktok' | 'youtube' | 'instagram' | 'facebook'
+      const label = platform === 'tiktok' ? 'TikTok'
+        : platform === 'youtube' ? 'YouTube'
+        : platform === 'instagram' ? 'Instagram' : 'Facebook'
       // TikTok e YouTube só aceitam vídeo.
       if ((platform === 'tiktok' || platform === 'youtube') && media.type !== 'video') {
         toast.error(`${label}: ${t('multipost.toastApi.videoRequiredPublish')}`)
@@ -309,7 +312,7 @@ export default function MultipostPage() {
           ? { videoUrl: mediaUrl, caption }
           : platform === 'youtube'
             ? { videoUrl: mediaUrl, title: caption.split('\n')[0].slice(0, 100) || 'Flux OS', description: caption }
-            : { mediaUrl, mediaType: media.type, caption } // instagram (imagem ou Reels)
+            : { mediaUrl, mediaType: media.type, caption } // instagram (Reels/foto) | facebook (Página)
       try {
         const res = await fetch(`/api/publish/${platform}`, {
           method: 'POST',
