@@ -268,16 +268,16 @@ export default function MultipostPage() {
   // no Supabase Storage e chama as rotas /api/publish/*. Retorna nº de sucessos.
   const publishToConnected = useCallback(async (): Promise<number> => {
     const targets = selected.filter(
-      (id) => (id === 'tiktok' || id === 'youtube_shorts') && isPlatformConnected(id),
+      (id) => (id === 'tiktok' || id === 'youtube_shorts' || id === 'instagram') && isPlatformConnected(id),
     )
     if (targets.length === 0) return 0
-    if (!media || media.type !== 'video') {
+    if (!media) {
       toast.error(t('multipost.toastApi.videoRequiredPublish'))
       return 0
     }
 
-    // 1. Hospeda o vídeo numa URL pública.
-    let videoUrl: string
+    // 1. Hospeda a mídia numa URL pública.
+    let mediaUrl: string
     try {
       const supabase = createClient()
       const safe = media.file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -287,7 +287,7 @@ export default function MultipostPage() {
         contentType: media.file.type,
       })
       if (up.error) throw up.error
-      videoUrl = supabase.storage.from('media').getPublicUrl(path).data.publicUrl
+      mediaUrl = supabase.storage.from('media').getPublicUrl(path).data.publicUrl
     } catch {
       toast.error(t('multipost.toastApi.uploadFailed'))
       return 0
@@ -296,18 +296,25 @@ export default function MultipostPage() {
     // 2. Publica em cada plataforma conectada.
     let ok = 0
     for (const id of targets) {
-      const platform = CONN_PLATFORM[id]! // 'tiktok' | 'youtube'
-      const label = platform === 'tiktok' ? 'TikTok' : 'YouTube'
+      const platform = CONN_PLATFORM[id]! // 'tiktok' | 'youtube' | 'instagram'
+      const label = platform === 'tiktok' ? 'TikTok' : platform === 'youtube' ? 'YouTube' : 'Instagram'
+      // TikTok e YouTube só aceitam vídeo.
+      if ((platform === 'tiktok' || platform === 'youtube') && media.type !== 'video') {
+        toast.error(`${label}: ${t('multipost.toastApi.videoRequiredPublish')}`)
+        continue
+      }
       const caption = (copies[id]?.trim() || baseCopy).trim()
+      const payload =
+        platform === 'tiktok'
+          ? { videoUrl: mediaUrl, caption }
+          : platform === 'youtube'
+            ? { videoUrl: mediaUrl, title: caption.split('\n')[0].slice(0, 100) || 'Flux OS', description: caption }
+            : { mediaUrl, mediaType: media.type, caption } // instagram (imagem ou Reels)
       try {
         const res = await fetch(`/api/publish/${platform}`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(
-            platform === 'tiktok'
-              ? { videoUrl, caption }
-              : { videoUrl, title: caption.split('\n')[0].slice(0, 100) || 'Flux OS', description: caption },
-          ),
+          body: JSON.stringify(payload),
         })
         const json = await res.json()
         if (json.success) { ok++; toast.success(t('multipost.toastApi.publishedTo', { platform: label })) }
