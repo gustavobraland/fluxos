@@ -143,3 +143,21 @@ create policy "social own update" on public.social_connections
 drop policy if exists "social own delete" on public.social_connections;
 create policy "social own delete" on public.social_connections
   for delete to authenticated using (auth.email() = user_email);
+
+-- ─── Storage: bucket público p/ hospedar mídia antes de publicar ─────────────
+-- TikTok (PULL_FROM_URL) e YouTube precisam de uma URL pública do vídeo.
+insert into storage.buckets (id, name, public)
+values ('media', 'media', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "media public read" on storage.objects;
+create policy "media public read" on storage.objects
+  for select to public using (bucket_id = 'media');
+
+drop policy if exists "media auth upload" on storage.objects;
+create policy "media auth upload" on storage.objects
+  for insert to authenticated with check (bucket_id = 'media');
+
+drop policy if exists "media auth update" on storage.objects;
+create policy "media auth update" on storage.objects
+  for update to authenticated using (bucket_id = 'media') with check (bucket_id = 'media');

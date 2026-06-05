@@ -18,7 +18,15 @@ import { toast } from 'sonner'
 import { useTranslation } from '@/hooks/useTranslation'
 import { usePermission } from '@/hooks/usePermission'
 import { fetchSocialConnections, type SocialConnection } from '@/lib/social'
+import { createClient } from '@/lib/supabase/client'
 import type { PlatformId as TaskPlatformId } from '@/types'
+
+// Plataforma do Multipost → plataforma salva em social_connections.
+const CONN_PLATFORM: Partial<Record<PlatformId, string>> = {
+  instagram: 'instagram',
+  youtube_shorts: 'youtube',
+  tiktok: 'tiktok',
+}
 
 const TZ = 'America/Sao_Paulo'
 
@@ -87,6 +95,11 @@ export default function MultipostPage() {
     })
     return () => { on = false }
   }, [])
+  const connectedSet = useMemo(() => new Set(connections.map((c) => c.platform)), [connections])
+  const isPlatformConnected = useCallback(
+    (id: PlatformId) => { const cp = CONN_PLATFORM[id]; return !!cp && connectedSet.has(cp) },
+    [connectedSet],
+  )
 
   // Dynamic {{variavel}} placeholders detected in the base copy (from a prompt)
   const vars = useMemo(() => {
@@ -251,21 +264,80 @@ export default function MultipostPage() {
     toast.success(t('multipost.toastApi.sentToApproval'))
   }
 
+  // Publica de verdade nas contas conectadas (TikTok/YouTube): hospeda o vídeo
+  // no Supabase Storage e chama as rotas /api/publish/*. Retorna nº de sucessos.
+  const publishToConnected = useCallback(async (): Promise<number> => {
+    const targets = selected.filter(
+      (id) => (id === 'tiktok' || id === 'youtube_shorts') && isPlatformConnected(id),
+    )
+    if (targets.length === 0) return 0
+    if (!media || media.type !== 'video') {
+      toast.error(t('multipost.toastApi.videoRequiredPublish'))
+      return 0
+    }
+
+    // 1. Hospeda o vídeo numa URL pública.
+    let videoUrl: string
+    try {
+      const supabase = createClient()
+      const safe = media.file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+      const path = `pub/${Date.now()}-${safe}`
+      const up = await supabase.storage.from('media').upload(path, media.file, {
+        upsert: true,
+        contentType: media.file.type,
+      })
+      if (up.error) throw up.error
+      videoUrl = supabase.storage.from('media').getPublicUrl(path).data.publicUrl
+    } catch {
+      toast.error(t('multipost.toastApi.uploadFailed'))
+      return 0
+    }
+
+    // 2. Publica em cada plataforma conectada.
+    let ok = 0
+    for (const id of targets) {
+      const platform = CONN_PLATFORM[id]! // 'tiktok' | 'youtube'
+      const label = platform === 'tiktok' ? 'TikTok' : 'YouTube'
+      const caption = (copies[id]?.trim() || baseCopy).trim()
+      try {
+        const res = await fetch(`/api/publish/${platform}`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(
+            platform === 'tiktok'
+              ? { videoUrl, caption }
+              : { videoUrl, title: caption.split('\n')[0].slice(0, 100) || 'Flux OS', description: caption },
+          ),
+        })
+        const json = await res.json()
+        if (json.success) { ok++; toast.success(t('multipost.toastApi.publishedTo', { platform: label })) }
+        else toast.error(`${label}: ${json.error ?? t('multipost.toastApi.publishFailed')}`)
+      } catch {
+        toast.error(`${label}: ${t('multipost.toastApi.networkError')}`)
+      }
+    }
+    return ok
+  }, [selected, isPlatformConnected, media, copies, baseCopy, t])
+
   const publishNow = useCallback(async () => {
     if (!guard()) return
     setPublishing(true)
-    await new Promise((r) => setTimeout(r, 1400))
+    const realCount = await publishToConnected()
     setPublishing(false)
     setPublished(true)
     trackTask('published')
-    toast.success(
-      scheduledAt
-        ? t('multipost.toastApi.scheduledAt', { date: new Date(scheduledAt).toLocaleString('pt-BR') })
-        : t('multipost.toastApi.publishedCount', { count: selected.length })
-    )
+    // Resumo: se publicou em conta conectada, os toasts por plataforma já saíram;
+    // senão (plataformas sem OAuth), mostra o resumo padrão.
+    if (realCount === 0) {
+      toast.success(
+        scheduledAt
+          ? t('multipost.toastApi.scheduledAt', { date: new Date(scheduledAt).toLocaleString('pt-BR') })
+          : t('multipost.toastApi.publishedCount', { count: selected.length })
+      )
+    }
     setTimeout(() => setPublished(false), 3000)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, copies, baseCopy, scheduledAt, trackTask])
+  }, [selected, copies, baseCopy, scheduledAt, trackTask, publishToConnected])
 
   // Real scheduling: persist the post + mirror it onto the Calendar as a content event
   const schedulePost = () => {
@@ -330,10 +402,12 @@ export default function MultipostPage() {
             <div className="flex flex-wrap" style={{ gap: 6 }}>
               {PLATFORM_ORDER.map((id) => {
                 const isSelected = selected.includes(id)
+                const connected = isPlatformConnected(id)
                 return (
                   <button
                     key={id}
                     onClick={() => togglePlatform(id)}
+                    title={connected ? 'Conta conectada' : undefined}
                     className="inline-flex items-center transition-all"
                     style={{
                       height: 32,
@@ -348,6 +422,9 @@ export default function MultipostPage() {
                   >
                     <PlatformGlyph id={id} size={13} />
                     <span style={{ fontSize: 11, fontWeight: 600 }}>{PLATFORM_META[id].short}</span>
+                    {connected && (
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)' }} title="Conectado" />
+                    )}
                   </button>
                 )
               })}
