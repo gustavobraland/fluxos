@@ -2,10 +2,11 @@
 // POST { draft, platforms, mediaType?, brandVoice? }
 //   → { copies: Record<PlatformId, string>, refinedBy: 'ai' | 'fallback' }
 //
-// Three tiers, each falling through to the next — never 500s the UI:
-//   1. Anthropic (only if ANTHROPIC_API_KEY is set) — best quality.
-//   2. Pollinations — free & keyless, for the test environment (best effort).
-//   3. Deterministic local adaptation — always works, no network.
+// Tiers, each falling through to the next — never 500s the UI:
+//   1. Google Gemini (preferido, se GEMINI_API_KEY estiver setado).
+//   2. Anthropic (se ANTHROPIC_API_KEY estiver setado) — alta qualidade.
+//   3. Pollinations — grátis e sem key, para o ambiente de teste (best effort).
+//   4. Adaptação local determinística — sempre funciona, sem rede.
 
 import { PLATFORM_LIMITS, PLATFORM_META, type PlatformId, type PlatformLimit } from '@/lib/platform-limits'
 
@@ -144,7 +145,33 @@ export async function POST(req: Request): Promise<Response> {
     return copies
   }
 
-  // ── Tier 1: Anthropic (only if a key is configured) ──
+  // ── Tier 1: Google Gemini (preferido quando GEMINI_API_KEY está setado) ──
+  const geminiKey = process.env.GEMINI_API_KEY
+  if (geminiKey) {
+    try {
+      const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+          }),
+        },
+      )
+      if (res.ok) {
+        const data = (await res.json()) as {
+          candidates?: { content?: { parts?: { text?: string }[] } }[]
+        }
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (text) return Response.json({ copies: shape(text), refinedBy: 'ai' as const })
+      }
+    } catch { /* cai para o próximo tier */ }
+  }
+
+  // ── Tier 2: Anthropic (only if a key is configured) ──
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (apiKey) {
     try {
