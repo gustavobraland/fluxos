@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Search, Bell, Sun, Moon, Command, LogOut, Menu } from 'lucide-react'
+import { Search, Bell, Sun, Moon, Command, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/useAppStore'
@@ -41,14 +41,14 @@ export function Topbar() {
         zIndex: 20,
       }}
     >
-      {/* Mobile: menu (3 barras) no canto esquerdo → abre o drawer */}
+      {/* Mobile: logo no canto esquerdo → abre o drawer (opções) */}
       <button
         onClick={toggleMobileNav}
         aria-label="Menu"
         className="mobile-only shrink-0 flex items-center justify-center"
-        style={{ width: 36, height: 36, marginLeft: -6, color: 'var(--txt2)' }}
+        style={{ height: 36 }}
       >
-        <Menu size={20} />
+        <FluxLogo size="sm" />
       </button>
 
       {/* Logo — desktop: wordmark à esquerda */}
@@ -56,18 +56,18 @@ export function Topbar() {
         <FluxLogo size="sm" showWordmark />
       </div>
 
-      {/* Mobile: "FLUX os" centralizado (vertical+horizontal) → Pipeline */}
+      {/* Mobile: "FLUX" centralizado (vertical+horizontal) → Pipeline */}
       <button
         onClick={() => router.push('/pipeline')}
-        aria-label="Flux OS — Pipeline"
+        aria-label="Flux — Pipeline"
         className="mobile-only"
         style={{
           position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
-          display: 'inline-flex', alignItems: 'baseline', gap: 2,
+          fontWeight: 800, fontSize: 18, letterSpacing: '0.13em', textTransform: 'uppercase',
+          color: 'var(--txt)', lineHeight: 1,
         }}
       >
-        <span style={{ fontWeight: 800, fontSize: 18, letterSpacing: '0.13em', textTransform: 'uppercase', color: 'var(--txt)', lineHeight: 1 }}>FLUX</span>
-        <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: '0.04em', color: '#E0201A', lineHeight: 1 }}>os</span>
+        FLUX
       </button>
 
       {/* Spacer (mobile) — empurra ações p/ direita */}
