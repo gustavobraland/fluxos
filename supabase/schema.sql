@@ -102,22 +102,32 @@ create trigger trg_enforce_team_role
   before insert or update on public.user_onboarding
   for each row execute function public.enforce_team_role();
 
--- ─── Conexões sociais (OAuth Meta: Instagram / Facebook) ─────────────────────
+-- ─── Conexões sociais (OAuth: Instagram / Facebook / TikTok / YouTube) ───────
+-- Uma conexão por (usuário, plataforma) — upsert no callback.
 create table if not exists public.social_connections (
-  id           uuid primary key default gen_random_uuid(),
-  user_email   text not null,
-  platform     text not null,                 -- 'instagram' | 'facebook'
-  access_token text not null,                 -- page token (publica em nome da página/IG)
-  account_id   text,                          -- IG business account id (ou page id)
-  account_name text,                          -- @username / nome da página
-  avatar_url   text,                          -- foto do perfil (UI)
-  expires_at   timestamptz,
-  created_at   timestamptz not null default now()
+  id            uuid primary key default gen_random_uuid(),
+  user_email    text not null,
+  platform      text not null,                -- 'instagram' | 'facebook' | 'tiktok' | 'youtube'
+  access_token  text not null,
+  refresh_token text,                         -- TikTok/YouTube (renovação)
+  account_id    text,                         -- open_id / channel id / IG business id
+  account_name  text,                         -- @username / nome do canal
+  avatar_url    text,                         -- foto do perfil (UI)
+  expires_at    timestamptz,
+  created_at    timestamptz not null default now(),
+  unique (user_email, platform)
 );
+
+-- Migração idempotente (se a tabela já existia da versão anterior).
+alter table public.social_connections add column if not exists refresh_token text;
+alter table public.social_connections add column if not exists avatar_url text;
+do $$ begin
+  alter table public.social_connections add constraint social_connections_user_platform_key unique (user_email, platform);
+exception when duplicate_table or duplicate_object then null; end $$;
 
 alter table public.social_connections enable row level security;
 
--- Cada usuário lê/insere/apaga apenas as próprias conexões (via JWT do login).
+-- Cada usuário lê/grava/apaga apenas as próprias conexões (via JWT do login).
 drop policy if exists "social own read" on public.social_connections;
 create policy "social own read" on public.social_connections
   for select to authenticated using (auth.email() = user_email);
@@ -125,6 +135,10 @@ create policy "social own read" on public.social_connections
 drop policy if exists "social own insert" on public.social_connections;
 create policy "social own insert" on public.social_connections
   for insert to authenticated with check (auth.email() = user_email);
+
+drop policy if exists "social own update" on public.social_connections;
+create policy "social own update" on public.social_connections
+  for update to authenticated using (auth.email() = user_email) with check (auth.email() = user_email);
 
 drop policy if exists "social own delete" on public.social_connections;
 create policy "social own delete" on public.social_connections

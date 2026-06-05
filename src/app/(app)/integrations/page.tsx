@@ -10,6 +10,9 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { fetchSocialConnections, deleteSocialConnection, type SocialConnection } from '@/lib/social'
 import type { IntegrationCategory } from '@/types'
 
+// Plataformas com OAuth real (popup + social_connections no Supabase).
+const OAUTH_PLATFORMS = new Set(['instagram', 'tiktok', 'youtube'])
+
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 
 function Spinner() {
@@ -209,18 +212,20 @@ export default function IntegrationsPage() {
     const onMsg = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return
       const d = e.data as { type?: string; status?: string }
-      if (d?.type !== 'flux:ig') return
-      if (d.status === 'connected') { toast.success('Instagram conectado!'); void refreshConnections() }
+      if (d?.type !== 'flux:social') return
+      if (d.status === 'connected') { toast.success('Conta conectada!'); void refreshConnections() }
       else if (d.status === 'no_ig') toast.error('Nenhuma conta Instagram Business ligada à página do Facebook.')
       else if (d.status === 'noauth') toast.error('Faça login no Flux OS antes de conectar.')
-      else toast.error('Não foi possível conectar o Instagram.')
+      else toast.error('Não foi possível conectar a conta.')
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)
   }, [refreshConnections])
 
-  const igConnections = connections.filter((c) => c.platform === 'instagram')
-  const connectedCount = integrations.filter((i) => i.connected && i.id !== 'instagram').length + (igConnections.length > 0 ? 1 : 0)
+  const connectedPlatforms = new Set(connections.map((c) => c.platform))
+  const connectedCount =
+    integrations.filter((i) => i.connected && !OAUTH_PLATFORMS.has(i.id)).length +
+    [...OAUTH_PLATFORMS].filter((p) => connectedPlatforms.has(p)).length
 
   const filtered = useMemo(() => {
     return integrations.filter((int) => {
@@ -232,13 +237,13 @@ export default function IntegrationsPage() {
   }, [integrations, activeCategory, search])
 
   async function handleConnect(id: string) {
-    // Instagram = OAuth real do Meta (popup).
-    if (id === 'instagram') {
+    // OAuth real (Instagram / TikTok / YouTube) via popup.
+    if (OAUTH_PLATFORMS.has(id)) {
       const w = 600, h = 760
       const left = window.screenX + (window.outerWidth - w) / 2
       const top = window.screenY + (window.outerHeight - h) / 2
-      const popup = window.open('/api/auth/instagram', 'flux_ig_oauth', `width=${w},height=${h},left=${left},top=${top}`)
-      if (!popup) toast.error('Permita popups para conectar o Instagram.')
+      const popup = window.open(`/api/auth/${id}`, `flux_oauth_${id}`, `width=${w},height=${h},left=${left},top=${top}`)
+      if (!popup) toast.error('Permita popups para conectar a conta.')
       return
     }
     await connectInt(id)
@@ -247,10 +252,11 @@ export default function IntegrationsPage() {
   }
 
   async function handleDisconnect(id: string) {
-    if (id === 'instagram') {
-      await Promise.all(igConnections.map((c) => deleteSocialConnection(c.id)))
+    if (OAUTH_PLATFORMS.has(id)) {
+      const rows = connections.filter((c) => c.platform === id)
+      await Promise.all(rows.map((c) => deleteSocialConnection(c.id)))
       await refreshConnections()
-      toast('Instagram desconectado.')
+      toast(`${integrations.find((i) => i.id === id)?.name ?? id} desconectado.`)
       return
     }
     disconnectInt(id)
@@ -403,12 +409,11 @@ export default function IntegrationsPage() {
           >
             <AnimatePresence mode="popLayout">
               {filtered.map((int) => {
-                const isIg = int.id === 'instagram'
-                const connected = isIg ? igConnections.length > 0 : int.connected
-                const handle = isIg
-                  ? igConnections.map((c) => c.account_name).filter(Boolean).join(', ')
-                  : int.handle
-                const avatarUrl = isIg ? igConnections[0]?.avatar_url : undefined
+                const isOAuth = OAUTH_PLATFORMS.has(int.id)
+                const conn = isOAuth ? connections.find((c) => c.platform === int.id) : undefined
+                const connected = isOAuth ? !!conn : int.connected
+                const handle = isOAuth ? (conn?.account_name ?? '') : int.handle
+                const avatarUrl = isOAuth ? conn?.avatar_url : undefined
                 return (
                   <IntegrationCard
                     key={int.id}

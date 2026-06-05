@@ -1,22 +1,9 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import { type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { GRAPH, appOrigin, redirectUri } from '@/lib/meta-oauth'
+import { GRAPH, redirectUri } from '@/lib/meta-oauth'
+import { appOrigin, oauthPopupResponse as finish } from '@/lib/oauth'
 
 export const dynamic = 'force-dynamic'
-
-// Página que fecha o popup e avisa a janela que abriu (Integrações escuta o evento).
-function finish(status: string, origin: string): NextResponse {
-  const s = JSON.stringify(status)
-  const o = JSON.stringify(origin)
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Flux OS</title></head>
-<body style="margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#131312;color:#aaa;font-family:system-ui">
-<p>${status === 'connected' ? '✓ Conta conectada. Pode fechar esta janela.' : 'Não foi possível conectar (' + status + ').'}</p>
-<script>
-  try { if (window.opener) { window.opener.postMessage({ type: 'flux:ig', status: ${s} }, ${o}); window.close(); } } catch (e) {}
-  setTimeout(function(){ try { location.href = ${o} + '/integrations?ig=' + ${s}; } catch(e){} }, 900);
-</script></body></html>`
-  return new NextResponse(html, { headers: { 'content-type': 'text/html; charset=utf-8' } })
-}
 
 interface MetaPage {
   name: string
@@ -24,7 +11,7 @@ interface MetaPage {
   instagram_business_account?: { id: string; username?: string; profile_picture_url?: string }
 }
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams
   const origin = appOrigin(request)
   const code = sp.get('code')
@@ -87,9 +74,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     if (rows.length === 0) return finish('no_ig', origin) // nenhuma conta IG business ligada à página
 
-    // Substitui as conexões IG anteriores deste usuário (idempotente).
-    await supabase.from('social_connections').delete().eq('user_email', email).eq('platform', 'instagram')
-    const { error } = await supabase.from('social_connections').insert(rows)
+    // Uma conexão por plataforma (upsert na conta primária).
+    const { error } = await supabase
+      .from('social_connections')
+      .upsert(rows[0], { onConflict: 'user_email,platform' })
     if (error) return finish('save_error', origin)
 
     return finish('connected', origin)
