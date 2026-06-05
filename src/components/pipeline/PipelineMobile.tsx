@@ -241,8 +241,8 @@ function CreateTaskSheet({
       onClose={() => { reset(); onClose() }}
       title={t('pipeline.newTask')}
       height="full"
-      footer={
-        <button onClick={submit} className="w-full h-12 rounded-xl text-[15px] font-semibold text-white" style={{ background: '#E0201A' }}>
+      headerAction={
+        <button onClick={submit} className="h-9 px-4 rounded-lg text-[13px] font-semibold text-white" style={{ background: '#E0201A' }}>
           {t('pipeline.createTask')}
         </button>
       }

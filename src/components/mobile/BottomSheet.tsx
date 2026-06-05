@@ -7,6 +7,8 @@ interface BottomSheetProps {
   onClose: () => void
   title?: string
   children: React.ReactNode
+  /** Ação fixa no cabeçalho (ex.: botão Criar) — sempre visível no topo. */
+  headerAction?: React.ReactNode
   /** Conteúdo fixo no rodapé (ex.: botão de submit) — sobe acima do teclado. */
   footer?: React.ReactNode
   height?: 'auto' | 'half' | 'full'
@@ -17,7 +19,7 @@ interface BottomSheetProps {
  * O rodapé (footer) respeita a safe-area do iPhone e sobe acima do teclado virtual
  * via visualViewport — o botão de submit nunca fica escondido.
  */
-export function BottomSheet({ isOpen, onClose, title, children, footer, height = 'auto' }: BottomSheetProps) {
+export function BottomSheet({ isOpen, onClose, title, children, headerAction, footer, height = 'auto' }: BottomSheetProps) {
   const [kb, setKb] = useState(0)
 
   useEffect(() => {
@@ -78,9 +80,10 @@ export function BottomSheet({ isOpen, onClose, title, children, footer, height =
               <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--border-mid)' }} />
             </div>
 
-            {title && (
-              <div className="px-5 pb-2 shrink-0 text-[16px] font-bold" style={{ color: 'var(--txt)' }}>
-                {title}
+            {(title || headerAction) && (
+              <div className="px-5 pb-2 shrink-0 flex items-center justify-between gap-3">
+                <span className="text-[16px] font-bold truncate" style={{ color: 'var(--txt)' }}>{title}</span>
+                {headerAction && <div className="shrink-0">{headerAction}</div>}
               </div>
             )}
 
