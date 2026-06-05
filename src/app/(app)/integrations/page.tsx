@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { Search, Plug } from 'lucide-react'
@@ -7,6 +7,7 @@ import { useIntegrationsStore } from '@/store/useIntegrationsStore'
 import { INTEGRATION_CATEGORIES, INTEGRATIONS } from '@/lib/constants'
 import { IntegrationIcon } from '@/components/ui/PlatformIcon'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { fetchSocialConnections, deleteSocialConnection, type SocialConnection } from '@/lib/social'
 import type { IntegrationCategory } from '@/types'
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
@@ -38,13 +39,14 @@ interface CardProps {
   bg: string
   connected: boolean
   handle: string
+  avatarUrl?: string | null
   isConnecting: boolean
   onConnect: (id: string) => void
   onDisconnect: (id: string) => void
 }
 
 function IntegrationCard({
-  id, name, desc, icon, bg, connected, handle, isConnecting, onConnect, onDisconnect,
+  id, name, desc, icon, bg, connected, handle, avatarUrl, isConnecting, onConnect, onDisconnect,
 }: CardProps) {
   return (
     <motion.div
@@ -76,9 +78,15 @@ function IntegrationCard({
           justifyContent: 'center',
           flexShrink: 0,
           color: connected ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.7)',
+          overflow: 'hidden',
         }}
       >
-        <IntegrationIcon id={id} size={20} />
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt={handle || name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <IntegrationIcon id={id} size={20} />
+        )}
       </div>
 
       {/* Info */}
@@ -187,8 +195,32 @@ export default function IntegrationsPage() {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('Todos')
+  const [connections, setConnections] = useState<SocialConnection[]>([])
 
-  const connectedCount = integrations.filter((i) => i.connected).length
+  const refreshConnections = useCallback(async () => {
+    setConnections(await fetchSocialConnections())
+  }, [])
+
+  // Conexões OAuth reais (Instagram) do Supabase.
+  useEffect(() => { void refreshConnections() }, [refreshConnections])
+
+  // O popup do OAuth avisa quando termina (postMessage do callback).
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return
+      const d = e.data as { type?: string; status?: string }
+      if (d?.type !== 'flux:ig') return
+      if (d.status === 'connected') { toast.success('Instagram conectado!'); void refreshConnections() }
+      else if (d.status === 'no_ig') toast.error('Nenhuma conta Instagram Business ligada à página do Facebook.')
+      else if (d.status === 'noauth') toast.error('Faça login no Flux OS antes de conectar.')
+      else toast.error('Não foi possível conectar o Instagram.')
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
+  }, [refreshConnections])
+
+  const igConnections = connections.filter((c) => c.platform === 'instagram')
+  const connectedCount = integrations.filter((i) => i.connected && i.id !== 'instagram').length + (igConnections.length > 0 ? 1 : 0)
 
   const filtered = useMemo(() => {
     return integrations.filter((int) => {
@@ -200,12 +232,27 @@ export default function IntegrationsPage() {
   }, [integrations, activeCategory, search])
 
   async function handleConnect(id: string) {
+    // Instagram = OAuth real do Meta (popup).
+    if (id === 'instagram') {
+      const w = 600, h = 760
+      const left = window.screenX + (window.outerWidth - w) / 2
+      const top = window.screenY + (window.outerHeight - h) / 2
+      const popup = window.open('/api/auth/instagram', 'flux_ig_oauth', `width=${w},height=${h},left=${left},top=${top}`)
+      if (!popup) toast.error('Permita popups para conectar o Instagram.')
+      return
+    }
     await connectInt(id)
     const int = integrations.find((i) => i.id === id)
     toast.success(`${int?.name ?? id} conectado com sucesso!`)
   }
 
-  function handleDisconnect(id: string) {
+  async function handleDisconnect(id: string) {
+    if (id === 'instagram') {
+      await Promise.all(igConnections.map((c) => deleteSocialConnection(c.id)))
+      await refreshConnections()
+      toast('Instagram desconectado.')
+      return
+    }
     disconnectInt(id)
     const int = integrations.find((i) => i.id === id)
     toast(`${int?.name ?? id} desconectado.`)
@@ -355,21 +402,30 @@ export default function IntegrationsPage() {
             }}
           >
             <AnimatePresence mode="popLayout">
-              {filtered.map((int) => (
-                <IntegrationCard
-                  key={int.id}
-                  id={int.id}
-                  name={int.name}
-                  desc={int.desc}
-                  icon={int.icon}
-                  bg={int.bg}
-                  connected={int.connected}
-                  handle={int.handle}
-                  isConnecting={connecting === int.id}
-                  onConnect={handleConnect}
-                  onDisconnect={handleDisconnect}
-                />
-              ))}
+              {filtered.map((int) => {
+                const isIg = int.id === 'instagram'
+                const connected = isIg ? igConnections.length > 0 : int.connected
+                const handle = isIg
+                  ? igConnections.map((c) => c.account_name).filter(Boolean).join(', ')
+                  : int.handle
+                const avatarUrl = isIg ? igConnections[0]?.avatar_url : undefined
+                return (
+                  <IntegrationCard
+                    key={int.id}
+                    id={int.id}
+                    name={int.name}
+                    desc={int.desc}
+                    icon={int.icon}
+                    bg={int.bg}
+                    connected={connected}
+                    handle={handle}
+                    avatarUrl={avatarUrl}
+                    isConnecting={connecting === int.id}
+                    onConnect={handleConnect}
+                    onDisconnect={handleDisconnect}
+                  />
+                )
+              })}
             </AnimatePresence>
           </motion.div>
         )}

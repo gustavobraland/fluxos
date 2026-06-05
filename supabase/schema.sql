@@ -101,3 +101,31 @@ drop trigger if exists trg_enforce_team_role on public.user_onboarding;
 create trigger trg_enforce_team_role
   before insert or update on public.user_onboarding
   for each row execute function public.enforce_team_role();
+
+-- ─── Conexões sociais (OAuth Meta: Instagram / Facebook) ─────────────────────
+create table if not exists public.social_connections (
+  id           uuid primary key default gen_random_uuid(),
+  user_email   text not null,
+  platform     text not null,                 -- 'instagram' | 'facebook'
+  access_token text not null,                 -- page token (publica em nome da página/IG)
+  account_id   text,                          -- IG business account id (ou page id)
+  account_name text,                          -- @username / nome da página
+  avatar_url   text,                          -- foto do perfil (UI)
+  expires_at   timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+alter table public.social_connections enable row level security;
+
+-- Cada usuário lê/insere/apaga apenas as próprias conexões (via JWT do login).
+drop policy if exists "social own read" on public.social_connections;
+create policy "social own read" on public.social_connections
+  for select to authenticated using (auth.email() = user_email);
+
+drop policy if exists "social own insert" on public.social_connections;
+create policy "social own insert" on public.social_connections
+  for insert to authenticated with check (auth.email() = user_email);
+
+drop policy if exists "social own delete" on public.social_connections;
+create policy "social own delete" on public.social_connections
+  for delete to authenticated using (auth.email() = user_email);

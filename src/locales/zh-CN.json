@@ -291,6 +291,7 @@
       "igFirstDesc": "Instagram优先"
     },
     "platformsLabel": "平台",
+    "accountLabel": "发布账号",
     "captionLabel": "正文",
     "captionPlaceholder": "在此输入正文，或使用AI生成…",
     "aiBtn": "✦ AI",

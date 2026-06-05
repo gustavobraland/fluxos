@@ -17,6 +17,7 @@ import { useShallow } from 'zustand/shallow'
 import { toast } from 'sonner'
 import { useTranslation } from '@/hooks/useTranslation'
 import { usePermission } from '@/hooks/usePermission'
+import { fetchSocialConnections, type SocialConnection } from '@/lib/social'
 import type { PlatformId as TaskPlatformId } from '@/types'
 
 const TZ = 'America/Sao_Paulo'
@@ -73,6 +74,19 @@ export default function MultipostPage() {
   const [publishing, setPublishing] = useState(false)
   const [published, setPublished] = useState(false)
   const [varValues, setVarValues] = useState<Record<string, string>>({})
+
+  // Contas sociais conectadas (OAuth) — para escolher onde publicar.
+  const [connections, setConnections] = useState<SocialConnection[]>([])
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+  useEffect(() => {
+    let on = true
+    void fetchSocialConnections().then((c) => {
+      if (!on) return
+      setConnections(c)
+      setSelectedAccountId((prev) => prev ?? c[0]?.account_id ?? null)
+    })
+    return () => { on = false }
+  }, [])
 
   // Dynamic {{variavel}} placeholders detected in the base copy (from a prompt)
   const vars = useMemo(() => {
@@ -339,6 +353,46 @@ export default function MultipostPage() {
               })}
             </div>
           </section>
+
+          {/* Contas conectadas (OAuth) — escolha onde publicar */}
+          {connections.length > 0 && (
+            <section>
+              <p
+                className="uppercase"
+                style={{ fontSize: 10, fontWeight: 600, color: 'var(--txt3)', marginBottom: 8, letterSpacing: '0.08em' }}
+              >
+                {t('multipost.accountLabel')}
+              </p>
+              <div className="flex flex-wrap" style={{ gap: 6 }}>
+                {connections.map((c) => {
+                  const active = selectedAccountId === c.account_id
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedAccountId(c.account_id)}
+                      className="inline-flex items-center transition-all"
+                      style={{
+                        height: 36, padding: '0 12px 0 6px', gap: 8, borderRadius: 999,
+                        border: `1px solid ${active ? 'rgba(37,99,235,.45)' : 'var(--border-subtle)'}`,
+                        background: active ? 'rgba(37,99,235,.12)' : 'var(--s2)',
+                        color: active ? 'var(--txt)' : 'var(--txt2)', cursor: 'pointer',
+                      }}
+                    >
+                      {c.avatar_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.avatar_url} alt={c.account_name ?? ''} style={{ width: 24, height: 24, borderRadius: '50%', objectFit: 'cover' }} />
+                      ) : (
+                        <span style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--s3)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <PlatformIcon id={c.platform} size={13} />
+                        </span>
+                      )}
+                      <span style={{ fontSize: 12, fontWeight: 600 }}>{c.account_name ?? c.platform}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          )}
 
           {/* Base copy */}
           <section>
