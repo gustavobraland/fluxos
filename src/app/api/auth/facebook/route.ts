@@ -4,7 +4,7 @@ import { callbackUri } from '@/lib/oauth'
 
 export const dynamic = 'force-dynamic'
 
-const SCOPES = 'pages_show_list,pages_read_engagement,pages_manage_posts'
+const SCOPES = 'pages_show_list,pages_read_engagement,instagram_basic,instagram_content_publish'
 
 // Inicia o OAuth do Facebook (publicar em Páginas).
 export async function GET(request: NextRequest): Promise<NextResponse> {
