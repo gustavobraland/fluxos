@@ -22,7 +22,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   url.searchParams.set('response_type', 'code')
   url.searchParams.set('scope', SCOPES)
   url.searchParams.set('access_type', 'offline')
-  url.searchParams.set('prompt', 'consent') // garante refresh_token sempre
+  url.searchParams.set('prompt', 'select_account consent') // seletor de conta + refresh_token
   url.searchParams.set('include_granted_scopes', 'true')
   url.searchParams.set('state', state)
 
