@@ -15,6 +15,8 @@ import {
   triggerGoalContent,
   triggerHalftimeContent,
   triggerMatchEndContent,
+  triggerCardContent,
+  triggerBreakingContent,
 } from './warroom-content'
 import type { FixtureStatus } from '@/types/fixtures'
 import { toast } from 'sonner'
@@ -24,17 +26,21 @@ interface MockStep {
   elapsed: number | null
   goals: { home: number; away: number }
   scorer?: string
+  card?: { side: 'home' | 'away'; player: string; cardType?: 'yellow' | 'red' }
+  breaking?: string
 }
 
-// 7 states, 3 s apart. Final placar 1–1 → pré-pack Empate.
+// 8 states, 3 s apart. Final placar 1–1 → pré-pack Empate.
+// Exercita o copy-engine: gol/cartão = template; intervalo/fim/urgente = IA.
 const SEQUENCE: MockStep[] = [
   { status: 'NS', elapsed: null, goals: { home: 0, away: 0 } }, // 1. não iniciado
   { status: '1H', elapsed: 20,   goals: { home: 0, away: 0 } }, // 2. em jogo, sem gols
-  { status: '1H', elapsed: 35,   goals: { home: 1, away: 0 }, scorer: 'Pedro' },    // 3. gol home
-  { status: 'HT', elapsed: 45,   goals: { home: 1, away: 0 } }, // 4. intervalo → halftime trigger + pausa
-  { status: '2H', elapsed: 65,   goals: { home: 1, away: 0 } }, // 5. 2º tempo
-  { status: '2H', elapsed: 82,   goals: { home: 1, away: 1 }, scorer: 'Endrick' },  // 6. gol away
-  { status: 'FT', elapsed: 90,   goals: { home: 1, away: 1 } }, // 7. fim → match-end + pré-pack Empate + Multipost
+  { status: '1H', elapsed: 35,   goals: { home: 1, away: 0 }, scorer: 'Pedro' },    // 3. gol home (template)
+  { status: 'HT', elapsed: 45,   goals: { home: 1, away: 0 } }, // 4. intervalo → IA (Gemini)
+  { status: '2H', elapsed: 60,   goals: { home: 1, away: 0 }, card: { side: 'away', player: 'Gómez', cardType: 'yellow' } }, // 5. cartão (template)
+  { status: '2H', elapsed: 82,   goals: { home: 1, away: 1 }, scorer: 'Endrick' },  // 6. gol away (template)
+  { status: '2H', elapsed: 86,   goals: { home: 1, away: 1 }, breaking: 'Lance polêmico revisado pelo VAR mantém o empate' }, // 7. urgente → IA (Sonnet)
+  { status: 'FT', elapsed: 90,   goals: { home: 1, away: 1 } }, // 8. fim → IA (Gemini→Sonnet) + pré-pack + Multipost
 ]
 
 const STEP_MS = 3000
@@ -65,6 +71,10 @@ function applyStep(step: MockStep): void {
     if (goals.home > prev.goals.home) triggerGoalContent('home', fx, goals, step.scorer, step.elapsed)
     if (goals.away > prev.goals.away) triggerGoalContent('away', fx, goals, step.scorer, step.elapsed)
   }
+
+  // Eventos extra do copy-engine (demo): cartão (template) e urgente (IA).
+  if (step.card) triggerCardContent(fx, goals, { side: step.card.side, player: step.card.player, cardType: step.card.cardType, minute: step.elapsed })
+  if (step.breaking) triggerBreakingContent(fx, goals, step.breaking)
 
   if (step.status === 'HT') {
     triggerHalftimeContent(fx, goals)

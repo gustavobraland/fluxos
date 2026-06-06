@@ -255,8 +255,14 @@
     },
     "trigger": {
       "goal": "进球",
+      "card": "牌",
+      "substitution": "换人",
+      "var": "VAR",
       "halftime": "中场",
       "fulltime": "终场",
+      "preview": "赛前",
+      "classification": "积分榜",
+      "breaking": "突发",
       "manual": "手动"
     },
     "editInMultipost": "在 Multipost 中编辑",

@@ -255,8 +255,14 @@
     },
     "trigger": {
       "goal": "Gol",
+      "card": "Cartão",
+      "substitution": "Substituição",
+      "var": "VAR",
       "halftime": "Intervalo",
       "fulltime": "Fim de jogo",
+      "preview": "Pré-jogo",
+      "classification": "Classificação",
+      "breaking": "Urgente",
       "manual": "Manual"
     },
     "editInMultipost": "Editar no Multipost",

@@ -50,7 +50,10 @@ export interface LiveData {
 
 // ─── Content queue ────────────────────────────────────────────────────────────
 
-export type QueueTrigger = 'goal' | 'halftime' | 'fulltime' | 'manual'
+export type QueueTrigger =
+  | 'goal' | 'card' | 'substitution' | 'var'
+  | 'halftime' | 'fulltime' | 'preview' | 'classification' | 'breaking'
+  | 'manual'
 export type QueueStatus = 'generating' | 'ready' | 'review' | 'published' | 'deploy'
 
 export interface QueueItem {
