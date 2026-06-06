@@ -289,8 +289,10 @@ export default function MultipostPage() {
       })
       if (up.error) throw up.error
       mediaUrl = supabase.storage.from('media').getPublicUrl(path).data.publicUrl
-    } catch {
-      toast.error(t('multipost.toastApi.uploadFailed'))
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error('Upload error:', e)
+      toast.error(`${t('multipost.toastApi.uploadFailed')} (${msg})`, { duration: 9000 })
       return 0
     }
 
