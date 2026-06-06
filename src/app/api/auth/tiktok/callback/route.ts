@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { appOrigin, callbackUri, oauthPopupResponse as finish } from '@/lib/oauth'
+import { appOrigin, callbackUri, oauthPopupResponse as finish, saveSocialConnection } from '@/lib/oauth'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,23 +56,23 @@ export async function GET(request: NextRequest) {
       profile = uJson?.data?.user ?? profile
     } catch { /* segue sem perfil */ }
 
-    const { error } = await supabase.from('social_connections').upsert(
-      {
-        user_email: email,
-        platform: 'tiktok',
-        access_token: tok.access_token,
-        refresh_token: tok.refresh_token ?? null,
-        account_id: profile.open_id ?? tok.open_id ?? null,
-        account_name: profile.display_name ?? 'TikTok',
-        avatar_url: profile.avatar_url ?? null,
-        expires_at: expiresAt,
-      },
-      { onConflict: 'user_email,platform' },
-    )
-    if (error) return finish('save_error', origin)
+    const { error } = await saveSocialConnection(supabase, {
+      user_email: email,
+      platform: 'tiktok',
+      access_token: tok.access_token,
+      refresh_token: tok.refresh_token ?? null,
+      account_id: profile.open_id ?? tok.open_id ?? null,
+      account_name: profile.display_name ?? 'TikTok',
+      expires_at: expiresAt,
+    }, profile.avatar_url ?? null)
+    if (error) {
+      console.error('[oauth/tiktok] save_error:', error)
+      return finish('save_error', origin, error)
+    }
 
     return finish('connected', origin)
-  } catch {
-    return finish('error', origin)
+  } catch (e) {
+    console.error('[oauth/tiktok] exception:', e)
+    return finish('error', origin, e instanceof Error ? e.message : String(e))
   }
 }

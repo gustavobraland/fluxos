@@ -211,12 +211,16 @@ export default function IntegrationsPage() {
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       if (e.origin !== window.location.origin) return
-      const d = e.data as { type?: string; status?: string }
+      const d = e.data as { type?: string; status?: string; detail?: string }
       if (d?.type !== 'flux:social') return
-      if (d.status === 'connected') { toast.success('Conta conectada!'); void refreshConnections() }
-      else if (d.status === 'no_ig') toast.error('Nenhuma conta Instagram Business ligada à página do Facebook.')
-      else if (d.status === 'noauth') toast.error('Faça login no Flux OS antes de conectar.')
-      else toast.error('Não foi possível conectar a conta.')
+      if (d.status === 'connected') { toast.success('Conta conectada!'); void refreshConnections(); return }
+      // Mostra a causa real quando houver (token/coluna/etc.).
+      const generic =
+        d.status === 'no_ig' ? 'Nenhuma conta Instagram Business ligada à página do Facebook.'
+        : d.status === 'no_page' ? 'Nenhuma Página do Facebook encontrada nesta conta.'
+        : d.status === 'noauth' ? 'Faça login no Flux OS antes de conectar.'
+        : 'Não foi possível conectar a conta.'
+      toast.error(d.detail ? `${generic} (${d.detail})` : generic, { duration: 8000 })
     }
     window.addEventListener('message', onMsg)
     return () => window.removeEventListener('message', onMsg)

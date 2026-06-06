@@ -1,6 +1,6 @@
 import { type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { appOrigin, callbackUri, oauthPopupResponse as finish } from '@/lib/oauth'
+import { appOrigin, callbackUri, oauthPopupResponse as finish, saveSocialConnection } from '@/lib/oauth'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
       }),
     })
     const tok = await tokenRes.json()
-    if (!tok.access_token) return finish('token', origin)
+    if (!tok.access_token) {
+      console.error('[oauth/youtube] token exchange falhou:', tok)
+      return finish('token', origin, tok.error_description || tok.error || JSON.stringify(tok).slice(0, 300))
+    }
 
     const expiresAt = tok.expires_in
       ? new Date(Date.now() + tok.expires_in * 1000).toISOString()
@@ -61,23 +64,23 @@ export async function GET(request: NextRequest) {
       }
     } catch { /* segue sem canal */ }
 
-    const { error } = await supabase.from('social_connections').upsert(
-      {
-        user_email: email,
-        platform: 'youtube',
-        access_token: tok.access_token,
-        refresh_token: tok.refresh_token ?? null,
-        account_id: channelId,
-        account_name: name,
-        avatar_url: avatar,
-        expires_at: expiresAt,
-      },
-      { onConflict: 'user_email,platform' },
-    )
-    if (error) return finish('save_error', origin)
+    const { error } = await saveSocialConnection(supabase, {
+      user_email: email,
+      platform: 'youtube',
+      access_token: tok.access_token,
+      refresh_token: tok.refresh_token ?? null,
+      account_id: channelId,
+      account_name: name,
+      expires_at: expiresAt,
+    }, avatar)
+    if (error) {
+      console.error('[oauth/youtube] save_error:', error)
+      return finish('save_error', origin, error)
+    }
 
     return finish('connected', origin)
-  } catch {
-    return finish('error', origin)
+  } catch (e) {
+    console.error('[oauth/youtube] exception:', e)
+    return finish('error', origin, e instanceof Error ? e.message : String(e))
   }
 }

@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { GRAPH } from '@/lib/meta-oauth'
-import { appOrigin, callbackUri, oauthPopupResponse as finish } from '@/lib/oauth'
+import { appOrigin, callbackUri, oauthPopupResponse as finish, saveSocialConnection } from '@/lib/oauth'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +37,10 @@ export async function GET(request: NextRequest) {
       + `&redirect_uri=${encodeURIComponent(callbackUri(request, 'facebook'))}`
       + `&client_secret=${secret}&code=${encodeURIComponent(code)}`
     const short = await (await fetch(shortUrl)).json()
-    if (!short.access_token) return finish('token', origin)
+    if (!short.access_token) {
+      console.error('[oauth/facebook] token exchange falhou:', short)
+      return finish('token', origin, short?.error?.message || JSON.stringify(short).slice(0, 300))
+    }
 
     // token longo
     const llUrl = `${GRAPH}/oauth/access_token?grant_type=fb_exchange_token`
@@ -50,24 +53,27 @@ export async function GET(request: NextRequest) {
     const pagesUrl = `${GRAPH}/me/accounts?fields=name,access_token,picture{url}&access_token=${userToken}`
     const pages = await (await fetch(pagesUrl)).json()
     const page: FBPage | undefined = (pages.data ?? [])[0]
-    if (!page?.id) return finish('no_page', origin)
+    if (!page?.id) {
+      console.error('[oauth/facebook] sem páginas:', pages)
+      return finish('no_page', origin, pages?.error?.message || 'Nenhuma Página do Facebook encontrada para esta conta.')
+    }
 
-    const { error } = await supabase.from('social_connections').upsert(
-      {
-        user_email: email,
-        platform: 'facebook',
-        access_token: page.access_token,
-        account_id: page.id,
-        account_name: page.name,
-        avatar_url: page.picture?.data?.url ?? null,
-        expires_at: expiresAt,
-      },
-      { onConflict: 'user_email,platform' },
-    )
-    if (error) return finish('save_error', origin)
+    const { error } = await saveSocialConnection(supabase, {
+      user_email: email,
+      platform: 'facebook',
+      access_token: page.access_token,
+      account_id: page.id,
+      account_name: page.name,
+      expires_at: expiresAt,
+    }, page.picture?.data?.url ?? null)
+    if (error) {
+      console.error('[oauth/facebook] save_error:', error)
+      return finish('save_error', origin, error)
+    }
 
     return finish('connected', origin)
-  } catch {
-    return finish('error', origin)
+  } catch (e) {
+    console.error('[oauth/facebook] exception:', e)
+    return finish('error', origin, e instanceof Error ? e.message : String(e))
   }
 }

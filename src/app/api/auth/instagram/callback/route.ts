@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { GRAPH, redirectUri } from '@/lib/meta-oauth'
-import { appOrigin, oauthPopupResponse as finish } from '@/lib/oauth'
+import { appOrigin, oauthPopupResponse as finish, saveSocialConnection } from '@/lib/oauth'
 
 export const dynamic = 'force-dynamic'
 
@@ -61,27 +61,31 @@ export async function GET(request: NextRequest) {
     const rows = list
       .filter((p) => p.instagram_business_account?.id)
       .map((p) => ({
-        user_email: email,
-        platform: 'instagram',
-        access_token: p.access_token,
-        account_id: p.instagram_business_account!.id,
-        account_name: p.instagram_business_account!.username
-          ? '@' + p.instagram_business_account!.username
-          : p.name,
-        avatar_url: p.instagram_business_account!.profile_picture_url ?? null,
-        expires_at: expiresAt,
+        base: {
+          user_email: email,
+          platform: 'instagram',
+          access_token: p.access_token,
+          account_id: p.instagram_business_account!.id,
+          account_name: p.instagram_business_account!.username
+            ? '@' + p.instagram_business_account!.username
+            : p.name,
+          expires_at: expiresAt,
+        },
+        avatar: p.instagram_business_account!.profile_picture_url ?? null,
       }))
 
     if (rows.length === 0) return finish('no_ig', origin) // nenhuma conta IG business ligada à página
 
-    // Uma conexão por plataforma (upsert na conta primária).
-    const { error } = await supabase
-      .from('social_connections')
-      .upsert(rows[0], { onConflict: 'user_email,platform' })
-    if (error) return finish('save_error', origin)
+    // Uma conexão por plataforma (conta primária).
+    const { error } = await saveSocialConnection(supabase, rows[0].base, rows[0].avatar)
+    if (error) {
+      console.error('[oauth/instagram] save_error:', error)
+      return finish('save_error', origin, error)
+    }
 
     return finish('connected', origin)
-  } catch {
-    return finish('error', origin)
+  } catch (e) {
+    console.error('[oauth/instagram] exception:', e)
+    return finish('error', origin, e instanceof Error ? e.message : String(e))
   }
 }
