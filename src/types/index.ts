@@ -31,6 +31,7 @@ export interface Task {
   priorityLevel?: 'low' | 'medium' | 'high'
   assignees?: string[]
   tags?: string[]
+  referenceUrl?: string  // Link de referência (Drive, Figma, etc.)
   createdAt: string
 }
 

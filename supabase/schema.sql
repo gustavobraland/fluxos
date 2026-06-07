@@ -179,6 +179,7 @@ create table if not exists public.pipeline_tasks (
   priority       boolean default false,
   priority_level text,                          -- 'low' | 'medium' | 'high'
   tags           text[],
+  reference_url  text,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );

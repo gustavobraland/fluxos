@@ -6,10 +6,11 @@ import {
   type DragStartEvent, type DragEndEvent, type DragOverEvent, type CollisionDetection,
 } from '@dnd-kit/core'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Filter, SlidersHorizontal, X, Star, Clock, Tag, Trash2, ChevronDown } from 'lucide-react'
+import { Plus, Filter, SlidersHorizontal, X, Clock, Tag, Trash2, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePipelineStore } from '@/store/usePipelineStore'
 import { PIPELINE_COLUMNS, PLATFORMS } from '@/lib/constants'
+import { TEAM, ROLE_LABELS } from '@/lib/onboarding-config'
 import { PipelineColumn } from './PipelineColumn'
 import { TaskCard } from './TaskCard'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
@@ -19,10 +20,14 @@ import { PipelineMobile } from './PipelineMobile'
 import type { Task, TaskStatus, TaskType, PlatformId } from '@/types'
 
 const TASK_TYPES: TaskType[] = ['Copy', 'Design', 'Motion', 'Copy + Design', 'Estratégia']
+
+// Plataformas relevantes para o Pipeline (sem Twitter / LinkedIn)
+const PIPELINE_PLATFORMS = PLATFORMS.filter(p => !['twitter', 'linkedin'].includes(p.id))
+
 const PRIORITY_OPTIONS = [
-  { value: 'low',    labelKey: 'pipeline.priorities.low',    color: '#5B5B7A' },
-  { value: 'medium', labelKey: 'pipeline.priorities.medium', color: '#F5C842' },
-  { value: 'high',   labelKey: 'pipeline.priorities.high',   color: '#E0201A' },
+  { value: 'low',    label: 'Baixa', color: '#5B5B7A' },
+  { value: 'medium', label: 'Média', color: '#F5C842' },
+  { value: 'high',   label: 'Alta',  color: '#E0201A' },
 ] as const
 
 type PriorityLevel = 'low' | 'medium' | 'high'
@@ -52,25 +57,58 @@ const fieldStyle = {
   outline: 'none',
 }
 
+// ─── Priority Buttons (uniform style) ─────────────────────────────────────────
+
+function PriorityGroup({ value, onChange }: { value: PriorityLevel; onChange: (v: PriorityLevel) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 8 }}>
+      {PRIORITY_OPTIONS.map(opt => {
+        const active = value === opt.value
+        return (
+          <button
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            style={{
+              flex: 1, height: 34, borderRadius: 8, fontSize: 12, fontWeight: 600,
+              border: active ? `1px solid ${opt.color}` : '1px solid var(--border-subtle)',
+              background: active ? opt.color + '20' : 'var(--s2)',
+              color: active ? opt.color : 'var(--txt2)',
+              cursor: 'pointer', fontFamily: 'inherit',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              transition: 'all 0.15s',
+            }}
+          >
+            <span style={{
+              width: 7, height: 7, borderRadius: 99, flexShrink: 0,
+              background: opt.color, opacity: active ? 1 : 0.35,
+            }} />
+            {opt.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // ─── Task Detail / Edit Modal ─────────────────────────────────────────────────
 
 function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void }) {
   const { t } = useTranslation()
   const { updateTask, deleteTask } = usePipelineStore()
 
-  const [title, setTitle]           = useState(task.title)
+  const [title, setTitle]             = useState(task.title)
   const [description, setDescription] = useState(task.description ?? '')
-  const [type, setType]             = useState<TaskType>(task.type)
-  const [status, setStatus]         = useState<TaskStatus>(task.status)
-  const [priorityLevel, setPriority]= useState<PriorityLevel>(task.priorityLevel ?? 'medium')
-  const [dueDate, setDueDate]       = useState(task.dueDate ?? '')
-  const [platforms, setPlatforms]   = useState<PlatformId[]>(task.platforms)
-  const [tagsRaw, setTagsRaw]       = useState((task.tags ?? []).join(', '))
+  const [type, setType]               = useState<TaskType>(task.type)
+  const [status, setStatus]           = useState<TaskStatus>(task.status)
+  const [priorityLevel, setPriority]  = useState<PriorityLevel>(task.priorityLevel ?? 'medium')
+  const [dueDate, setDueDate]         = useState(task.dueDate ?? '')
+  const [platforms, setPlatforms]     = useState<PlatformId[]>(task.platforms)
+  const [tagsRaw, setTagsRaw]         = useState((task.tags ?? []).join(', '))
+  const [assignee, setAssignee]       = useState<string>(task.assignees?.[0] ?? '')
+  const [referenceUrl, setReferenceUrl] = useState<string>(task.referenceUrl ?? '')
 
   function togglePlatform(id: PlatformId) {
-    setPlatforms(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    )
+    setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
   }
 
   function handleSave() {
@@ -85,6 +123,8 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
       dueDate: dueDate || undefined,
       platforms,
       tags: tagsRaw.split(',').map(tag => tag.trim()).filter(Boolean),
+      assignees: assignee ? [assignee] : [],
+      referenceUrl: referenceUrl.trim() || undefined,
     })
     toast.success(t('pipeline.taskUpdated'))
     onClose()
@@ -155,7 +195,7 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
             />
           </div>
 
-          {/* Type + Status row */}
+          {/* Type + Status */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.typeLabel')}</label>
@@ -179,33 +219,21 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
             </div>
           </div>
 
-          {/* Priority */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.priorityLabel')}</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {PRIORITY_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setPriority(opt.value)}
-                  style={{
-                    flex: 1, height: 34, borderRadius: 8, fontSize: 12, fontWeight: 600,
-                    border: priorityLevel === opt.value ? `1px solid ${opt.color}` : '1px solid var(--border-subtle)',
-                    background: priorityLevel === opt.value ? opt.color + '20' : 'var(--s2)',
-                    color: priorityLevel === opt.value ? opt.color : 'var(--txt2)',
-                    cursor: 'pointer', fontFamily: 'inherit',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {opt.value === 'high' && <Star size={11} style={{ fill: 'currentColor' }} />}
-                  {t(opt.labelKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Due date + Tags row */}
+          {/* Atribuir para + Data de entrega */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Atribuir para</label>
+              <select
+                value={assignee}
+                onChange={e => setAssignee(e.target.value)}
+                style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12 }}
+              >
+                <option value="">— Ninguém —</option>
+                {TEAM.map(m => (
+                  <option key={m.email} value={m.email}>{m.name} · {ROLE_LABELS[m.role]}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
                 <Clock size={10} style={{ display: 'inline', marginRight: 4 }} />
@@ -218,25 +246,49 @@ function TaskDetailModal({ task, onClose }: { task: Task; onClose: () => void })
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }}
               />
             </div>
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
-                <Tag size={10} style={{ display: 'inline', marginRight: 4 }} />
-                {t('pipeline.tagsCommaLabel')}
-              </label>
-              <input
-                value={tagsRaw}
-                onChange={e => setTagsRaw(e.target.value)}
-                placeholder={t('pipeline.tagsExampleEdit')}
-                style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }}
-              />
-            </div>
           </div>
 
-          {/* Platforms */}
+          {/* Prioridade */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.priorityLabel')}</label>
+            <PriorityGroup value={priorityLevel} onChange={setPriority} />
+          </div>
+
+          {/* Link de referência */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
+              <Link2 size={10} style={{ display: 'inline', marginRight: 4 }} />
+              Link de referência{' '}
+              <span style={{ fontWeight: 400, color: 'var(--txt3)' }}>(opcional)</span>
+            </label>
+            <input
+              type="url"
+              value={referenceUrl}
+              onChange={e => setReferenceUrl(e.target.value)}
+              placeholder="https://drive.google.com/... ou Figma"
+              style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 10px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
+              <Tag size={10} style={{ display: 'inline', marginRight: 4 }} />
+              {t('pipeline.tagsCommaLabel')}
+            </label>
+            <input
+              value={tagsRaw}
+              onChange={e => setTagsRaw(e.target.value)}
+              placeholder={t('pipeline.tagsExampleEdit')}
+              style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {/* Plataformas */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.platformsLabel')}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {PLATFORMS.map(p => {
+              {PIPELINE_PLATFORMS.map(p => {
                 const sel = platforms.includes(p.id)
                 return (
                   <button
@@ -280,19 +332,19 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
   const { t } = useTranslation()
   const { addTask } = usePipelineStore()
 
-  const [title, setTitle]             = useState('')
-  const [description, setDescription] = useState('')
-  const [type, setType]               = useState<TaskType>('Copy + Design')
-  const [status, setStatus]           = useState<TaskStatus>(defaultStatus)
-  const [priorityLevel, setPriority]  = useState<PriorityLevel>('medium')
-  const [dueDate, setDueDate]         = useState('')
-  const [platforms, setPlatforms]     = useState<PlatformId[]>(['instagram'])
-  const [tagsRaw, setTagsRaw]         = useState('')
+  const [title, setTitle]               = useState('')
+  const [description, setDescription]   = useState('')
+  const [type, setType]                 = useState<TaskType>('Copy + Design')
+  const [status, setStatus]             = useState<TaskStatus>(defaultStatus)
+  const [priorityLevel, setPriority]    = useState<PriorityLevel>('medium')
+  const [dueDate, setDueDate]           = useState('')
+  const [platforms, setPlatforms]       = useState<PlatformId[]>(['instagram'])
+  const [tagsRaw, setTagsRaw]           = useState('')
+  const [assignee, setAssignee]         = useState<string>('')
+  const [referenceUrl, setReferenceUrl] = useState<string>('')
 
   function togglePlatform(id: PlatformId) {
-    setPlatforms(prev =>
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    )
+    setPlatforms(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])
   }
 
   function handleCreate() {
@@ -308,6 +360,8 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
       dueDate: dueDate || undefined,
       platforms,
       tags: tagsRaw.split(',').map(tag => tag.trim()).filter(Boolean),
+      assignees: assignee ? [assignee] : [],
+      referenceUrl: referenceUrl.trim() || undefined,
     })
     toast.success(t('pipeline.toast.created'))
     onClose()
@@ -336,7 +390,7 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
         {/* Body */}
         <div style={{ overflowY: 'auto', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {/* Title */}
+          {/* Título */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.titleStar')}</label>
             <input
@@ -349,7 +403,7 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
             />
           </div>
 
-          {/* Description */}
+          {/* Descrição */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.descriptionLabel')}</label>
             <textarea
@@ -361,7 +415,7 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
             />
           </div>
 
-          {/* Type + Status */}
+          {/* Tipo + Status */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.typeLabel')}</label>
@@ -379,50 +433,68 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
             </div>
           </div>
 
-          {/* Priority */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.priorityLabel')}</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {PRIORITY_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  onClick={() => setPriority(opt.value)}
-                  style={{
-                    flex: 1, height: 34, borderRadius: 8, fontSize: 12, fontWeight: 600,
-                    border: priorityLevel === opt.value ? `1px solid ${opt.color}` : '1px solid var(--border-subtle)',
-                    background: priorityLevel === opt.value ? opt.color + '20' : 'var(--s2)',
-                    color: priorityLevel === opt.value ? opt.color : 'var(--txt2)',
-                    cursor: 'pointer', fontFamily: 'inherit',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {opt.value === 'high' && <Star size={11} style={{ fill: 'currentColor' }} />}
-                  {t(opt.labelKey)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Due date + Tags */}
+          {/* Atribuir para + Data de entrega */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.dueDateLabelShort')}</label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>Atribuir para</label>
+              <select
+                value={assignee}
+                onChange={e => setAssignee(e.target.value)}
+                style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12 }}
+              >
+                <option value="">— Ninguém —</option>
+                {TEAM.map(m => (
+                  <option key={m.email} value={m.email}>{m.name} · {ROLE_LABELS[m.role]}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
+                <Clock size={10} style={{ display: 'inline', marginRight: 4 }} />
+                {t('pipeline.dueDateLabelShort')}
+              </label>
               <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
                 style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }} />
             </div>
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>{t('pipeline.tagsLabel')}</label>
-              <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)} placeholder={t('pipeline.tagsExampleCreate')}
-                style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }} />
-            </div>
           </div>
 
-          {/* Platforms */}
+          {/* Prioridade */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.priorityLabel')}</label>
+            <PriorityGroup value={priorityLevel} onChange={setPriority} />
+          </div>
+
+          {/* Link de referência */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
+              <Link2 size={10} style={{ display: 'inline', marginRight: 4 }} />
+              Link de referência{' '}
+              <span style={{ fontWeight: 400, color: 'var(--txt3)' }}>(opcional)</span>
+            </label>
+            <input
+              type="url"
+              value={referenceUrl}
+              onChange={e => setReferenceUrl(e.target.value)}
+              placeholder="https://drive.google.com/... ou Figma"
+              style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 10px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {/* Tags */}
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 5 }}>
+              <Tag size={10} style={{ display: 'inline', marginRight: 4 }} />
+              {t('pipeline.tagsLabel')}
+            </label>
+            <input value={tagsRaw} onChange={e => setTagsRaw(e.target.value)} placeholder={t('pipeline.tagsExampleCreate')}
+              style={{ ...fieldStyle, width: '100%', height: 36, padding: '0 8px', borderRadius: 8, fontSize: 12, boxSizing: 'border-box' }} />
+          </div>
+
+          {/* Plataformas */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', display: 'block', marginBottom: 8 }}>{t('pipeline.platformsStar')}</label>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {PLATFORMS.map(p => {
+              {PIPELINE_PLATFORMS.map(p => {
                 const sel = platforms.includes(p.id)
                 return (
                   <button key={p.id} onClick={() => togglePlatform(p.id)}
@@ -461,11 +533,6 @@ function CreateTaskModal({ defaultStatus, onClose }: { defaultStatus: TaskStatus
 
 const COL_IDS = PIPELINE_COLUMNS.map(c => c.id) as TaskStatus[]
 
-// Pointer-first collision detection. `closestCorners` measured the dragged
-// card's (224px-wide) corners, so near a column edge it snapped to the
-// NEIGHBOURING column. `pointerWithin` uses the actual cursor position
-// (unambiguous), falling back to rect-intersection only when the pointer is
-// outside every droppable (e.g. over the gap between columns).
 const collisionDetection: CollisionDetection = (args) => {
   const pointer = pointerWithin(args)
   if (pointer.length > 0) return pointer
@@ -475,10 +542,10 @@ const collisionDetection: CollisionDetection = (args) => {
 export function PipelineBoard() {
   const { t } = useTranslation()
   const { tasks, moveTask, reorderTasks, loadTasks } = usePipelineStore()
-  const [activeTask, setActiveTask]   = useState<Task | null>(null)
-  const [showCreate, setShowCreate]   = useState(false)
+  const [activeTask, setActiveTask]     = useState<Task | null>(null)
+  const [showCreate, setShowCreate]     = useState(false)
   const [createStatus, setCreateStatus] = useState<TaskStatus>('backlog')
-  const [editTask, setEditTask]       = useState<Task | null>(null)
+  const [editTask, setEditTask]         = useState<Task | null>(null)
 
   const isMobile = useMediaQuery('(max-width: 768px)')
 
@@ -500,7 +567,6 @@ export function PipelineBoard() {
     return acc
   }, {} as Record<TaskStatus, Task[]>)
 
-  // Resolve which column a droppable id belongs to (column id, or a task's status)
   const statusOf = (id: string): TaskStatus | null => {
     if (COL_IDS.includes(id as TaskStatus)) return id as TaskStatus
     return usePipelineStore.getState().tasks.find(task => task.id === id)?.status ?? null
@@ -510,8 +576,6 @@ export function PipelineBoard() {
     setActiveTask(tasks.find(task => task.id === active.id) || null)
   }
 
-  // Live cross-column move: as the card hovers a different column, switch its
-  // status so it visually flows into that column (canonical multi-container pattern).
   const handleDragOver = ({ active, over }: DragOverEvent) => {
     if (!over || active.id === over.id) return
     const current = usePipelineStore.getState().tasks.find(task => task.id === active.id)
@@ -525,13 +589,11 @@ export function PipelineBoard() {
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveTask(null)
     if (!over) return
-    // Same column (or settling next to a task): finalize order via reorder.
     if (active.id !== over.id && !COL_IDS.includes(over.id as TaskStatus)) {
       reorderTasks(active.id as string, over.id as string)
     }
   }
 
-  // Mobile: lista vertical + bottom sheets (drag & drop não funciona bem no toque)
   if (isMobile) return <PipelineMobile />
 
   return (

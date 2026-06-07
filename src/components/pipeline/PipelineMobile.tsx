@@ -1,10 +1,11 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Plus, Star, Clock, Trash2, Check } from 'lucide-react'
+import { Plus, Star, Clock, Trash2, Check, Link2 } from 'lucide-react'
 import { usePipelineStore } from '@/store/usePipelineStore'
 import { useUserStore } from '@/store/useUserStore'
 import { PIPELINE_COLUMNS, PLATFORMS } from '@/lib/constants'
+import { TEAM, ROLE_LABELS } from '@/lib/onboarding-config'
 import { PlatformIcon } from '@/components/ui/PlatformIcon'
 import { BottomSheet } from '@/components/mobile/BottomSheet'
 import { SwipeableCard } from '@/components/mobile/SwipeableCard'
@@ -15,10 +16,19 @@ const TASK_TYPES: TaskType[] = ['Copy', 'Design', 'Motion', 'Copy + Design', 'Es
 const COL_IDS = PIPELINE_COLUMNS.map((c) => c.id) as TaskStatus[]
 const COL_COLOR: Record<string, string> = Object.fromEntries(PIPELINE_COLUMNS.map((c) => [c.id, c.color]))
 
+// Plataformas relevantes para o Pipeline (sem Twitter / LinkedIn)
+const PIPELINE_PLATFORMS = PLATFORMS.filter(p => !['twitter', 'linkedin'].includes(p.id))
+
 const TYPE_COLORS: Record<string, string> = {
   'Copy': '#A78BFA', 'Design': '#E0201A', 'Motion': '#2563EB',
   'Copy + Design': '#F5C842', 'Estratégia': '#3ECF8E',
 }
+
+const PRIORITY_OPTIONS = [
+  { value: 'low'    as const, label: 'Baixa', color: '#5B5B7A' },
+  { value: 'medium' as const, label: 'Média', color: '#F5C842' },
+  { value: 'high'   as const, label: 'Alta',  color: '#E0201A' },
+]
 
 export function PipelineMobile() {
   const { t } = useTranslation()
@@ -95,6 +105,9 @@ export function PipelineMobile() {
 
               {colTasks.map((task) => {
                 const typeColor = TYPE_COLORS[task.type] || 'var(--txt2)'
+                const assigneeName = task.assignees?.[0]
+                  ? TEAM.find(m => m.email === task.assignees![0])?.name ?? task.assignees![0]
+                  : null
                 return (
                   <SwipeableCard
                     key={task.id}
@@ -126,6 +139,11 @@ export function PipelineMobile() {
                             <span className="flex items-center gap-1 text-[10px] font-mono" style={{ color: 'var(--txt3)' }}>
                               <Clock size={9} />
                               {new Date(task.dueDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                            </span>
+                          )}
+                          {assigneeName && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ background: 'var(--s3)', color: 'var(--txt3)' }}>
+                              {assigneeName}
                             </span>
                           )}
                         </div>
@@ -215,12 +233,18 @@ function CreateTaskSheet({
   onCreate: (data: Omit<Task, 'id' | 'createdAt'>) => void
 }) {
   const { t } = useTranslation()
-  const [title, setTitle] = useState('')
-  const [type, setType] = useState<TaskType>('Copy + Design')
-  const [platforms, setPlatforms] = useState<PlatformId[]>(['instagram'])
-  const [dueDate, setDueDate] = useState('')
+  const [title, setTitle]               = useState('')
+  const [type, setType]                 = useState<TaskType>('Copy + Design')
+  const [platforms, setPlatforms]       = useState<PlatformId[]>(['instagram'])
+  const [dueDate, setDueDate]           = useState('')
+  const [priorityLevel, setPriority]    = useState<'low' | 'medium' | 'high'>('medium')
+  const [assignee, setAssignee]         = useState<string>('')
+  const [referenceUrl, setReferenceUrl] = useState<string>('')
 
-  const reset = () => { setTitle(''); setType('Copy + Design'); setPlatforms(['instagram']); setDueDate('') }
+  const reset = () => {
+    setTitle(''); setType('Copy + Design'); setPlatforms(['instagram'])
+    setDueDate(''); setPriority('medium'); setAssignee(''); setReferenceUrl('')
+  }
   const togglePlatform = (id: PlatformId) =>
     setPlatforms((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))
 
@@ -229,10 +253,17 @@ function CreateTaskSheet({
     if (platforms.length === 0) { toast.error(t('pipeline.platformRequired')); return }
     onCreate({
       title: title.trim(), type, status: 'backlog',
-      priorityLevel: 'medium', priority: false,
+      priorityLevel, priority: priorityLevel === 'high',
       dueDate: dueDate || undefined, platforms, tags: [],
+      assignees: assignee ? [assignee] : [],
+      referenceUrl: referenceUrl.trim() || undefined,
     })
     reset()
+  }
+
+  const fieldCss: React.CSSProperties = {
+    background: 'var(--s2)', border: '1px solid var(--border-subtle)',
+    color: 'var(--txt)', width: '100%', borderRadius: 10, outline: 'none',
   }
 
   return (
@@ -248,22 +279,67 @@ function CreateTaskSheet({
       }
     >
       <div className="flex flex-col gap-4 pb-2">
+
+        {/* Título */}
         <Field label={t('pipeline.titleStar')}>
           <input
             autoFocus value={title} onChange={(e) => setTitle(e.target.value)}
             placeholder={t('pipeline.newTaskTitlePlaceholder')}
-            className="w-full h-12 px-3 rounded-lg text-[16px]"
-            style={{ background: 'var(--s2)', border: '1px solid var(--border-subtle)', color: 'var(--txt)' }}
+            className="h-12 px-3 text-[16px]"
+            style={fieldCss}
           />
         </Field>
+
+        {/* Tipo */}
         <Field label={t('pipeline.typeLabel')}>
           <div className="flex flex-wrap gap-2">
             {TASK_TYPES.map((tt) => <Chip key={tt} active={type === tt} onClick={() => setType(tt)} label={tt} />)}
           </div>
         </Field>
+
+        {/* Atribuir para */}
+        <Field label="Atribuir para">
+          <select
+            value={assignee}
+            onChange={(e) => setAssignee(e.target.value)}
+            className="h-12 px-3 text-[15px]"
+            style={fieldCss}
+          >
+            <option value="">— Ninguém —</option>
+            {TEAM.map(m => (
+              <option key={m.email} value={m.email}>{m.name} · {ROLE_LABELS[m.role]}</option>
+            ))}
+          </select>
+        </Field>
+
+        {/* Prioridade */}
+        <Field label={t('pipeline.priorityLabel')}>
+          <div className="flex gap-2">
+            {PRIORITY_OPTIONS.map(opt => {
+              const active = priorityLevel === opt.value
+              return (
+                <button
+                  key={opt.value}
+                  onClick={() => setPriority(opt.value)}
+                  className="flex-1 h-10 rounded-lg text-[13px] font-semibold flex items-center justify-center gap-1.5"
+                  style={{
+                    border: active ? `1px solid ${opt.color}` : '1px solid var(--border-subtle)',
+                    background: active ? opt.color + '20' : 'var(--s2)',
+                    color: active ? opt.color : 'var(--txt2)',
+                  }}
+                >
+                  <span style={{ width: 7, height: 7, borderRadius: 99, background: opt.color, opacity: active ? 1 : 0.35 }} />
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        </Field>
+
+        {/* Plataformas */}
         <Field label={t('pipeline.platformsStar')}>
           <div className="flex flex-wrap gap-2">
-            {PLATFORMS.map((p) => (
+            {PIPELINE_PLATFORMS.map((p) => (
               <button
                 key={p.id} onClick={() => togglePlatform(p.id)}
                 className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-[13px]"
@@ -278,13 +354,26 @@ function CreateTaskSheet({
             ))}
           </div>
         </Field>
+
+        {/* Data de entrega */}
         <Field label={t('pipeline.dueDateLabelShort')}>
           <input
             type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
-            className="w-full h-12 px-3 rounded-lg text-[16px]"
-            style={{ background: 'var(--s2)', border: '1px solid var(--border-subtle)', color: 'var(--txt)' }}
+            className="h-12 px-3 text-[16px]"
+            style={fieldCss}
           />
         </Field>
+
+        {/* Link de referência */}
+        <Field label="Link de referência (opcional)">
+          <input
+            type="url" value={referenceUrl} onChange={(e) => setReferenceUrl(e.target.value)}
+            placeholder="https://drive.google.com/... ou Figma"
+            className="h-12 px-3 text-[15px]"
+            style={fieldCss}
+          />
+        </Field>
+
       </div>
     </BottomSheet>
   )

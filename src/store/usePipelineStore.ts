@@ -44,6 +44,7 @@ interface DbTask {
   priority: boolean | null
   priority_level: string | null
   tags: string[] | null
+  reference_url: string | null
   created_at: string
   updated_at?: string
 }
@@ -61,6 +62,7 @@ function rowToTask(row: DbTask): Task {
     priorityLevel: (row.priority_level as 'low' | 'medium' | 'high') ?? 'medium',
     assignees: row.assigned_to ?? [],
     tags: row.tags ?? [],
+    referenceUrl: row.reference_url ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -80,6 +82,7 @@ function taskToInsert(task: Task, createdBy?: string | null): Omit<DbTask, 'upda
     priority: task.priority ?? false,
     priority_level: task.priorityLevel ?? null,
     tags: task.tags && task.tags.length > 0 ? task.tags : null,
+    reference_url: task.referenceUrl ?? null,
     created_at: task.createdAt,
   }
 }
@@ -280,6 +283,7 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
           priority:       updated.priority ?? false,
           priority_level: updated.priorityLevel ?? null,
           tags:           updated.tags && updated.tags.length > 0 ? updated.tags : null,
+          reference_url:  updated.referenceUrl ?? null,
         })
         .eq('id', taskId)
       if (error) throw error
