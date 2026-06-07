@@ -3,20 +3,16 @@
 // Salva relatórios no Supabase `daily_reports` (uma entrada por usuário/dia).
 // RLS garante que CEO/Admin veem tudo, demais membros só o próprio.
 // localStorage (`persist`) serve como cache offline / fallback sem Supabase.
+//
+// Usa createClient() do @/lib/supabase/client (createBrowserClient do @supabase/ssr)
+// porque a RLS usa auth.email() — precisa do JWT de sessão do usuário.
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { DailyReport } from '@/types'
 import { supabaseEnabled } from '@/lib/supabase'
-
-function getSupabaseClient() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@/lib/supabase/client').createClient() as ReturnType<typeof import('@/lib/supabase/client').createClient>
-}
-function getUserStore() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@/store/useUserStore').useUserStore as typeof import('@/store/useUserStore').useUserStore
-}
+import { createClient } from '@/lib/supabase/client'
+import { useUserStore } from '@/store/useUserStore'
 
 interface ReportState {
   reports: DailyReport[]
@@ -40,7 +36,7 @@ export const useReportStore = create<ReportState>()(
         if (!supabaseEnabled()) return
         set({ loading: true })
         try {
-          const supabase = getSupabaseClient()
+          const supabase = createClient()
           const { data, error } = await supabase
             .from('daily_reports')
             .select('id, report_date, content, user_name, user_email, role, created_at')
@@ -68,7 +64,7 @@ export const useReportStore = create<ReportState>()(
 
       // ── Add ──────────────────────────────────────────────────────────────────
       addReport: (content, author = 'Admin') => {
-        const user = getUserStore().getState()
+        const user = useUserStore.getState()
         const userEmail = user.email
         const userRole  = user.role ?? undefined
         const resolvedAuthor = user.name ?? author
@@ -89,7 +85,7 @@ export const useReportStore = create<ReportState>()(
         if (supabaseEnabled() && userEmail) {
           void (async () => {
             try {
-              const supabase = getSupabaseClient()
+              const supabase = createClient()
               const { error } = await supabase
                 .from('daily_reports')
                 .upsert(
@@ -121,7 +117,7 @@ export const useReportStore = create<ReportState>()(
         if (!supabaseEnabled()) return
         void (async () => {
           try {
-            const supabase = getSupabaseClient()
+            const supabase = createClient()
             const { error } = await supabase.from('daily_reports').delete().eq('id', id)
             if (error) console.error('[reports] deleteReport:', error)
           } catch (e) {

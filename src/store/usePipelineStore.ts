@@ -1,33 +1,20 @@
 'use client'
-// ─── Pipeline store — Supabase-backed ─────────────────────────────────────────
-// Todas as mutações são otimistas: o estado local é atualizado imediatamente e
-// o Supabase é sincronizado em background. Em caso de erro, o estado reverte.
+// ─── Pipeline store — Supabase-backed (raw PostgREST fetch) ───────────────────
+// Usa os helpers sbSelect/sbInsert/sbPatch/sbDelete de @/lib/supabase,
+// que chamam a API REST diretamente com a anon key (sem SDK, sem require()).
 //
-// Efeitos colaterais automáticos:
-//   • task com due_date → evento no Calendar (id: `task-${task.id}`)
-//   • task movida para 'published' → item nas Aprovações (status: 'published')
+// RLS de `pipeline_tasks` permite `anon, authenticated` — a auth real é o
+// proxy.ts (@braland.com.br). Consistente com `flux_state`.
+//
+// Todas as mutações são otimistas: estado local atualiza imediatamente,
+// Supabase sincroniza em background, reverte se houver erro.
 
 import { create } from 'zustand'
 import type { Task, TaskStatus, TaskType, PlatformId } from '@/types'
-import { supabaseEnabled } from '@/lib/supabase'
-
-// Lazy imports to avoid module-load-order issues
-function getCalendarStore() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@/store/useCalendarStore').useCalendarStore as typeof import('@/store/useCalendarStore').useCalendarStore
-}
-function getApprovalsStore() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@/store/useApprovalsStore').useApprovalsStore as typeof import('@/store/useApprovalsStore').useApprovalsStore
-}
-function getUserStore() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@/store/useUserStore').useUserStore as typeof import('@/store/useUserStore').useUserStore
-}
-function getSupabaseClient() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require('@/lib/supabase/client').createClient() as ReturnType<typeof import('@/lib/supabase/client').createClient>
-}
+import { supabaseEnabled, sbSelect, sbInsert, sbPatch, sbDelete } from '@/lib/supabase'
+import { useCalendarStore } from '@/store/useCalendarStore'
+import { useApprovalsStore } from '@/store/useApprovalsStore'
+import { useUserStore } from '@/store/useUserStore'
 
 // ─── DB row type (snake_case) ──────────────────────────────────────────────────
 interface DbTask {
@@ -67,23 +54,23 @@ function rowToTask(row: DbTask): Task {
   }
 }
 
-function taskToInsert(task: Task, createdBy?: string | null): Omit<DbTask, 'updated_at'> {
+function taskToRow(task: Task, createdBy?: string | null): Record<string, unknown> {
   return {
-    id: task.id,
-    workspace_id: 'braland',
-    title: task.title,
-    description: task.description ?? null,
-    type: task.type ?? null,
-    status: task.status,
-    platforms: task.platforms.length > 0 ? task.platforms : null,
-    assigned_to: task.assignees && task.assignees.length > 0 ? task.assignees : null,
-    due_date: task.dueDate ?? null,
-    created_by: createdBy ?? null,
-    priority: task.priority ?? false,
+    id:             task.id,
+    workspace_id:   'braland',
+    title:          task.title,
+    description:    task.description ?? null,
+    type:           task.type ?? null,
+    status:         task.status,
+    platforms:      task.platforms.length > 0 ? task.platforms : null,
+    assigned_to:    task.assignees && task.assignees.length > 0 ? task.assignees : null,
+    due_date:       task.dueDate ?? null,
+    created_by:     createdBy ?? null,
+    priority:       task.priority ?? false,
     priority_level: task.priorityLevel ?? null,
-    tags: task.tags && task.tags.length > 0 ? task.tags : null,
-    reference_url: task.referenceUrl ?? null,
-    created_at: task.createdAt,
+    tags:           task.tags && task.tags.length > 0 ? task.tags : null,
+    reference_url:  task.referenceUrl ?? null,
+    created_at:     task.createdAt,
   }
 }
 
@@ -97,8 +84,7 @@ const STATUS_EVENT_TYPE: Partial<Record<TaskStatus, 'content' | 'deadline' | 'ca
 function syncTaskToCalendar(task: Task): void {
   if (!task.dueDate) return
   try {
-    const store = getCalendarStore()
-    store.getState().addEvent({
+    useCalendarStore.getState().addEvent({
       id: `task-${task.id}`,
       type: STATUS_EVENT_TYPE[task.status] ?? 'content',
       title: task.title,
@@ -109,20 +95,16 @@ function syncTaskToCalendar(task: Task): void {
       platforms: task.platforms,
       source: 'manual',
     })
-  } catch { /* calendário não inicializado ainda */ }
+  } catch { /* calendário não inicializado */ }
 }
 
 function removeTaskFromCalendar(taskId: string): void {
-  try {
-    getCalendarStore().getState().removeEvent(`task-${taskId}`)
-  } catch { /* ok */ }
+  try { useCalendarStore.getState().removeEvent(`task-${taskId}`) } catch { /* ok */ }
 }
 
 // ─── Approvals sync ────────────────────────────────────────────────────────────
 function publishTaskToApprovals(task: Task): void {
-  try {
-    getApprovalsStore().getState().addFromTask(task)
-  } catch { /* ok */ }
+  try { useApprovalsStore.getState().addFromTask(task) } catch { /* ok */ }
 }
 
 // ─── Store ─────────────────────────────────────────────────────────────────────
@@ -147,21 +129,14 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
   loadTasks: async () => {
     if (!supabaseEnabled()) return
     set({ loading: true })
-    try {
-      const supabase = getSupabaseClient()
-      const { data, error } = await supabase
-        .from('pipeline_tasks')
-        .select('*')
-        .order('created_at', { ascending: true })
-      if (error) throw error
-      const tasks = (data as DbTask[] ?? []).map(rowToTask)
-      set({ tasks, loading: false })
-      // Sync due_date tasks into Calendar
-      tasks.forEach(syncTaskToCalendar)
-    } catch (e) {
-      console.error('[pipeline] loadTasks:', e)
-      set({ loading: false })
-    }
+    const rows = await sbSelect<DbTask>('pipeline_tasks', {
+      filters: { workspace_id: 'braland' },
+      order: 'created_at.asc',
+    })
+    const tasks = rows.map(rowToTask)
+    set({ tasks, loading: false })
+    // Sync due_date tasks to Calendar
+    tasks.forEach(syncTaskToCalendar)
   },
 
   // ── Add ─────────────────────────────────────────────────────────────────────
@@ -176,16 +151,11 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
 
     // 2. Persist
     if (!supabaseEnabled()) return
-    try {
-      const userEmail = getUserStore().getState().email
-      const supabase = getSupabaseClient()
-      const { error } = await supabase
-        .from('pipeline_tasks')
-        .insert(taskToInsert(newTask, userEmail))
-      if (error) throw error
-    } catch (e) {
-      console.error('[pipeline] addTask:', e)
-      // Revert
+    const createdBy = useUserStore.getState().email ?? null
+    const err = await sbInsert('pipeline_tasks', taskToRow(newTask, createdBy))
+    if (err) {
+      console.error('[pipeline] addTask — INSERT falhou:', err)
+      // Revert on error
       set((s) => ({ tasks: s.tasks.filter(t => t.id !== id) }))
     }
   },
@@ -203,15 +173,9 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
 
     // 2. Persist
     if (!supabaseEnabled()) return
-    try {
-      const supabase = getSupabaseClient()
-      const { error } = await supabase
-        .from('pipeline_tasks')
-        .update({ status: toStatus })
-        .eq('id', taskId)
-      if (error) throw error
-    } catch (e) {
-      console.error('[pipeline] moveTask:', e)
+    const err = await sbPatch('pipeline_tasks', taskId, { status: toStatus })
+    if (err) {
+      console.error('[pipeline] moveTask — PATCH falhou:', err)
       // Revert
       set((s) => ({ tasks: s.tasks.map(t => t.id === taskId ? prev : t) }))
     }
@@ -239,15 +203,9 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
 
     // 2. Persist
     if (!supabaseEnabled()) return
-    try {
-      const supabase = getSupabaseClient()
-      const { error } = await supabase
-        .from('pipeline_tasks')
-        .delete()
-        .eq('id', taskId)
-      if (error) throw error
-    } catch (e) {
-      console.error('[pipeline] deleteTask:', e)
+    const err = await sbDelete('pipeline_tasks', taskId)
+    if (err) {
+      console.error('[pipeline] deleteTask — DELETE falhou:', err)
       // Revert
       if (prev) set((s) => ({ tasks: [...s.tasks, prev] }))
     }
@@ -268,29 +226,23 @@ export const usePipelineStore = create<PipelineState>((set, get) => ({
 
     // 2. Persist
     if (!supabaseEnabled()) return
-    try {
-      const supabase = getSupabaseClient()
-      const { error } = await supabase
-        .from('pipeline_tasks')
-        .update({
-          title:          updated.title,
-          description:    updated.description ?? null,
-          type:           updated.type ?? null,
-          status:         updated.status,
-          platforms:      updated.platforms.length > 0 ? updated.platforms : null,
-          assigned_to:    updated.assignees && updated.assignees.length > 0 ? updated.assignees : null,
-          due_date:       updated.dueDate ?? null,
-          priority:       updated.priority ?? false,
-          priority_level: updated.priorityLevel ?? null,
-          tags:           updated.tags && updated.tags.length > 0 ? updated.tags : null,
-          reference_url:  updated.referenceUrl ?? null,
-        })
-        .eq('id', taskId)
-      if (error) throw error
-    } catch (e) {
-      console.error('[pipeline] updateTask:', e)
+    const err = await sbPatch('pipeline_tasks', taskId, {
+      title:          updated.title,
+      description:    updated.description ?? null,
+      type:           updated.type ?? null,
+      status:         updated.status,
+      platforms:      updated.platforms.length > 0 ? updated.platforms : null,
+      assigned_to:    updated.assignees && updated.assignees.length > 0 ? updated.assignees : null,
+      due_date:       updated.dueDate ?? null,
+      priority:       updated.priority ?? false,
+      priority_level: updated.priorityLevel ?? null,
+      tags:           updated.tags && updated.tags.length > 0 ? updated.tags : null,
+      reference_url:  updated.referenceUrl ?? null,
+    })
+    if (err) {
+      console.error('[pipeline] updateTask — PATCH falhou:', err)
       // Revert
-      if (prev) set((s) => ({ tasks: s.tasks.map(t => t.id === taskId ? prev : t) }))
+      set((s) => ({ tasks: s.tasks.map(t => t.id === taskId ? prev : t) }))
     }
   },
 }))

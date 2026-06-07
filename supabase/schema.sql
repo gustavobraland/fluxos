@@ -186,9 +186,11 @@ create table if not exists public.pipeline_tasks (
 
 alter table public.pipeline_tasks enable row level security;
 
+-- RLS: anon + authenticated (auth real feita pelo proxy.ts no nível do Next.js,
+-- assim como flux_state — a anon key é pública por design do Supabase).
 drop policy if exists "pipeline workspace" on public.pipeline_tasks;
 create policy "pipeline workspace" on public.pipeline_tasks
-  for all to authenticated using (true) with check (true);
+  for all to anon, authenticated using (true) with check (true);
 
 -- updated_at automático
 create or replace function public.set_updated_at()
@@ -219,7 +221,7 @@ alter table public.approvals enable row level security;
 
 drop policy if exists "approvals workspace" on public.approvals;
 create policy "approvals workspace" on public.approvals
-  for all to authenticated using (true) with check (true);
+  for all to anon, authenticated using (true) with check (true);
 
 -- ─── Daily Reports ────────────────────────────────────────────────────────────
 -- Um relatório por usuário por dia (UNIQUE). CEO e Admin veem todos, demais só o próprio.
@@ -260,3 +262,18 @@ create policy "reports own update" on public.daily_reports
 drop policy if exists "reports own delete" on public.daily_reports;
 create policy "reports own delete" on public.daily_reports
   for delete to authenticated using (auth.email() = user_email);
+
+-- ─── Migrations idempotentes (se as tabelas já existiam antes destas versões) ──
+-- Se você criou pipeline_tasks antes de Jun/2026, rode estas linhas no SQL Editor:
+
+-- Adiciona coluna reference_url se não existir
+alter table public.pipeline_tasks add column if not exists reference_url text;
+
+-- Corrige RLS para incluir anon (necessário para o store usar anon key diretamente)
+-- (já está no bloco acima — rode o schema completo ou só estes DROPs/CREATEs)
+-- drop policy if exists "pipeline workspace" on public.pipeline_tasks;
+-- create policy "pipeline workspace" on public.pipeline_tasks
+--   for all to anon, authenticated using (true) with check (true);
+-- drop policy if exists "approvals workspace" on public.approvals;
+-- create policy "approvals workspace" on public.approvals
+--   for all to anon, authenticated using (true) with check (true);
