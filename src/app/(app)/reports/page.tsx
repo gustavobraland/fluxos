@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ClipboardList, Plus, Trash2, CalendarDays, User, FileText, Sparkles } from 'lucide-react'
 import { useReportStore } from '@/store/useReportStore'
@@ -7,6 +7,7 @@ import { usePipelineStore } from '@/store/usePipelineStore'
 import { useApprovalsStore } from '@/store/useApprovalsStore'
 import { usePromptsStore } from '@/store/usePromptsStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { useUserStore } from '@/store/useUserStore'
 import { buildDailyReport } from '@/lib/insights'
 import { useTranslation } from '@/hooks/useTranslation'
 import { toast } from 'sonner'
@@ -27,15 +28,19 @@ function formatTime(iso: string) {
 const TODAY = new Date().toISOString().slice(0, 10)
 
 export default function ReportsPage() {
-  const { reports, addReport, deleteReport } = useReportStore()
+  const { reports, addReport, deleteReport, loadReports } = useReportStore()
   const tasks = usePipelineStore((s) => s.tasks)
   const approvals = useApprovalsStore((s) => s.items)
   const prompts = usePromptsStore((s) => s.prompts)
   const events = useCalendarStore((s) => s.events)
+  const { name: userName, email: userEmail } = useUserStore()
   const { t, locale } = useTranslation()
   const [content, setContent] = useState('')
   const [saving, setSaving] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  // Carrega relatórios do Supabase no mount (RLS filtra por papel)
+  useEffect(() => { void loadReports() }, [loadReports])
 
   const generateSummary = () => {
     setContent(buildDailyReport({ tasks, approvals, prompts, events }))
@@ -46,7 +51,7 @@ export default function ReportsPage() {
     if (!content.trim()) { toast.error(t('reports.toast.contentRequired')); return }
     setSaving(true)
     await new Promise(r => setTimeout(r, 300))
-    const report = addReport(content)
+    const report = addReport(content, userName ?? 'Admin')
     setContent('')
     setSelectedId(report.id)
     setSaving(false)
@@ -110,9 +115,9 @@ export default function ReportsPage() {
                 background: 'linear-gradient(135deg,#2563EB,#A78BFA)',
               }}
             >
-              G
+              {(userName ?? userEmail ?? 'A').slice(0, 1).toUpperCase()}
             </div>
-            <span style={{ fontSize: 12, color: 'var(--txt2)' }}>Admin</span>
+            <span style={{ fontSize: 12, color: 'var(--txt2)' }}>{userName ?? userEmail ?? 'Admin'}</span>
             <span
               className="ml-auto"
               style={{ fontSize: 10, color: 'var(--txt3)' }}

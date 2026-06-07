@@ -161,3 +161,101 @@ create policy "media auth upload" on storage.objects
 drop policy if exists "media auth update" on storage.objects;
 create policy "media auth update" on storage.objects
   for update to authenticated using (bucket_id = 'media') with check (bucket_id = 'media');
+
+-- ─── Pipeline Tasks ───────────────────────────────────────────────────────────
+-- Tabela principal de tarefas do Pipeline. Persiste entre sessões/dispositivos.
+-- RLS: todos os usuários autenticados podem ler e editar (workspace compartilhado).
+create table if not exists public.pipeline_tasks (
+  id             uuid primary key default gen_random_uuid(),
+  workspace_id   text not null default 'braland',
+  title          text not null,
+  description    text,
+  type           text,                          -- TaskType: 'Copy' | 'Design' | 'Motion' | 'Copy + Design' | 'Estratégia'
+  status         text not null default 'backlog', -- TaskStatus: 'backlog' | 'production' | 'review' | 'ready' | 'published'
+  platforms      text[],                        -- PlatformId[]
+  assigned_to    text[],                        -- emails dos responsáveis
+  due_date       date,
+  created_by     text,                          -- email de quem criou
+  priority       boolean default false,
+  priority_level text,                          -- 'low' | 'medium' | 'high'
+  tags           text[],
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now()
+);
+
+alter table public.pipeline_tasks enable row level security;
+
+drop policy if exists "pipeline workspace" on public.pipeline_tasks;
+create policy "pipeline workspace" on public.pipeline_tasks
+  for all to authenticated using (true) with check (true);
+
+-- updated_at automático
+create or replace function public.set_updated_at()
+returns trigger language plpgsql as $$
+begin new.updated_at = now(); return new; end; $$;
+
+drop trigger if exists trg_pipeline_updated_at on public.pipeline_tasks;
+create trigger trg_pipeline_updated_at
+  before update on public.pipeline_tasks
+  for each row execute function public.set_updated_at();
+
+-- ─── Approvals (histórico de tarefas publicadas via Pipeline) ─────────────────
+create table if not exists public.approvals (
+  id           uuid primary key default gen_random_uuid(),
+  task_id      uuid references public.pipeline_tasks(id) on delete set null,
+  workspace_id text not null default 'braland',
+  title        text,
+  platform     text,
+  asset_url    text,
+  status       text not null default 'pending', -- 'pending' | 'approved' | 'rejected' | 'published'
+  approved_by  text,
+  approved_at  timestamptz,
+  published_at timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+alter table public.approvals enable row level security;
+
+drop policy if exists "approvals workspace" on public.approvals;
+create policy "approvals workspace" on public.approvals
+  for all to authenticated using (true) with check (true);
+
+-- ─── Daily Reports ────────────────────────────────────────────────────────────
+-- Um relatório por usuário por dia (UNIQUE). CEO e Admin veem todos, demais só o próprio.
+create table if not exists public.daily_reports (
+  id                uuid primary key default gen_random_uuid(),
+  workspace_id      text not null default 'braland',
+  user_email        text not null,
+  user_name         text,
+  role              text,
+  report_date       date not null default current_date,
+  content           text not null,
+  tasks_completed   integer default 0,
+  tasks_in_progress integer default 0,
+  blockers          text,
+  created_at        timestamptz not null default now(),
+  unique (user_email, report_date)
+);
+
+alter table public.daily_reports enable row level security;
+
+drop policy if exists "reports own or admin" on public.daily_reports;
+create policy "reports own or admin" on public.daily_reports
+  for select to authenticated
+  using (
+    auth.email() = user_email
+    or auth.email() in ('gustavo@braland.com.br', 'jaden@braland.com.br')
+  );
+
+drop policy if exists "reports own insert" on public.daily_reports;
+create policy "reports own insert" on public.daily_reports
+  for insert to authenticated with check (auth.email() = user_email);
+
+drop policy if exists "reports own update" on public.daily_reports;
+create policy "reports own update" on public.daily_reports
+  for update to authenticated
+  using (auth.email() = user_email) with check (auth.email() = user_email);
+
+drop policy if exists "reports own delete" on public.daily_reports;
+create policy "reports own delete" on public.daily_reports
+  for delete to authenticated using (auth.email() = user_email);

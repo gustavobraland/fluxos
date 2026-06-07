@@ -474,7 +474,7 @@ const collisionDetection: CollisionDetection = (args) => {
 
 export function PipelineBoard() {
   const { t } = useTranslation()
-  const { tasks, moveTask, reorderTasks } = usePipelineStore()
+  const { tasks, moveTask, reorderTasks, loadTasks } = usePipelineStore()
   const [activeTask, setActiveTask]   = useState<Task | null>(null)
   const [showCreate, setShowCreate]   = useState(false)
   const [createStatus, setCreateStatus] = useState<TaskStatus>('backlog')
@@ -486,11 +486,13 @@ export function PipelineBoard() {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   )
 
-  // Atalho/Command/ActionSheet "Nova Task" → abre o modal de criação (desktop).
+  // Carrega tasks do Supabase no mount. Também registra o atalho "Nova Task".
   useEffect(() => {
+    void loadTasks()
     const onNew = () => { setCreateStatus('backlog'); setShowCreate(true) }
     window.addEventListener('flux:newTask', onNew)
     return () => window.removeEventListener('flux:newTask', onNew)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const tasksByStatus = PIPELINE_COLUMNS.reduce((acc, col) => {

@@ -39,6 +39,8 @@ export interface DailyReport {
   date: string       // YYYY-MM-DD
   content: string
   author: string
+  userEmail?: string  // email do autor (para filtro por papel)
+  userRole?: string   // papel no momento do registro
   createdAt: string
 }
 
@@ -98,9 +100,11 @@ export interface ApprovalItem {
   subtitle: string
   emoji: string
   type: 'image' | 'video'
-  status: 'pending' | 'approved' | 'rejected' | 'changes'
+  status: 'pending' | 'approved' | 'rejected' | 'changes' | 'published'
   mediaUrl?: string
   comments: Comment[]
+  taskId?: string       // referência à pipeline_task de origem
+  publishedAt?: string  // ISO timestamp de publicação
 }
 
 export interface Comment {
