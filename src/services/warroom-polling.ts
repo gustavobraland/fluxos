@@ -102,6 +102,55 @@ function isFinished(status: string): boolean {
   return FINISHED.has(status as FixtureStatus) || FINISHED_EXTRA.has(status)
 }
 
+// Aplica a resposta da API ao store: placar ao vivo + linha do tempo completa
+// (todos os lances) + marcos de fase + flag matchEnded. Usado pelo poll E pelo
+// backfill de abertura. NÃO agenda nem para o polling (quem chama decide).
+function applyFixtureData(fx: Fixture): { status: FixtureStatus; elapsed: number | null; finished: boolean } {
+  const store = useWarRoomStore.getState()
+  const status = fx.fixture.status.short
+  const elapsed = fx.fixture.status.elapsed
+  const goals = { home: fx.goals.home ?? 0, away: fx.goals.away ?? 0 }
+
+  store.setLiveData({ status, elapsed, goals })
+  // Linha do tempo — sincroniza TODOS os lances da resposta (custo zero),
+  // inclusive os que ocorreram antes da War Room abrir.
+  store.syncMatchEvents(mapApiEvents(fx))
+
+  // Marcos de fase (uma vez cada, via dedupe no store)
+  if (status === 'HT') store.addPhaseEvent(phaseEvent('halftime', 45_00, goals))
+  if (status === 'BT') store.addPhaseEvent(phaseEvent('break', 105_00, goals))
+  if (status === 'ET') store.addPhaseEvent(phaseEvent('extratime', 91_00, goals))
+  if (status === 'P') store.addPhaseEvent(phaseEvent('penalties', 121_00, goals))
+
+  const finished = isFinished(status)
+  if (finished) store.addPhaseEvent(phaseEvent('fulltime', 200_00, goals))
+
+  // Mantém matchEnded coerente com o status real (recupera sessões persistidas
+  // que ficaram com matchEnded=true de um jogo anterior).
+  if (finished && !store.matchEnded) store.setMatchEnded(true)
+  else if (!finished && store.matchEnded) store.setMatchEnded(false)
+
+  return { status, elapsed, finished }
+}
+
+// Backfill de abertura: 1 request imediato para popular a linha do tempo assim
+// que a War Room abre (mostra os lances anteriores em ordem). Não agenda polls —
+// o ciclo de polling ao vivo continua separadamente.
+export async function refreshFixtureOnce(fixtureId: number): Promise<void> {
+  const store = useWarRoomStore.getState()
+  if (store.requestsUsed >= QUOTA_RESERVE) return
+  let data: { fixture: Fixture | null; requestsUsed?: number }
+  try {
+    const res = await fetch(`/api/football/fixture?id=${fixtureId}`, { cache: 'no-store' })
+    data = await res.json()
+  } catch {
+    return
+  }
+  if (useWarRoomStore.getState().selectedFixtureId !== fixtureId) return
+  if (typeof data.requestsUsed === 'number' && data.requestsUsed > 0) store.setRequestsUsed(data.requestsUsed)
+  if (data.fixture) applyFixtureData(data.fixture)
+}
+
 async function pollFixture(fixtureId: number): Promise<void> {
   if (stopped) return
   const store = useWarRoomStore.getState()
@@ -132,39 +181,16 @@ async function pollFixture(fixtureId: number): Promise<void> {
   const fx = data.fixture
   if (!fx) { schedule(fixtureId, POLL_NORMAL); return }
 
-  const status = fx.fixture.status.short
-  const elapsed = fx.fixture.status.elapsed
-  const goals = { home: fx.goals.home ?? 0, away: fx.goals.away ?? 0 }
+  const { status, elapsed, finished } = applyFixtureData(fx)
 
-  store.setLiveData({ status, elapsed, goals })
-
-  // Linha do tempo — sincroniza TODOS os lances da resposta (custo zero).
-  store.syncMatchEvents(mapApiEvents(fx))
-
-  // Intervalo — marca uma vez e relaxa a cadência (5 min)
-  if (status === 'HT') {
-    store.addPhaseEvent(phaseEvent('halftime', 45_00, goals))
+  // Intervalo / intervalo da prorrogação — relaxa a cadência (5 min)
+  if (status === 'HT' || status === 'BT') {
     schedule(fixtureId, POLL_HALFTIME_PAUSE)
     return
   }
 
-  // Intervalo da prorrogação ('BT') — marca uma vez e relaxa a cadência
-  if (status === 'BT') {
-    store.addPhaseEvent(phaseEvent('break', 105_00, goals))
-    schedule(fixtureId, POLL_HALFTIME_PAUSE)
-    return
-  }
-
-  // Prorrogação ('ET') — marca o início uma vez; segue em cadência apertada
-  if (status === 'ET') store.addPhaseEvent(phaseEvent('extratime', 91_00, goals))
-
-  // Disputa de pênaltis ('P') — marca uma vez; segue em cadência apertada
-  if (status === 'P') store.addPhaseEvent(phaseEvent('penalties', 121_00, goals))
-
-  // Fim de jogo — marca, encerra a sessão e para de vez
-  if (isFinished(status)) {
-    store.addPhaseEvent(phaseEvent('fulltime', 200_00, goals))
-    store.setMatchEnded(true)
+  // Fim de jogo — encerra a sessão e para de vez
+  if (finished) {
     stopPolling()
     return
   }

@@ -12,7 +12,7 @@ import { ContentQueue } from '@/components/warroom/ContentQueue'
 import { MatchEventsTimeline } from '@/components/warroom/MatchEventsTimeline'
 import { PrePackPanel } from '@/components/warroom/PrePackPanel'
 import { QuotaDisplay } from '@/components/warroom/QuotaDisplay'
-import { startPolling, stopPolling } from '@/services/warroom-polling'
+import { startPolling, stopPolling, refreshFixtureOnce } from '@/services/warroom-polling'
 import { fetchLineup } from '@/services/warroom-lineup'
 import { startMockMatch, stopMockMatch, isMockRunning } from '@/services/warroom-mock'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -91,10 +91,16 @@ export default function WarRoomPage() {
 
     if (isMockRunning()) {
       // a simulation owns the store — don't touch the live poller
-    } else if (liveNow) {
-      startPolling(fixtureId)
-    } else if (!finished) {
-      maybeStart()
+    } else {
+      // Backfill imediato: 1 request popula a linha do tempo com TODOS os lances
+      // já ocorridos (mesmo os anteriores à abertura da War Room). Depois decide
+      // se inicia o polling ao vivo conforme o status real retornado.
+      void refreshFixtureOnce(fixtureId).then(() => {
+        if (isFinishedStatus(useWarRoomStore.getState().liveData?.status ?? 'NS')) return
+        maybeStart()
+      })
+      if (liveNow) startPolling(fixtureId)
+      else if (!finished) maybeStart()
     }
 
     // Re-check every minute so a scheduled match auto-starts at kickoff
