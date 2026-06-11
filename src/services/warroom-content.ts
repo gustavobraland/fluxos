@@ -227,6 +227,33 @@ export function triggerMatchEndContent(fx: Fixture, goals: Goals) {
   toast.success(`Pacote de fim de jogo (${label}) enviado para o Multipost`)
 }
 
+// ─── Fases especiais: prorrogação / pênaltis / intervalo da prorrogação ───────
+// Template puro (instantâneo, sem custo de API). Dispara uma vez por fase.
+
+export function triggerPhaseContent(
+  fx: Fixture,
+  goals: Goals,
+  phase: 'extratime' | 'penalties' | 'break',
+) {
+  const score = scoreLine(fx, goals)
+  const caption =
+    phase === 'extratime'
+      ? `⏱️ PRORROGAÇÃO!\nVamos pra mais 30 minutos!\n${score}`
+      : phase === 'penalties'
+        ? `🥅 PÊNALTIS!\nDecisão nas penalidades!\n${score}`
+        : `⏸️ INTERVALO DA PRORROGAÇÃO\n${score}`
+  const id = nextId(phase)
+  useWarRoomStore.getState().addQueueItem({
+    id,
+    trigger: 'breaking',
+    status: 'generating',
+    caption,
+    platforms: ['instagram', 'twitter'],
+    createdAt: Date.now(),
+  })
+  settleReady(id)
+}
+
 // ─── Demais gatilhos (template: card/sub/VAR · IA: breaking/preview/classification)
 
 /** Cartão (template puro). side = time do jogador. */

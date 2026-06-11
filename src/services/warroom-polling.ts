@@ -22,6 +22,7 @@ import {
   triggerCardContent,
   triggerSubContent,
   triggerVarContent,
+  triggerPhaseContent,
 } from './warroom-content'
 
 const POLL_NORMAL = 3 * 60_000          // 3 min
@@ -34,6 +35,9 @@ const FINISHED_EXTRA = new Set<string>(['AWD', 'WO'])
 
 let timer: ReturnType<typeof setTimeout> | null = null
 let halftimeFired = false
+// Fases especiais já anunciadas (prorrogação, pênaltis, intervalo da prorrogação).
+// Cada uma dispara conteúdo uma única vez.
+const firedPhases = new Set<string>()
 let stopped = true
 // Diff incremental de eventos (sem custo). `baselined` evita reprocessar o
 // histórico no 1º poll (ex.: ao entrar com o jogo já em andamento).
@@ -149,6 +153,28 @@ async function pollFixture(fixtureId: number): Promise<void> {
     return
   }
 
+  // Intervalo da prorrogação ('BT') — anuncia uma vez e relaxa a cadência
+  if (status === 'BT') {
+    if (!firedPhases.has('break')) {
+      firedPhases.add('break')
+      triggerPhaseContent(fx, goals, 'break')
+    }
+    schedule(fixtureId, POLL_HALFTIME_PAUSE)
+    return
+  }
+
+  // Prorrogação ('ET') — anuncia o início uma vez; segue em cadência apertada
+  if (status === 'ET' && !firedPhases.has('extratime')) {
+    firedPhases.add('extratime')
+    triggerPhaseContent(fx, goals, 'extratime')
+  }
+
+  // Disputa de pênaltis ('P') — anuncia uma vez; segue em cadência apertada
+  if (status === 'P' && !firedPhases.has('penalties')) {
+    firedPhases.add('penalties')
+    triggerPhaseContent(fx, goals, 'penalties')
+  }
+
   // Fulltime — produce the end-of-match pack and stop entirely
   if (isFinished(status)) {
     triggerMatchEndContent(fx, goals)
@@ -157,8 +183,9 @@ async function pollFixture(fixtureId: number): Promise<void> {
     return
   }
 
-  // In play — tighten cadence in the closing minutes
-  const interval = (elapsed ?? 0) >= 80 ? POLL_FINAL : POLL_NORMAL
+  // In play — tighten cadence in the closing minutes (and durante ET/P)
+  const lateStretch = (elapsed ?? 0) >= 80 || status === 'ET' || status === 'P'
+  const interval = lateStretch ? POLL_FINAL : POLL_NORMAL
   schedule(fixtureId, interval)
 }
 
@@ -166,6 +193,7 @@ export function startPolling(fixtureId: number): void {
   stopPolling()
   stopped = false
   halftimeFired = false
+  firedPhases.clear()
   seenEvents = 0
   baselined = false
   useWarRoomStore.getState().setPolling(true)

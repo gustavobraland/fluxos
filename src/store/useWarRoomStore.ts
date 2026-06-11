@@ -299,22 +299,25 @@ export const useWarRoomStore = create<WarRoomState>()(
   {
     name: 'flux-warroom',
     storage: createJSONStorage(() => localStorage),
-    // Persist only the fields needed to restore the War Room after refresh.
-    // Sessions (live data, queue, lineup) are intentionally NOT persisted —
-    // they would be stale after a refresh; polling will repopulate them.
+    // Persist the fixtures AND their full sessions (queue, goals, prePacks,
+    // matchEnded, liveData) so generated content NEVER disappears on refresh.
+    // Persisting liveData also keeps the goal-diff baseline alive across a
+    // refresh — a goal scored while the page was reloading is still detected
+    // on the next poll (and already-counted goals are not re-announced).
     partialize: (state) => ({
       activeFixtures: state.activeFixtures,
       selectedFixtureId: state.selectedFixtureId,
+      sessions: state.sessions,
       setup: state.setup,
     }),
     onRehydrateStorage: () => (state) => {
       if (!state) return
-      // After hydration the sessions map is empty (fresh start).
-      // Recompute mirror fields so components see the correct activeFixture.
+      // Recompute mirror fields from the rehydrated sessions so components see
+      // the correct selected fixture's queue/goals/liveData immediately.
       const m = mirror(
         state.activeFixtures ?? [],
         state.selectedFixtureId ?? null,
-        {},
+        state.sessions ?? {},
       )
       Object.assign(state, m)
     },
