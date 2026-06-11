@@ -9,6 +9,7 @@ import { MatchFooter } from '@/components/warroom/MatchFooter'
 import { WarRoomTabs } from '@/components/warroom/WarRoomTabs'
 import { LineupPanel } from '@/components/warroom/LineupPanel'
 import { ContentQueue } from '@/components/warroom/ContentQueue'
+import { MatchEventsTimeline } from '@/components/warroom/MatchEventsTimeline'
 import { PrePackPanel } from '@/components/warroom/PrePackPanel'
 import { QuotaDisplay } from '@/components/warroom/QuotaDisplay'
 import { startPolling, stopPolling } from '@/services/warroom-polling'
@@ -61,6 +62,7 @@ export default function WarRoomPage() {
   const fixture = useWarRoomStore(s => s.activeFixture)
   const liveData = useWarRoomStore(s => s.liveData)
   const queue = useWarRoomStore(s => s.queue)
+  const events = useWarRoomStore(s => s.events)
   const fixtureId = fixture?.fixture.id ?? null
   const kickoffTs = fixture?.fixture.timestamp ?? 0
   const cachedStatus = fixture?.fixture.status.short
@@ -107,7 +109,7 @@ export default function WarRoomPage() {
   if (!fixture) return <EmptyState />
 
   const status = liveData?.status ?? fixture.fixture.status.short
-  const showQueue = isLiveStatus(status) || isFinishedStatus(status) || queue.length > 0
+  const showFeed = isLiveStatus(status) || isFinishedStatus(status) || events.length > 0 || queue.length > 0
 
   return (
     <div style={{
@@ -160,22 +162,16 @@ export default function WarRoomPage() {
           padding: '12px 8px 12px 12px',
           overflowY: isMobile ? 'visible' : 'auto',
         }}>
-          {showQueue ? (
-            <ContentQueue />
-          ) : null}
-
-          {showQueue && queue.length === 0 && (
-            <div style={{
-              background: 'var(--s1)', border: '1px solid var(--border-subtle)',
-              borderRadius: 12, padding: '32px 16px', textAlign: 'center',
-            }}>
-              <div style={{ fontSize: 12, color: 'var(--txt3)' }}>
-                {t('warroom.monitoringLive')}
-              </div>
-            </div>
+          {showFeed && (
+            <>
+              {/* Linha do tempo do jogo — cada lance com botão de Deploy */}
+              <MatchEventsTimeline />
+              {/* Fila de postagem manual — conteúdo já gerado (Deploy) */}
+              {queue.length > 0 && <ContentQueue />}
+            </>
           )}
 
-          {!showQueue && (
+          {!showFeed && (
             <div style={{
               background: 'var(--s1)', border: '1px solid var(--border-subtle)',
               borderRadius: 12, padding: '32px 16px', textAlign: 'center',

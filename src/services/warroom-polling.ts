@@ -1,48 +1,32 @@
 // ─── War Room adaptive polling ────────────────────────────────────────────────
-// Polls a single fixture through our server proxy and feeds the store. Built to
-// conserve the API-Football free tier (REGRA DE OURO — ECONOMIA DE CRÉDITOS):
+// Polls a single fixture through our server proxy and feeds the LINHA DO TEMPO
+// de eventos (store.events). NÃO gera conteúdo automaticamente — cada lance vira
+// um item da timeline e o usuário escolhe quais postar via "Deploy".
+// Built to conserve the API-Football free tier (REGRA DE OURO — ECONOMIA):
 //
-//   • Goal / halftime / fulltime drive content. Cards / subs / VAR também viram
-//     conteúdo, detectados pelo DIFF dos eventos que já vêm na MESMA resposta
-//     (/fixtures?id=) — sem nenhum request extra (mantém a economia de créditos).
-//   • Normal cadence is 3 min; tighten to 1 min in the final stretch (elapsed≥80).
-//   • Pause to 5 min while at halftime.
-//   • Stop completely at fulltime.
-//   • Never poll once the match ended, the War Room is inactive, or we are within
-//     the 5-request emergency reserve (requestsUsed ≥ 95).
-//
-// Budget per game ≈ 1 lineup + ~30 normal + ~8 final ≈ 40 requests → ~2 games/day.
+//   • Eventos (gol, cartão, sub, VAR) vêm na MESMA resposta (/fixtures?id=),
+//     sem nenhum request extra. Sincronizamos a timeline a cada poll.
+//   • Marcos de fase (intervalo, prorrogação, intervalo da prorrogação, pênaltis,
+//     fim de jogo) são detectados pelo status e adicionados à timeline uma vez.
+//   • Cadência normal 3 min; aperta para 1 min na reta final (≥80') e na
+//     prorrogação/pênaltis. Pausa 5 min no intervalo. Para de vez no fim.
+//   • Nunca consome a reserva de emergência (requestsUsed ≥ 95).
 
-import { useWarRoomStore } from '@/store/useWarRoomStore'
+import { useWarRoomStore, type MatchEvent, type MatchEventKind } from '@/store/useWarRoomStore'
 import type { Fixture, FixtureStatus } from '@/types/fixtures'
-import {
-  triggerGoalContent,
-  triggerHalftimeContent,
-  triggerMatchEndContent,
-  triggerCardContent,
-  triggerSubContent,
-  triggerVarContent,
-  triggerPhaseContent,
-} from './warroom-content'
 
 const POLL_NORMAL = 3 * 60_000          // 3 min
-const POLL_FINAL = 60_000               // 1 min (elapsed ≥ 80')
-const POLL_HALFTIME_PAUSE = 5 * 60_000  // 5 min during the interval
-const QUOTA_RESERVE = 95                // keep 5 emergency requests
+const POLL_FINAL = 60_000               // 1 min (reta final / prorrogação)
+const POLL_HALFTIME_PAUSE = 5 * 60_000  // 5 min durante o intervalo
+const QUOTA_RESERVE = 95                // mantém 5 requests de emergência
 
 const FINISHED = new Set<FixtureStatus>(['FT', 'AET', 'PEN'])
 const FINISHED_EXTRA = new Set<string>(['AWD', 'WO'])
 
 let timer: ReturnType<typeof setTimeout> | null = null
-let halftimeFired = false
-// Fases especiais já anunciadas (prorrogação, pênaltis, intervalo da prorrogação).
-// Cada uma dispara conteúdo uma única vez.
-const firedPhases = new Set<string>()
 let stopped = true
-// Diff incremental de eventos (sem custo). `baselined` evita reprocessar o
-// histórico no 1º poll (ex.: ao entrar com o jogo já em andamento).
-let seenEvents = 0
-let baselined = false
+
+type Goals = { home: number; away: number }
 
 interface ApiEvent {
   time?: { elapsed?: number | null }
@@ -53,37 +37,60 @@ interface ApiEvent {
   detail?: string // 'Yellow Card' | 'Red Card' | 'Substitution N' | detalhe do VAR
 }
 
-// Dispara conteúdo para os eventos NOVOS (cartão/sub/VAR) que apareceram desde
-// o último poll. Gols são tratados pelo diff de placar (ignorados aqui).
-function processNewEvents(fx: Fixture, goals: { home: number; away: number }) {
-  const events = (fx as unknown as { events?: ApiEvent[] }).events
-  if (!Array.isArray(events)) return
-  // 1º poll: estabelece a baseline sem disparar o histórico já ocorrido.
-  if (!baselined) {
-    seenEvents = events.length
-    baselined = true
-    return
-  }
-  for (let i = seenEvents; i < events.length; i++) {
-    const ev = events[i]
-    const side: 'home' | 'away' = ev.team?.id === fx.teams.away.id ? 'away' : 'home'
-    const minute = ev.time?.elapsed ?? null
+// Mapeia os eventos da API em MatchEvent[], calculando o placar corrente em
+// cada lance (gols incrementam o placar na ordem cronológica).
+function mapApiEvents(fx: Fixture): MatchEvent[] {
+  const raw = (fx as unknown as { events?: ApiEvent[] }).events
+  if (!Array.isArray(raw)) return []
+  const out: MatchEvent[] = []
+  let h = 0
+  let a = 0
+  raw.forEach((ev, i) => {
     const type = (ev.type ?? '').toLowerCase()
-    if (type === 'card') {
-      triggerCardContent(fx, goals, {
-        side, player: ev.player?.name ?? null,
-        cardType: /red/i.test(ev.detail ?? '') ? 'red' : 'yellow', minute,
-      })
-    } else if (type === 'subst') {
-      triggerSubContent(fx, goals, {
-        side, playerIn: ev.player?.name ?? null, playerOut: ev.assist?.name ?? null, minute,
-      })
-    } else if (type === 'var') {
-      triggerVarContent(fx, goals, ev.detail ?? null)
+    const side: 'home' | 'away' = ev.team?.id === fx.teams.away.id ? 'away' : 'home'
+    const teamName = fx.teams[side].name
+    const minute = ev.time?.elapsed ?? null
+    const player = ev.player?.name ?? null
+    const assist = ev.assist?.name ?? null
+    const detail = ev.detail ?? null
+
+    if (type === 'goal') {
+      if (side === 'home') h += 1; else a += 1
     }
-    // 'goal' é coberto pelo diff de placar — não duplicar aqui.
+    const score = { home: h, away: a }
+    const sortKey = (minute ?? 0) * 100 + i
+    const base = { source: 'api' as const, minute, sortKey, side, teamName, score, deployed: false }
+
+    if (type === 'goal') {
+      out.push({ ...base, id: `goal-${minute}-${side}-${player ?? i}`, kind: 'goal', player, assist, detail })
+    } else if (type === 'card') {
+      const red = /red/i.test(detail ?? '')
+      out.push({ ...base, id: `card-${minute}-${side}-${player ?? i}`, kind: red ? 'red' : 'yellow', player, assist: null, detail })
+    } else if (type === 'subst') {
+      out.push({ ...base, id: `subst-${minute}-${side}-${player ?? i}`, kind: 'subst', player, assist, detail })
+    } else if (type === 'var') {
+      out.push({ ...base, id: `var-${minute}-${i}`, kind: 'var', player, assist: null, detail })
+    }
+  })
+  return out
+}
+
+// Constrói um marco de fase (intervalo / prorrogação / pênaltis / fim).
+function phaseEvent(kind: MatchEventKind, sortKey: number, goals: Goals): MatchEvent {
+  return {
+    id: `phase-${kind}`,
+    kind,
+    source: 'phase',
+    minute: null,
+    sortKey,
+    side: null,
+    teamName: null,
+    player: null,
+    assist: null,
+    detail: null,
+    score: { ...goals },
+    deployed: false,
   }
-  seenEvents = events.length
 }
 
 function schedule(fixtureId: number, ms: number) {
@@ -111,13 +118,11 @@ async function pollFixture(fixtureId: number): Promise<void> {
     const res = await fetch(`/api/football/fixture?id=${fixtureId}`, { cache: 'no-store' })
     data = await res.json()
   } catch {
-    // transient network blip — retry on the normal cadence
     schedule(fixtureId, POLL_NORMAL)
     return
   }
 
-  // A tab switch (or dismiss) may have happened during the await — bail before
-  // writing so we never leak one fixture's data into another's session.
+  // Bail before writing if the user switched/dismissed the fixture during await.
   if (stopped || useWarRoomStore.getState().selectedFixtureId !== fixtureId) return
 
   if (typeof data.requestsUsed === 'number' && data.requestsUsed > 0) {
@@ -130,72 +135,48 @@ async function pollFixture(fixtureId: number): Promise<void> {
   const status = fx.fixture.status.short
   const elapsed = fx.fixture.status.elapsed
   const goals = { home: fx.goals.home ?? 0, away: fx.goals.away ?? 0 }
-  const prev = store.liveData
 
   store.setLiveData({ status, elapsed, goals })
 
-  // Goal detection — only when the score actually increased vs the prior poll
-  if (prev) {
-    if (goals.home > prev.goals.home) triggerGoalContent('home', fx, goals)
-    if (goals.away > prev.goals.away) triggerGoalContent('away', fx, goals)
-  }
+  // Linha do tempo — sincroniza TODOS os lances da resposta (custo zero).
+  store.syncMatchEvents(mapApiEvents(fx))
 
-  // Cartão / substituição / VAR — diff dos eventos da MESMA resposta (custo zero)
-  processNewEvents(fx, goals)
-
-  // Halftime — fire once, then back off to the 5 min interval cadence
+  // Intervalo — marca uma vez e relaxa a cadência (5 min)
   if (status === 'HT') {
-    if (!halftimeFired) {
-      halftimeFired = true
-      triggerHalftimeContent(fx, goals)
-    }
+    store.addPhaseEvent(phaseEvent('halftime', 45_00, goals))
     schedule(fixtureId, POLL_HALFTIME_PAUSE)
     return
   }
 
-  // Intervalo da prorrogação ('BT') — anuncia uma vez e relaxa a cadência
+  // Intervalo da prorrogação ('BT') — marca uma vez e relaxa a cadência
   if (status === 'BT') {
-    if (!firedPhases.has('break')) {
-      firedPhases.add('break')
-      triggerPhaseContent(fx, goals, 'break')
-    }
+    store.addPhaseEvent(phaseEvent('break', 105_00, goals))
     schedule(fixtureId, POLL_HALFTIME_PAUSE)
     return
   }
 
-  // Prorrogação ('ET') — anuncia o início uma vez; segue em cadência apertada
-  if (status === 'ET' && !firedPhases.has('extratime')) {
-    firedPhases.add('extratime')
-    triggerPhaseContent(fx, goals, 'extratime')
-  }
+  // Prorrogação ('ET') — marca o início uma vez; segue em cadência apertada
+  if (status === 'ET') store.addPhaseEvent(phaseEvent('extratime', 91_00, goals))
 
-  // Disputa de pênaltis ('P') — anuncia uma vez; segue em cadência apertada
-  if (status === 'P' && !firedPhases.has('penalties')) {
-    firedPhases.add('penalties')
-    triggerPhaseContent(fx, goals, 'penalties')
-  }
+  // Disputa de pênaltis ('P') — marca uma vez; segue em cadência apertada
+  if (status === 'P') store.addPhaseEvent(phaseEvent('penalties', 121_00, goals))
 
-  // Fulltime — produce the end-of-match pack and stop entirely
+  // Fim de jogo — marca, encerra a sessão e para de vez
   if (isFinished(status)) {
-    triggerMatchEndContent(fx, goals)
+    store.addPhaseEvent(phaseEvent('fulltime', 200_00, goals))
     store.setMatchEnded(true)
     stopPolling()
     return
   }
 
-  // In play — tighten cadence in the closing minutes (and durante ET/P)
+  // Em jogo — aperta a cadência na reta final e durante ET/P
   const lateStretch = (elapsed ?? 0) >= 80 || status === 'ET' || status === 'P'
-  const interval = lateStretch ? POLL_FINAL : POLL_NORMAL
-  schedule(fixtureId, interval)
+  schedule(fixtureId, lateStretch ? POLL_FINAL : POLL_NORMAL)
 }
 
 export function startPolling(fixtureId: number): void {
   stopPolling()
   stopped = false
-  halftimeFired = false
-  firedPhases.clear()
-  seenEvents = 0
-  baselined = false
   useWarRoomStore.getState().setPolling(true)
   void pollFixture(fixtureId)
 }

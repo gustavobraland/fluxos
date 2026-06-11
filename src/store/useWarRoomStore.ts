@@ -69,6 +69,30 @@ export interface QueueItem {
   artUrl?: string
 }
 
+// ─── Match event timeline (linha do tempo do jogo) ───────────────────────────
+// Cada lance da partida vira um item da timeline, alimentado DIRETO da resposta
+// da API (events) + transições de status (intervalo, prorrogação, pênaltis, fim).
+// Custo zero de API. O usuário escolhe qual lance vira post via "Deploy".
+
+export type MatchEventKind =
+  | 'goal' | 'yellow' | 'red' | 'subst' | 'var'
+  | 'halftime' | 'fulltime' | 'extratime' | 'penalties' | 'break'
+
+export interface MatchEvent {
+  id: string                       // estável (dedupe entre polls): kind-minute-side-player
+  kind: MatchEventKind
+  source: 'api' | 'phase'          // 'api' = events[] da API · 'phase' = transição de status
+  minute: number | null
+  sortKey: number                  // ordenação cronológica
+  side: 'home' | 'away' | null
+  teamName: string | null
+  player: string | null            // autor do gol / cartão / quem entrou
+  assist: string | null            // assistência / quem saiu
+  detail: string | null
+  score: { home: number; away: number }
+  deployed: boolean                // já gerou conteúdo para a fila
+}
+
 // ─── Pre-packs ──────────────────────────────────────────────────────────────
 
 export type PrePackScenario = 'win' | 'draw' | 'loss'
@@ -109,10 +133,11 @@ interface Session {
   prePacks: PrePack[]
   matchEnded: boolean
   goals: GoalLog[]
+  events: MatchEvent[]
 }
 
 function freshSession(): Session {
-  return { lineup: null, liveData: null, queue: [], prePacks: defaultPrePacks(), matchEnded: false, goals: [] }
+  return { lineup: null, liveData: null, queue: [], prePacks: defaultPrePacks(), matchEnded: false, goals: [], events: [] }
 }
 
 // ─── Calendar sync helper ─────────────────────────────────────────────────────
@@ -159,6 +184,7 @@ interface WarRoomState {
   prePacks: PrePack[]
   matchEnded: boolean
   goals: GoalLog[]
+  events: MatchEvent[]
 
   // Fixture management
   addFixture: (f: Fixture) => void
@@ -173,6 +199,9 @@ interface WarRoomState {
   addQueueItem: (item: QueueItem) => void
   updateQueueItem: (id: string, patch: Partial<QueueItem>) => void
   addGoal: (g: GoalLog) => void
+  syncMatchEvents: (events: MatchEvent[]) => void   // substitui os eventos da API (preserva deployed/phase)
+  addPhaseEvent: (ev: MatchEvent) => void           // adiciona marco de fase (dedupe por id)
+  markEventDeployed: (id: string) => void
   activatePrePack: (scenario: PrePackScenario) => void
   setMatchEnded: (v: boolean) => void
   reset: () => void
@@ -194,6 +223,7 @@ function mirror(activeFixtures: Fixture[], selectedFixtureId: number | null, ses
     prePacks: sess?.prePacks ?? defaultPrePacks(),
     matchEnded: sess?.matchEnded ?? false,
     goals: sess?.goals ?? [],
+    events: sess?.events ?? [],
   }
 }
 
@@ -223,6 +253,7 @@ export const useWarRoomStore = create<WarRoomState>()(
     prePacks: defaultPrePacks(),
     matchEnded: false,
     goals: [],
+    events: [],
 
     addFixture: (f) => {
       const id = f.fixture.id
@@ -283,6 +314,27 @@ export const useWarRoomStore = create<WarRoomState>()(
     addGoal: (g) => patchSelected(s => ({ ...s, goals: [...s.goals, g] })),
     updateQueueItem: (id, patch) => patchSelected(s => ({
       ...s, queue: s.queue.map(q => (q.id === id ? { ...q, ...patch } : q)),
+    })),
+
+    // Substitui os eventos vindos da API a cada poll, preservando: (a) os marcos
+    // de fase (source==='phase') e (b) o flag `deployed` de eventos já existentes.
+    syncMatchEvents: (incoming) => patchSelected(s => {
+      const prevById = new Map(s.events.map(e => [e.id, e]))
+      const phase = s.events.filter(e => e.source === 'phase')
+      const api = incoming.map(e => ({ ...e, deployed: prevById.get(e.id)?.deployed ?? false }))
+      const events = [...phase, ...api].sort((a, b) => b.sortKey - a.sortKey)
+      return { ...s, events }
+    }),
+
+    // Adiciona um marco de fase (intervalo, prorrogação, pênaltis, fim) uma única vez.
+    addPhaseEvent: (ev) => patchSelected(s => {
+      if (s.events.some(e => e.id === ev.id)) return s
+      const events = [...s.events, ev].sort((a, b) => b.sortKey - a.sortKey)
+      return { ...s, events }
+    }),
+
+    markEventDeployed: (id) => patchSelected(s => ({
+      ...s, events: s.events.map(e => (e.id === id ? { ...e, deployed: true } : e)),
     })),
     activatePrePack: (scenario) => patchSelected(s => ({
       ...s, prePacks: s.prePacks.map(p => (p.scenario === scenario ? { ...p, status: 'deployed' } : p)),

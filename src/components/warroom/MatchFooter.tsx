@@ -21,10 +21,22 @@ function statusLabel(
 export function MatchFooter() {
   const fixture = useWarRoomStore(s => s.activeFixture)
   const liveData = useWarRoomStore(s => s.liveData)
-  const goals = useWarRoomStore(s => s.goals)
+  const events = useWarRoomStore(s => s.events)
   const { t } = useTranslation()
 
   if (!fixture) return null
+
+  // Gols derivados da linha do tempo (ordem cronológica).
+  const goals = [...events]
+    .filter(e => e.kind === 'goal')
+    .sort((a, b) => a.sortKey - b.sortKey)
+    .map(e => ({
+      id: e.id,
+      team: e.teamName ?? '',
+      scorer: e.player,
+      minute: e.minute,
+      score: e.score,
+    }))
 
   const status = liveData?.status ?? fixture.fixture.status.short
   const elapsed = liveData?.elapsed ?? fixture.fixture.status.elapsed
