@@ -1,7 +1,7 @@
 // ─── Live Fixtures Types ──────────────────────────────────────────────────────
 // Mirrors the API-Football /fixtures response, plus a Flux OS `_category` tag.
 
-export type MatchCategory = 'BR' | 'EU' | 'NT'
+export type MatchCategory = 'BR' | 'EU' | 'NT' | 'CUP'
 
 export type FixtureStatus =
   | 'NS'   // not started

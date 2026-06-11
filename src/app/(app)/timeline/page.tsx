@@ -35,16 +35,18 @@ export default function TimelinePage() {
     }))
   )
 
-  const [filter, setFilter] = useState<FixtureFilter>('ALL')
+  const [filter, setFilter] = useState<FixtureFilter>('CUP')
   const [modalFixture, setModalFixture] = useState<Fixture | null>(null)
 
   // Fetch on mount (store skips if cache is still fresh)
   useEffect(() => { fetchAll() }, [fetchAll])
 
-  const filtered = useMemo(
-    () => filter === 'ALL' ? fixtures : fixtures.filter(f => f._category === filter),
-    [fixtures, filter]
-  )
+  const filtered = useMemo(() => {
+    if (filter === 'ALL') return fixtures
+    // Filtro NT também inclui jogos da Copa (são partidas de seleções)
+    if (filter === 'NT') return fixtures.filter(f => f._category === 'NT' || f._category === 'CUP')
+    return fixtures.filter(f => f._category === filter)
+  }, [fixtures, filter])
 
   const liveCount = useMemo(
     () => fixtures.filter(f => isLiveStatus(f.fixture.status.short)).length,

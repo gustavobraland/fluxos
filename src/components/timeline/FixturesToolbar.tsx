@@ -5,7 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 export type FixtureFilter = 'ALL' | MatchCategory
 
-const FILTER_IDS: FixtureFilter[] = ['ALL', 'BR', 'EU', 'NT']
+const FILTER_IDS: FixtureFilter[] = ['CUP', 'ALL', 'BR', 'EU', 'NT']
 
 export function FixturesToolbar({
   filter,

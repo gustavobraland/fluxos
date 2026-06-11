@@ -474,7 +474,7 @@
 
   "timeline": {
     "title": "Partidas",
-    "subtitle": "Próximos 7 dias · 30 times prioritários · dados ao vivo da API",
+    "subtitle": "Copa do Mundo 2026 · próximos 7 dias · ao vivo",
     "loading": "Carregando partidas…",
     "errorLoad": "Erro ao carregar partidas",
     "apiUnavailable": "API de futebol indisponível",
@@ -483,8 +483,9 @@
     "noFixturesAll": "Sem jogos nos próximos 7 dias",
     "noFixturesFilter": "Tente outro filtro",
     "filters": {
+      "CUP": "🏆 Copa",
       "ALL": "Todos",
-      "BR": "🇧🇷 Brasil",
+      "BR": "🇧🇷 Clubes BR",
       "EU": "🌍 Europa",
       "NT": "🏳 Seleções"
     },

@@ -1,6 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Zap, Globe, Flag, Shield, Calendar, MapPin, type LucideIcon } from 'lucide-react'
+import { Zap, Globe, Flag, Shield, Trophy, Calendar, MapPin, type LucideIcon } from 'lucide-react'
 import type { Fixture, MatchCategory } from '@/types/fixtures'
 import { isLiveStatus, isFinishedStatus } from '@/types/fixtures'
 import { formatTimeBRT, formatDateShortBRT } from '@/lib/fixtures-client'
@@ -8,9 +8,10 @@ import { TeamLogo } from './TeamLogo'
 import { useTranslation } from '@/hooks/useTranslation'
 
 const CATEGORY_META: Record<MatchCategory, { Icon: LucideIcon; color: string }> = {
-  BR: { Icon: Flag,   color: 'var(--green)' },
-  EU: { Icon: Globe,  color: 'var(--blue)' },
-  NT: { Icon: Shield, color: 'var(--orange)' },
+  CUP: { Icon: Trophy, color: '#F5C842' },       // Copa do Mundo — dourado
+  BR:  { Icon: Flag,   color: 'var(--green)' },
+  EU:  { Icon: Globe,  color: 'var(--blue)' },
+  NT:  { Icon: Shield, color: 'var(--orange)' },
 }
 
 export function FixtureCard({
