@@ -150,7 +150,7 @@ export async function POST(req: Request): Promise<Response> {
   console.log('[refine-copy] GEMINI_KEY presente:', !!geminiKey, geminiKey ? geminiKey.slice(0, 8) + '…' : 'N/A')
   if (geminiKey) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest'
+      const model = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
         {

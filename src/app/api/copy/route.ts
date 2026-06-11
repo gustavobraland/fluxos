@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 
 interface Body { type: EventType; facts: CopyFacts; brandVoice?: string }
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash'
 const SONNET_MODEL = process.env.COPY_SONNET_MODEL || process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest'
 
 function clean(s: string): string {

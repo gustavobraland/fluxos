@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Fixture, FixtureStatus } from '@/types/fixtures'
 import { useCalendarStore, type CalendarEvent } from '@/store/useCalendarStore'
 
@@ -196,7 +197,9 @@ function mirror(activeFixtures: Fixture[], selectedFixtureId: number | null, ses
   }
 }
 
-export const useWarRoomStore = create<WarRoomState>((set, get) => {
+export const useWarRoomStore = create<WarRoomState>()(
+  persist(
+  (set, get) => {
   // Mutate the selected fixture's session, then refresh the mirror.
   const patchSelected = (fn: (s: Session) => Session) => {
     const { selectedFixtureId, sessions, activeFixtures } = get()
@@ -292,4 +295,29 @@ export const useWarRoomStore = create<WarRoomState>((set, get) => {
     setPolling: (isPolling) => set({ isPolling }),
     setRequestsUsed: (requestsUsed) => set({ requestsUsed }),
   }
-})
+  },
+  {
+    name: 'flux-warroom',
+    storage: createJSONStorage(() => localStorage),
+    // Persist only the fields needed to restore the War Room after refresh.
+    // Sessions (live data, queue, lineup) are intentionally NOT persisted —
+    // they would be stale after a refresh; polling will repopulate them.
+    partialize: (state) => ({
+      activeFixtures: state.activeFixtures,
+      selectedFixtureId: state.selectedFixtureId,
+      setup: state.setup,
+    }),
+    onRehydrateStorage: () => (state) => {
+      if (!state) return
+      // After hydration the sessions map is empty (fresh start).
+      // Recompute mirror fields so components see the correct activeFixture.
+      const m = mirror(
+        state.activeFixtures ?? [],
+        state.selectedFixtureId ?? null,
+        {},
+      )
+      Object.assign(state, m)
+    },
+  }
+  )
+)

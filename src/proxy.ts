@@ -25,7 +25,32 @@ export async function proxy(request: NextRequest) {
     },
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // getUser() makes a server-side call to verify the session and rotates
+  // the refresh token if needed. Under concurrent requests (e.g. parallel
+  // fetches on page load) two requests can race to rotate the same token —
+  // one succeeds, the other throws refresh_token_already_used.
+  // In that case we fall back to getSession() which reads the existing JWT
+  // from cookies without a network call (the access token is usually still
+  // valid; the rotation was just proactive).
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>['data']['user'] = null
+  try {
+    const { data } = await supabase.auth.getUser()
+    user = data.user
+  } catch (e: unknown) {
+    const code = (e as { code?: string })?.code
+    if (code === 'refresh_token_already_used') {
+      // Concurrent rotation race — not a security issue, read JWT from cookies.
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        user = session?.user ?? null
+      } catch {
+        user = null
+      }
+    } else {
+      console.error('[proxy] Unexpected auth error:', e)
+    }
+  }
+
   const email = (user?.email ?? '').toLowerCase()
   const allowed = !!user && email.endsWith(`@${ALLOWED_DOMAIN}`)
 
