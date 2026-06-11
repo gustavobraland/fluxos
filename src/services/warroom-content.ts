@@ -14,6 +14,7 @@ import { useWorkspaceStore, brandVoiceToString } from '@/store/useWorkspaceStore
 import { ALL_TEAMS } from '@/lib/teams30'
 import { generateCopy, buildTemplate, type CopyEvent, type CopyFacts } from '@/lib/copy-engine'
 import type { Fixture } from '@/types/fixtures'
+import type { ArtEventBody } from '@/app/api/art/generate/route'
 import { toast } from 'sonner'
 
 const WATCHED = new Set<number>(ALL_TEAMS.map((t) => t.id))
@@ -34,6 +35,26 @@ function settleReady(id: string) {
     const item = queue.find((q) => q.id === id)
     if (item && item.status === 'generating') updateQueueItem(id, { status: 'ready' })
   }, delay)
+}
+
+/**
+ * Gera arte com DALL-E 3 em paralelo e atualiza o item da fila com a URL.
+ * Não bloqueia — a arte aparece na fila quando pronta (15-30s).
+ */
+function generateArt(id: string, artBody: ArtEventBody) {
+  void fetch('/api/art/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(artBody),
+  })
+    .then(async (res) => {
+      if (!res.ok) return
+      const data = (await res.json()) as { artUrl?: string | null }
+      if (data.artUrl) {
+        useWarRoomStore.getState().updateQueueItem(id, { artUrl: data.artUrl })
+      }
+    })
+    .catch((e) => console.warn('[art] generateArt:', e))
 }
 
 function brandVoice(): string {
@@ -120,6 +141,17 @@ export function triggerGoalContent(side: 'home' | 'away', fx: Fixture, goals: Go
     createdAt: Date.now(),
   })
   settleReady(id)
+  // Gera arte em paralelo (DALL-E 3) — aparece quando pronta
+  generateArt(id, {
+    type: 'goal',
+    homeTeam: fx.teams.home.name,
+    awayTeam: fx.teams.away.name,
+    scoreHome: goals.home,
+    scoreAway: goals.away,
+    scorer: who,
+    minute: minute ?? fx.fixture.status.elapsed,
+    league: fx.league?.name ?? null,
+  })
 }
 
 // ─── Halftime ─────────────────────────────────────────────────────────────────
@@ -136,6 +168,15 @@ export function triggerHalftimeContent(fx: Fixture, goals: Goals) {
     createdAt: Date.now(),
   })
   enrichWithAI(id, event) // Gemini Flash
+  // Gera arte em paralelo
+  generateArt(id, {
+    type: 'halftime',
+    homeTeam: fx.teams.home.name,
+    awayTeam: fx.teams.away.name,
+    scoreHome: goals.home,
+    scoreAway: goals.away,
+    league: fx.league?.name ?? null,
+  })
 }
 
 // ─── Fulltime ─────────────────────────────────────────────────────────────────
@@ -171,6 +212,16 @@ export function triggerMatchEndContent(fx: Fixture, goals: Goals) {
     useMultipostStore.getState().setDraft({ caption, platforms, scheduledAt: null, source: 'warroom' })
   setDraft(base)
   enrichWithAI(id, event, setDraft) // Gemini Flash → Claude Sonnet
+  // Gera arte em paralelo
+  generateArt(id, {
+    type: 'fulltime',
+    homeTeam: fx.teams.home.name,
+    awayTeam: fx.teams.away.name,
+    scoreHome: goals.home,
+    scoreAway: goals.away,
+    league: fx.league?.name ?? null,
+    result,
+  })
 
   const label = result === 'win' ? 'Vitória' : result === 'loss' ? 'Derrota' : 'Empate'
   toast.success(`Pacote de fim de jogo (${label}) enviado para o Multipost`)

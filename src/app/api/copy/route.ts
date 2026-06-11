@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 
 interface Body { type: EventType; facts: CopyFacts; brandVoice?: string }
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest'
 const SONNET_MODEL = process.env.COPY_SONNET_MODEL || process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-latest'
 
 function clean(s: string): string {
@@ -32,11 +32,15 @@ async function gemini(prompt: string): Promise<string | null> {
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.8 } }),
       },
     )
-    if (!res.ok) return null
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '')
+      console.error('[copy] Gemini erro HTTP', res.status, errBody.slice(0, 200))
+      return null
+    }
     const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] }
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
     return text ? clean(text) : null
-  } catch { return null }
+  } catch (e) { console.error('[copy] Gemini exceção:', e); return null }
 }
 
 async function sonnet(prompt: string): Promise<string | null> {

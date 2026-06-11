@@ -64,6 +64,8 @@ export interface QueueItem {
   platforms: string[]
   createdAt: number
   result?: PrePackScenario
+  /** URL pública da arte gerada pelo DALL-E 3 (undefined enquanto gerando) */
+  artUrl?: string
 }
 
 // ─── Pre-packs ──────────────────────────────────────────────────────────────

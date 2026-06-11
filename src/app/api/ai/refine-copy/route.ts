@@ -147,9 +147,10 @@ export async function POST(req: Request): Promise<Response> {
 
   // ── Tier 1: Google Gemini (preferido quando GEMINI_API_KEY está setado) ──
   const geminiKey = process.env.GEMINI_API_KEY
+  console.log('[refine-copy] GEMINI_KEY presente:', !!geminiKey, geminiKey ? geminiKey.slice(0, 8) + '…' : 'N/A')
   if (geminiKey) {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+      const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash-latest'
       const res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`,
         {
@@ -157,7 +158,7 @@ export async function POST(req: Request): Promise<Response> {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.7 },
+            generationConfig: { temperature: 0.7 },
           }),
         },
       )
@@ -167,8 +168,12 @@ export async function POST(req: Request): Promise<Response> {
         }
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
         if (text) return Response.json({ copies: shape(text), refinedBy: 'ai' as const })
+        console.warn('[refine-copy] Gemini respondeu ok mas sem texto')
+      } else {
+        const errBody = await res.text().catch(() => '')
+        console.error('[refine-copy] Gemini erro HTTP', res.status, errBody.slice(0, 300))
       }
-    } catch { /* cai para o próximo tier */ }
+    } catch (e) { console.error('[refine-copy] Gemini exceção:', e) }
   }
 
   // ── Tier 2: Anthropic (only if a key is configured) ──
