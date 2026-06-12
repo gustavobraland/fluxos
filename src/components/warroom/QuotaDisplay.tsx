@@ -5,7 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 // Live API-Football quota meter. Yellow at 70+, red at 90+. Also surfaces whether
 // the adaptive poller is currently running or paused.
-export function QuotaDisplay() {
+export function QuotaDisplay({ desktopStyle }: { desktopStyle?: React.CSSProperties }) {
   const requestsUsed = useWarRoomStore(s => s.requestsUsed)
   const isPolling = useWarRoomStore(s => s.isPolling)
   const matchEnded = useWarRoomStore(s => s.matchEnded)
@@ -21,7 +21,7 @@ export function QuotaDisplay() {
   return (
     <div style={{
       background: 'var(--s1)', border: '1px solid var(--border-subtle)',
-      borderRadius: 12, padding: '12px 14px',
+      borderRadius: 12, padding: '12px 14px', ...desktopStyle,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
         {isPolling ? (

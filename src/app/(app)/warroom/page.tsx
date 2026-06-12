@@ -117,6 +117,13 @@ export default function WarRoomPage() {
   const status = liveData?.status ?? fixture.fixture.status.short
   const showFeed = isLiveStatus(status) || isFinishedStatus(status) || events.length > 0 || queue.length > 0
 
+  // Desktop-only flex sizing for the panels (undefined em mobile → render idêntico).
+  // Primário = cresce e rola por dentro · Pinned = altura natural sempre visível ·
+  // Queue = capado em 42% da coluna com rolagem interna.
+  const flexPrimary = isMobile ? undefined : { flex: '1 1 0', minHeight: 0 }
+  const flexPinned = isMobile ? undefined : { flexShrink: 0 }
+  const flexQueue = isMobile ? undefined : { flex: '0 0 auto', maxHeight: '42%' }
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column',
@@ -161,19 +168,21 @@ export default function WarRoomPage() {
         flexDirection: isMobile ? 'column' : 'row',
         overflowY: isMobile ? 'auto' : 'hidden',
       }}>
-        {/* Main column — live content (fila) */}
+        {/* Main column — live content (fila). Desktop: pilha flex sem rolagem própria;
+            cada painel rola por dentro (timeline cresce, fila capada embaixo). */}
         <div style={{
           flex: isMobile ? 'none' : '0 0 58%', width: isMobile ? '100%' : undefined,
           display: 'flex', flexDirection: 'column', gap: 10,
           padding: '12px 8px 12px 12px',
-          overflowY: isMobile ? 'visible' : 'auto',
+          minHeight: isMobile ? undefined : 0,
+          overflowY: isMobile ? 'visible' : 'hidden',
         }}>
           {showFeed && (
             <>
               {/* Linha do tempo do jogo — cada lance com botão de Deploy */}
-              <MatchEventsTimeline />
+              <MatchEventsTimeline desktopStyle={flexPrimary} />
               {/* Fila de postagem manual — conteúdo já gerado (Deploy) */}
-              {queue.length > 0 && <ContentQueue />}
+              {queue.length > 0 && <ContentQueue desktopStyle={flexQueue} />}
             </>
           )}
 
@@ -192,16 +201,18 @@ export default function WarRoomPage() {
           )}
         </div>
 
-        {/* Side column — lineup, pre-packs, quota */}
+        {/* Side column — lineup, pre-packs, quota. Desktop: escalação cresce e rola
+            por dentro; Pré-Packs e Créditos ficam fixos sempre visíveis embaixo. */}
         <div style={{
           flex: isMobile ? 'none' : '0 0 42%', width: isMobile ? '100%' : undefined,
           display: 'flex', flexDirection: 'column', gap: 10,
           padding: '12px 12px 12px 4px',
-          overflowY: isMobile ? 'visible' : 'auto',
+          minHeight: isMobile ? undefined : 0,
+          overflowY: isMobile ? 'visible' : 'hidden',
         }}>
-          <LineupPanel />
-          <PrePackPanel />
-          <QuotaDisplay />
+          <LineupPanel desktopStyle={flexPrimary} />
+          <PrePackPanel desktopStyle={flexPinned} />
+          <QuotaDisplay desktopStyle={flexPinned} />
         </div>
       </div>
 

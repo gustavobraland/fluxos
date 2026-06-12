@@ -13,7 +13,7 @@ const SCENARIO_COLOR: Record<PrePackScenario, string> = {
 // Pre-produced creative bundles for each end-of-match scenario. Deploying one
 // hands its caption + platforms to Multipost (no game data is invented — the
 // matchup names come from the live fixture).
-export function PrePackPanel() {
+export function PrePackPanel({ desktopStyle }: { desktopStyle?: React.CSSProperties }) {
   const prePacks = useWarRoomStore(s => s.prePacks)
   const fixture = useWarRoomStore(s => s.activeFixture)
   const activatePrePack = useWarRoomStore(s => s.activatePrePack)
@@ -40,7 +40,7 @@ export function PrePackPanel() {
   return (
     <div style={{
       background: 'var(--s1)', border: '1px solid var(--border-subtle)',
-      borderRadius: 12, overflow: 'hidden',
+      borderRadius: 12, overflow: 'hidden', ...desktopStyle,
     }}>
       <div style={{
         padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)',

@@ -30,8 +30,13 @@ const KIND_META: Record<MatchEventKind, { emoji: string; label: string; color: s
   break:     { emoji: '⏸️', label: 'Intervalo da prorrogação', color: 'var(--txt2)' },
 }
 
-export function MatchEventsTimeline() {
+export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSSProperties }) {
   const events = useWarRoomStore(s => s.events)
+  // No desktop o painel é flex e o corpo rola por dentro; em mobile (desktopStyle
+  // undefined) tudo cresce naturalmente como antes.
+  const scrollBody: React.CSSProperties | undefined = desktopStyle
+    ? { flex: '1 1 0', minHeight: 160, overflowY: 'auto' }
+    : undefined
 
   // Dispara a geração de conteúdo (copy + arte) para o lance escolhido.
   const deploy = (ev: MatchEvent) => {
@@ -68,11 +73,12 @@ export function MatchEventsTimeline() {
     <div style={{
       background: 'var(--s1)', border: '1px solid var(--border-subtle)',
       borderRadius: 12, overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', ...desktopStyle,
     }}>
       {/* Header */}
       <div style={{
         padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', gap: 7,
+        display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0,
       }}>
         <Radio size={13} style={{ color: 'var(--green)' }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>Linha do tempo do jogo</span>
@@ -87,6 +93,7 @@ export function MatchEventsTimeline() {
         )}
       </div>
 
+      <div style={scrollBody}>
       {events.length === 0 ? (
         <div style={{ padding: '32px 16px', textAlign: 'center' }}>
           <div style={{ fontSize: 12, color: 'var(--txt3)' }}>
@@ -168,6 +175,7 @@ export function MatchEventsTimeline() {
           })}
         </div>
       )}
+      </div>
     </div>
   )
 }

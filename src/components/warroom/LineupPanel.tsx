@@ -61,7 +61,7 @@ function TeamColumn({ side }: { side: TeamLineup | null }) {
 
 // Official / probable lineups for both sides. Fetched once and cached in the
 // store. When the official XI isn't published yet, shows the "Provável" badge.
-export function LineupPanel() {
+export function LineupPanel({ desktopStyle }: { desktopStyle?: React.CSSProperties }) {
   const lineup = useWarRoomStore(s => s.lineup)
   const { t } = useTranslation()
 
@@ -69,10 +69,11 @@ export function LineupPanel() {
     <div style={{
       background: 'var(--s1)', border: '1px solid var(--border-subtle)',
       borderRadius: 12, overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', ...desktopStyle,
     }}>
       <div style={{
         padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', gap: 7,
+        display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0,
       }}>
         <Users size={13} style={{ color: 'var(--txt2)' }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{t('warroom.lineup')}</span>
@@ -87,7 +88,10 @@ export function LineupPanel() {
         </span>
       </div>
 
-      <div style={{ padding: 14 }}>
+      <div style={{
+        padding: 14,
+        ...(desktopStyle ? { flex: '1 1 0', minHeight: 160, overflowY: 'auto' } : {}),
+      }}>
         {!lineup ? (
           <div style={{ fontSize: 11, color: 'var(--txt3)', textAlign: 'center', padding: '12px 0' }}>
             {t('warroom.lineupLoading')}
@@ -103,7 +107,7 @@ export function LineupPanel() {
 
       {lineup && !lineup.available && (
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
+          display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0,
           padding: '8px 14px', borderTop: '1px solid var(--border-subtle)',
           background: 'rgba(167,139,250,0.06)',
         }}>

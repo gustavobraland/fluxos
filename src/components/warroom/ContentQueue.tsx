@@ -31,7 +31,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   telegram:  'Telegram',
 }
 
-export function ContentQueue() {
+export function ContentQueue({ desktopStyle }: { desktopStyle?: React.CSSProperties }) {
   const queue          = useWarRoomStore(s => s.queue)
   const updateQueueItem = useWarRoomStore(s => s.updateQueueItem)
   const setDraft        = useMultipostStore(s => s.setDraft)
@@ -69,11 +69,12 @@ export function ContentQueue() {
     <div style={{
       background: 'var(--s1)', border: '1px solid var(--border-subtle)',
       borderRadius: 12, overflow: 'hidden',
+      display: 'flex', flexDirection: 'column', minHeight: 0, ...desktopStyle,
     }}>
       {/* Header */}
       <div style={{
         padding: '10px 14px', borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', gap: 7,
+        display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0,
       }}>
         <Radio size={13} style={{ color: 'var(--green)' }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)' }}>{t('warroom.contentQueue')}</span>
@@ -86,7 +87,10 @@ export function ContentQueue() {
         </span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column',
+        ...(desktopStyle ? { flex: '1 1 auto', minHeight: 0, overflowY: 'auto' } : {}),
+      }}>
         {queue.map(item => {
           const meta      = STATUS_META[item.status]
           const actionable = item.status === 'ready' || item.status === 'review'
