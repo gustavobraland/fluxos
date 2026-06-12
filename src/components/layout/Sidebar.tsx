@@ -16,7 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays,
-  Send, FolderOpen, CheckSquare, BarChart3, Plug, ClipboardList, Scissors,
+  Send, FolderOpen, CheckSquare, BarChart3, Plug, ClipboardList, Scissors, Sparkles,
 }
 
 export function Sidebar() {

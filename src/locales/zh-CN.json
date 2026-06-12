@@ -585,7 +585,29 @@
       "pending": "待审批",
       "approved": "已通过",
       "rejected": "已拒绝",
-      "changes": "已请求修改"
+      "changes": "已请求修改",
+      "published": "已发布"
+    },
+    "manageSubtitle": "管理并查看谁审批了每个内容",
+    "filters": {
+      "all": "全部",
+      "pending": "待审批",
+      "approved": "已通过",
+      "rejected": "已拒绝",
+      "changes": "修改",
+      "published": "已发布"
+    },
+    "history": "历史记录",
+    "historyEmpty": "暂无操作记录",
+    "by": "操作人",
+    "delete": "移除",
+    "deleteConfirm": "从审批列表中移除此项？该操作将记录在历史中。",
+    "log": {
+      "approved": "通过了",
+      "rejected": "拒绝了",
+      "changes": "请求修改",
+      "published": "发布了",
+      "deleted": "移除了"
     },
     "reject": "拒绝",
     "approve": "通过",
@@ -625,7 +647,8 @@
       "approved": "✓ 已通过 — {{name}}",
       "adjustRequested": "已请求修改 — {{name}}",
       "designerNotified": "已通知设计师。",
-      "rejected": "已拒绝 — {{name}}"
+      "rejected": "已拒绝 — {{name}}",
+      "deleted": "已移除 — {{name}}"
     },
     "noteAdjust": "已请求修改",
     "noteReject": "已拒绝"

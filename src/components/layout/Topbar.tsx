@@ -51,10 +51,15 @@ export function Topbar() {
         <FluxLogo size="sm" />
       </button>
 
-      {/* Logo — desktop: wordmark à esquerda */}
-      <div className="shrink-0 desktop-only">
+      {/* Logo — desktop: wordmark à esquerda → Dashboard */}
+      <button
+        onClick={() => router.push('/dashboard')}
+        aria-label="Flux OS — Dashboard"
+        className="shrink-0 desktop-only"
+        style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}
+      >
         <FluxLogo size="sm" showWordmark />
-      </div>
+      </button>
 
       {/* Mobile: "FLUX" centralizado (vertical+horizontal) → Pipeline */}
       <button

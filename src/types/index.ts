@@ -106,6 +106,22 @@ export interface ApprovalItem {
   comments: Comment[]
   taskId?: string       // referência à pipeline_task de origem
   publishedAt?: string  // ISO timestamp de publicação
+  decidedBy?: string    // quem aprovou/rejeitou/pediu ajuste (nome do usuário)
+  decidedAt?: string    // ISO timestamp da decisão
+}
+
+// Trilha de auditoria: registra cada ação de aprovação/rejeição/exclusão para
+// que a equipe possa voltar e saber quem clicou em cada card.
+export type ApprovalAction = 'approved' | 'rejected' | 'changes' | 'published' | 'deleted'
+
+export interface ApprovalLogEntry {
+  id: string
+  itemId: string
+  itemName: string
+  action: ApprovalAction
+  by: string        // nome do usuário que executou a ação
+  at: string        // ISO timestamp
+  note?: string     // motivo (rejeição / ajuste)
 }
 
 export interface Comment {

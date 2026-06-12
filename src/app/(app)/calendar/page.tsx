@@ -1,14 +1,39 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Plus, Trophy, FileText, Clock, TrendingUp, CalendarDays, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useShallow } from 'zustand/shallow'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
+import { usePipelineStore } from '@/store/usePipelineStore'
+import { useFixturesStore } from '@/store/useFixturesStore'
+import type { Fixture } from '@/types/fixtures'
 import { TeamLogo } from '@/components/timeline/TeamLogo'
 import { useTranslation } from '@/hooks/useTranslation'
+
+const TZ = 'America/Sao_Paulo'
+
+// Converte um Fixture da API num evento de exibição do calendário.
+function fixtureToDisplay(fx: Fixture): DisplayEvent {
+  const ms = fx.fixture.timestamp * 1000
+  const date = new Date(ms).toLocaleDateString('en-CA', { timeZone: TZ }) // YYYY-MM-DD
+  return {
+    id: `match-${fx.fixture.id}`,
+    day: Number(date.slice(8, 10)),
+    month: Number(date.slice(5, 7)),
+    year: Number(date.slice(0, 4)),
+    time: new Date(ms).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: TZ }),
+    type: 'match',
+    title: `${fx.teams.home.name} × ${fx.teams.away.name}`,
+    subtitle: fx.league.name,
+    result: null,
+    leagueLogo: fx.league.logo,
+    homeLogo: fx.teams.home.logo,
+    awayLogo: fx.teams.away.logo,
+  }
+}
 
 type ViewMode = 'month' | 'week'
 
@@ -52,10 +77,6 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   campaign: FileText,
 }
 
-// Sem eventos de demonstração — o calendário inicia vazio e é populado por
-// jogos reais (API-Football via War Room) e eventos criados pela equipe.
-const mockEvents: DisplayEvent[] = []
-
 const WEEK_HOURS = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00']
 
 function getDaysInMonth(year: number, month: number) {
@@ -73,14 +94,32 @@ export default function CalendarPage() {
   const gcalConnected = gcal?.connected ?? false
   const isConnecting = connecting === 'gcal'
 
+  // Data real de hoje (BRT) — o calendário abre no mês corrente.
+  const now = new Date()
+  const todayParts = now.toLocaleDateString('en-CA', { timeZone: TZ }).split('-')
+  const TODAY_YEAR = Number(todayParts[0])
+  const TODAY_MONTH = Number(todayParts[1])
+  const TODAY_DAY = Number(todayParts[2])
+
   const [viewMode, setViewMode] = useState<ViewMode>('month')
-  const [currentMonth, setCurrentMonth] = useState(5) // May
-  const [currentYear, setCurrentYear] = useState(2026)
-  const [selectedDay, setSelectedDay] = useState<number | null>(27)
+  const [currentMonth, setCurrentMonth] = useState(TODAY_MONTH)
+  const [currentYear, setCurrentYear] = useState(TODAY_YEAR)
+  const [selectedDay, setSelectedDay] = useState<number | null>(TODAY_DAY)
 
   const monthName = (m: number) => t(`calendar.months.${m}`)
 
-  // Live events from the War Room / Multipost sync
+  // Jogos da Copa + times monitorados (próximos 7 dias) — reaproveita o mesmo
+  // cache do Timeline (TTL 10 min) para NÃO gastar créditos extras da API.
+  const copaFixtures = useFixturesStore(useShallow(s => s.fixtures))
+  const fetchFixtures = useFixturesStore(s => s.fetchAll)
+  useEffect(() => {
+    // Garante que tarefas com prazo (Pipeline) também apareçam no calendário.
+    usePipelineStore.getState().loadTasks()
+    // Carrega os jogos (pula se o cache do Timeline ainda estiver fresco).
+    void fetchFixtures()
+  }, [fetchFixtures])
+
+  // Live events from the War Room / Multipost / Pipeline (deadlines) sync
   const storeEvents = useCalendarStore(useShallow(s => s.events))
   const storeDisplay = useMemo<DisplayEvent[]>(() =>
     storeEvents.map(e => ({
@@ -98,14 +137,20 @@ export default function CalendarPage() {
       awayLogo: e.awayLogo,
     })), [storeEvents])
 
+  // Merge: jogos da Copa + eventos do store (War Room / posts / prazos).
+  // Eventos do store têm prioridade (ex.: resultado preenchido) sobre o fixture cru.
+  const allDisplay = useMemo<DisplayEvent[]>(() => {
+    const storeIds = new Set(storeDisplay.map(e => e.id))
+    const copa = copaFixtures.map(fixtureToDisplay).filter(e => !storeIds.has(e.id))
+    return [...copa, ...storeDisplay]
+  }, [copaFixtures, storeDisplay])
+
   const daysInMonth = getDaysInMonth(currentYear, currentMonth)
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
-  const TODAY = 27 // 2026-05-27
+  const isCurrentMonth = currentMonth === TODAY_MONTH && currentYear === TODAY_YEAR
 
-  const eventsForDay = (day: number): DisplayEvent[] => [
-    ...mockEvents.filter((e) => e.day === day && e.month === currentMonth),
-    ...storeDisplay.filter((e) => e.day === day && e.month === currentMonth && e.year === currentYear),
-  ]
+  const eventsForDay = (day: number): DisplayEvent[] =>
+    allDisplay.filter((e) => e.day === day && e.month === currentMonth && e.year === currentYear)
 
   const selectedEvents = selectedDay ? eventsForDay(selectedDay) : []
 
@@ -120,7 +165,10 @@ export default function CalendarPage() {
     setSelectedDay(null)
   }
 
-  const weekDays = [27, 28, 29, 30, 31, 1, 2]
+  // Semana (Dom→Sáb) que contém o dia selecionado (ou hoje) no mês corrente.
+  const weekAnchor = selectedDay ?? TODAY_DAY
+  const weekStart = weekAnchor - new Date(currentYear, currentMonth - 1, weekAnchor).getDay()
+  const weekDays = Array.from({ length: 7 }, (_, i) => weekStart + i)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', color: 'var(--txt)' }}>
@@ -269,14 +317,14 @@ export default function CalendarPage() {
             <MonthView
               daysInMonth={daysInMonth}
               firstDay={firstDay}
-              today={TODAY}
+              today={isCurrentMonth ? TODAY_DAY : -1}
               currentMonth={currentMonth}
               eventsForDay={eventsForDay}
               selectedDay={selectedDay}
               onSelectDay={setSelectedDay}
             />
           ) : (
-            <WeekView weekDays={weekDays} eventsForDay={eventsForDay} today={TODAY} />
+            <WeekView weekDays={weekDays} eventsForDay={eventsForDay} today={isCurrentMonth ? TODAY_DAY : -1} />
           )}
         </div>
 
@@ -320,7 +368,7 @@ function MonthView({
         {cells.map((day, idx) => {
           if (day === null) return <div key={`empty-${idx}`} />
           const evs = eventsForDay(day)
-          const isToday = day === today && currentMonth === 5
+          const isToday = day === today
           const isSelected = day === selectedDay
           return (
             <motion.div

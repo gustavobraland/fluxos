@@ -51,6 +51,17 @@ export const usePromptsStore = create<PromptsState>()(
         return prompt.template
       },
     }),
-    { name: 'flux-prompts' }
+    {
+      name: 'flux-prompts',
+      // v2: biblioteca enxuta — substitui a leva antiga de prompts de exemplo
+      // pelo único modelo de relatório diário (limpeza solicitada pela equipe).
+      version: 2,
+      migrate: (persisted, version) => {
+        if (version < 2) {
+          return { prompts: DEFAULT_PROMPTS } as PromptsState
+        }
+        return persisted as PromptsState
+      },
+    }
   )
 )

@@ -586,7 +586,29 @@
       "pending": "Pendente",
       "approved": "Aprovado",
       "rejected": "Rejeitado",
-      "changes": "Ajuste solicitado"
+      "changes": "Ajuste solicitado",
+      "published": "Publicado"
+    },
+    "manageSubtitle": "Gerencie e veja quem aprovou cada conteúdo",
+    "filters": {
+      "all": "Todos",
+      "pending": "Pendentes",
+      "approved": "Aprovados",
+      "rejected": "Rejeitados",
+      "changes": "Ajustes",
+      "published": "Publicados"
+    },
+    "history": "Histórico",
+    "historyEmpty": "Nenhuma ação registrada ainda",
+    "by": "por",
+    "delete": "Remover",
+    "deleteConfirm": "Remover este item da lista de aprovações? A ação ficará registrada no histórico.",
+    "log": {
+      "approved": "aprovou",
+      "rejected": "rejeitou",
+      "changes": "pediu ajuste em",
+      "published": "publicou",
+      "deleted": "removeu"
     },
     "reject": "Rejeitar",
     "approve": "Aprovar",
@@ -626,7 +648,8 @@
       "approved": "✓ Aprovado — {{name}}",
       "adjustRequested": "Ajuste solicitado — {{name}}",
       "designerNotified": "O designer foi notificado.",
-      "rejected": "Rejeitado — {{name}}"
+      "rejected": "Rejeitado — {{name}}",
+      "deleted": "Removido — {{name}}"
     },
     "noteAdjust": "Ajuste solicitado",
     "noteReject": "Rejeitado"

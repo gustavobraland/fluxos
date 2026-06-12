@@ -8,6 +8,14 @@ const ALLOWED_DOMAIN = 'braland.com.br'
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
 
+  // Bypass de autenticação SOMENTE em desenvolvimento local (preview).
+  // Duplo-guardado: exige a flag NEXT_PUBLIC_PREVIEW_NOAUTH=1 (em .env.local) E
+  // NODE_ENV !== 'production' — então NUNCA libera acesso em produção/Vercel,
+  // mesmo que a flag vaze para o ambiente de deploy.
+  if (process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_PREVIEW_NOAUTH === '1') {
+    return response
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
