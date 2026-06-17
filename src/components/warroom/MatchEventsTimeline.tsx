@@ -4,7 +4,8 @@
 // como um item. Um clique em "Deploy" gera o conteúdo (copy + arte DALL-E 3)
 // daquele lance e envia para a fila de postagem manual logo abaixo.
 
-import { Rocket, CheckCircle2, Radio } from 'lucide-react'
+import { useState } from 'react'
+import { Rocket, CheckCircle2, Radio, ImageIcon, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useWarRoomStore, type MatchEvent, type MatchEventKind } from '@/store/useWarRoomStore'
 import {
@@ -32,11 +33,49 @@ const KIND_META: Record<MatchEventKind, { emoji: string; label: string; color: s
 
 export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSSProperties }) {
   const events = useWarRoomStore(s => s.events)
+  const [artLoading, setArtLoading] = useState<string | null>(null)
   // No desktop o painel é flex e o corpo rola por dentro; em mobile (desktopStyle
   // undefined) tudo cresce naturalmente como antes.
   const scrollBody: React.CSSProperties | undefined = desktopStyle
     ? { flex: '1 1 0', minHeight: 160, overflowY: 'auto' }
     : undefined
+
+  // Gera a ARTE por template (next/og) do gol e abre em nova aba.
+  const generateArt = async (ev: MatchEvent) => {
+    const fx = useWarRoomStore.getState().activeFixture
+    if (!fx) return
+    setArtLoading(ev.id)
+    try {
+      const competition = fx.league?.name === 'World Cup' ? 'Copa do Mundo 2026' : (fx.league?.name ?? '')
+      const res = await fetch('/api/art/generate-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          homeTeam: fx.teams.home.name,
+          awayTeam: fx.teams.away.name,
+          homeScore: ev.score.home,
+          awayScore: ev.score.away,
+          scorerName: ev.player,
+          minute: ev.minute,
+          competition,
+          scorerTeam: ev.teamName,
+          homeFlag: fx.teams.home.logo,
+          awayFlag: fx.teams.away.logo,
+        }),
+      })
+      const data = (await res.json()) as { artUrl?: string | null }
+      if (data.artUrl) {
+        window.open(data.artUrl, '_blank')
+        toast.success('Arte gerada! Abriu em nova aba ↗')
+      } else {
+        toast.error('Não foi possível gerar a arte')
+      }
+    } catch {
+      toast.error('Erro ao gerar a arte')
+    } finally {
+      setArtLoading(null)
+    }
+  }
 
   // Dispara a geração de conteúdo (copy + arte) para o lance escolhido.
   const deploy = (ev: MatchEvent) => {
@@ -147,29 +186,53 @@ export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSS
                   )}
                 </div>
 
-                {/* Deploy */}
-                {ev.deployed ? (
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
-                    fontSize: 11, fontWeight: 700, color: 'var(--green)',
-                    background: 'rgba(62,207,142,0.1)', border: '1px solid rgba(62,207,142,0.25)',
-                    borderRadius: 8, padding: '5px 10px',
-                  }}>
-                    <CheckCircle2 size={12} /> Gerado
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => deploy(ev)}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 5, flexShrink: 0,
-                      height: 30, padding: '0 12px', borderRadius: 8, cursor: 'pointer',
-                      background: 'var(--grad)', border: 'none', color: '#fff',
-                      fontSize: 12, fontWeight: 700,
-                    }}
-                  >
-                    <Rocket size={12} /> Deploy
-                  </button>
-                )}
+                {/* Ações */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  {/* Arte por template — só para gols */}
+                  {ev.kind === 'goal' && (
+                    <button
+                      onClick={() => generateArt(ev)}
+                      disabled={artLoading === ev.id}
+                      title="Gerar arte do gol (template Canal BRA)"
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        height: 30, padding: '0 10px', borderRadius: 8,
+                        cursor: artLoading === ev.id ? 'default' : 'pointer',
+                        background: 'rgba(0,212,180,0.12)', border: '1px solid rgba(0,212,180,0.4)',
+                        color: '#00D4B4', fontSize: 12, fontWeight: 700,
+                        opacity: artLoading === ev.id ? 0.7 : 1,
+                      }}
+                    >
+                      {artLoading === ev.id
+                        ? <><Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} /> Gerando…</>
+                        : <><ImageIcon size={12} /> Arte</>}
+                    </button>
+                  )}
+
+                  {/* Deploy */}
+                  {ev.deployed ? (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      fontSize: 11, fontWeight: 700, color: 'var(--green)',
+                      background: 'rgba(62,207,142,0.1)', border: '1px solid rgba(62,207,142,0.25)',
+                      borderRadius: 8, padding: '5px 10px',
+                    }}>
+                      <CheckCircle2 size={12} /> Gerado
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => deploy(ev)}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
+                        height: 30, padding: '0 12px', borderRadius: 8, cursor: 'pointer',
+                        background: 'var(--grad)', border: 'none', color: '#fff',
+                        fontSize: 12, fontWeight: 700,
+                      }}
+                    >
+                      <Rocket size={12} /> Deploy
+                    </button>
+                  )}
+                </div>
               </div>
             )
           })}
