@@ -87,3 +87,27 @@ export function ptName(teamName: string | null | undefined): string {
   if (!teamName) return ''
   return PT_NAMES[normalize(teamName)] ?? teamName
 }
+
+// Cor predominante do uniforme da seleção (para o prompt do DALL-E da comemoração).
+const JERSEY_COLOR: Record<string, string> = {
+  brazil: 'yellow and green', argentina: 'light blue and white', uruguay: 'sky blue',
+  colombia: 'yellow', chile: 'red', peru: 'white with a red sash', ecuador: 'yellow',
+  paraguay: 'red and white stripes', portugal: 'dark red', france: 'blue',
+  germany: 'white', spain: 'red', england: 'white', netherlands: 'orange',
+  holland: 'orange', croatia: 'red and white checkered', belgium: 'red',
+  switzerland: 'red', italy: 'blue', serbia: 'red', poland: 'white and red',
+  denmark: 'red', sweden: 'yellow and blue', norway: 'red', morocco: 'red',
+  senegal: 'white and green', 'congo dr': 'blue', 'dr congo': 'blue', ghana: 'white',
+  nigeria: 'green and white', cameroon: 'green', 'ivory coast': 'orange',
+  algeria: 'green and white', tunisia: 'red and white', egypt: 'red',
+  'south africa': 'gold and green', japan: 'blue', 'south korea': 'red',
+  'korea republic': 'red', iran: 'white', 'saudi arabia': 'white and green',
+  australia: 'gold and green', qatar: 'maroon', 'united states': 'white and navy blue',
+  usa: 'white and navy blue', mexico: 'green', canada: 'red',
+}
+
+/** Cor do uniforme da seleção (texto p/ prompt do DALL-E), ou genérico se desconhecido. */
+export function jerseyColor(teamName: string | null | undefined): string {
+  if (!teamName) return 'team colored'
+  return JERSEY_COLOR[normalize(teamName)] ?? 'national team colored'
+}

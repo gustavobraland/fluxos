@@ -40,14 +40,17 @@ export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSS
     ? { flex: '1 1 0', minHeight: 160, overflowY: 'auto' }
     : undefined
 
-  // Gera a ARTE por template (next/og) do gol e abre em nova aba.
+  // Geração AUTOMÁTICA completa: 2 fotos DALL-E + template Canal BRA (next/og).
+  // O resultado cai na fila com preview para aprovação humana.
   const generateArt = async (ev: MatchEvent) => {
-    const fx = useWarRoomStore.getState().activeFixture
+    const store = useWarRoomStore.getState()
+    const fx = store.activeFixture
     if (!fx) return
     setArtLoading(ev.id)
+    toast.message('Gerando arte do gol… (fotos + montagem, ~20s)')
     try {
       const competition = fx.league?.name === 'World Cup' ? 'Copa do Mundo 2026' : (fx.league?.name ?? '')
-      const res = await fetch('/api/art/generate-template', {
+      const res = await fetch('/api/art/generate-goal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -64,12 +67,28 @@ export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSS
         }),
       })
       const data = (await res.json()) as { artUrl?: string | null }
-      if (data.artUrl) {
-        window.open(data.artUrl, '_blank')
-        toast.success('Arte gerada! Abriu em nova aba ↗')
-      } else {
+      if (!data.artUrl) {
         toast.error('Não foi possível gerar a arte')
+        return
       }
+      // Cai na fila com preview para aprovação humana (painel de postagem manual)
+      const scorerTeamName = ev.teamName ?? fx.teams.home.name
+      const caption =
+        `⚽ GOL DO ${scorerTeamName.toUpperCase()}!` +
+        (ev.player ? ` ${ev.player}` : '') +
+        `\n${fx.teams.home.name} ${ev.score.home} x ${ev.score.away} ${fx.teams.away.name}` +
+        (ev.minute ? ` · ${ev.minute}'` : '')
+      store.addQueueItem({
+        id: `art-${ev.id}-${Date.now()}`,
+        trigger: 'goal',
+        status: 'ready',
+        caption,
+        platforms: ['instagram', 'twitter'],
+        createdAt: Date.now(),
+        artUrl: data.artUrl,
+      })
+      store.markEventDeployed(ev.id)
+      toast.success('Arte pronta! Veja na fila para aprovar ↓')
     } catch {
       toast.error('Erro ao gerar a arte')
     } finally {
