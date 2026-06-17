@@ -28,7 +28,8 @@ const ACTION_PROMPT =
 function playerPrompt(color: string): string {
   return (
     `Professional football player celebrating a goal, wearing ${color} jersey, euphoric celebration gesture, ` +
-    'teal/green blurred background, close up portrait, photorealistic sports photography, no text, no logos'
+    'teal/green blurred stadium background, medium close-up shot, landscape framing, ' +
+    'photorealistic sports photography, no text, no logos'
   )
 }
 
@@ -72,7 +73,7 @@ export async function POST(req: Request): Promise<Response> {
     const color = jerseyColor(b.scorerTeam ?? b.homeTeam)
     ;[actionUrl, playerUrl] = await Promise.all([
       dalle(ACTION_PROMPT, '1792x1024', apiKey),
-      dalle(playerPrompt(color), '1024x1024', apiKey),
+      dalle(playerPrompt(color), '1792x1024', apiKey),
     ])
   } else {
     console.log('[art-goal] OPENAI_API_KEY ausente — gerando com placeholders')
