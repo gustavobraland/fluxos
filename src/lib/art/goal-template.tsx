@@ -1,18 +1,24 @@
 /* eslint-disable @next/next/no-img-element */
 // ─── Render do template de arte de gol (next/og / Satori) ─────────────────────
-// Reutilizado por /api/art/generate-template (manual) e /api/art/generate-goal
-// (automático com fotos do DALL-E). Renderiza 1080×1350 (4:5, feed do Instagram)
-// no modelo Canal BRA e faz upload no Supabase Storage (bucket media).
+// Recria o layout do PSD Canal BRA (1080×1350): DUAS fotos full-bleed (gol no
+// topo, comemoração embaixo), linha divisória em gradiente Canal BRA, placar
+// CENTRALIZADO sobre a linha, logo oficial no canto superior esquerdo, watermark
+// @CANAL.BRA no topo, título "GOL DE {jogador}" e rodapé com o minuto no padrão
+// brasileiro ("40' DO SEGUNDO TEMPO"). Só fotos/copy/placar/bandeiras mudam.
 
 import { ImageResponse } from 'next/og'
 import { createClient } from '@/lib/supabase/server'
 import { countryCode, flagUrl, ptName } from '@/lib/country-flags'
+import { CANAL_BRA_LOGO, CANAL_BRA_LOGO_W, CANAL_BRA_LOGO_H } from './canal-bra-logo'
 
-const TEAL = '#00D4B4'
-const TEAL_DARK = '#064E43'
-const DARK = '#0B1F1C'
+const CYAN = '#00D5FF'
+const GREEN = '#2DFFB3'
 const W = 1080
 const H = 1350
+const HALF = 675
+const GRAD = `linear-gradient(90deg, ${CYAN}, ${GREEN})`
+const LOGO_W = 116
+const LOGO_H = Math.round(LOGO_W * (CANAL_BRA_LOGO_H / CANAL_BRA_LOGO_W))
 
 export interface GoalTemplateBody {
   homeTeam: string
@@ -50,16 +56,21 @@ function norm(s: string): string {
   return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 }
 
-// Frase do rodapé derivada do contexto do gol (ou override via footerText).
-export function footerFor(b: GoalTemplateBody): string {
-  if (b.footerText) return b.footerText.toUpperCase()
+// Minuto no padrão brasileiro: ≤45 = primeiro tempo; >45 = (min-45) segundo tempo.
+export function minuteBR(min: number | null | undefined): string {
+  if (min == null) return ''
+  return min <= 45 ? `${min}' DO PRIMEIRO TEMPO` : `${min - 45}' DO SEGUNDO TEMPO`
+}
+
+// Frase contextual (fallback quando não há minuto).
+function contextualFooter(b: GoalTemplateBody): string {
   const st = b.scorerTeam
   if (!st) return `${ptName(b.homeTeam).toUpperCase()} ${b.homeScore} × ${b.awayScore} ${ptName(b.awayTeam).toUpperCase()}`
   const isHome = norm(st) === norm(b.homeTeam)
   const isAway = norm(st) === norm(b.awayTeam)
   const T = ptName(st).toUpperCase()
   if (!isHome && !isAway) return `${T} BALANÇA AS REDES`
-  const s = isHome ? b.homeScore : b.awayScore // placar do time que marcou (após o gol)
+  const s = isHome ? b.homeScore : b.awayScore
   const o = isHome ? b.awayScore : b.homeScore
   const before = s - 1
   if (s === o) return `${T} EMPATA O JOGO`
@@ -73,85 +84,85 @@ function flagFor(team: string, fallback?: string | null): string | null {
   return code ? flagUrl(code) : (fallback ?? null)
 }
 
-function PhotoBand({ url, height, gradient, hint, display }: {
-  url: string | null | undefined; height: number; gradient: string; hint: string; display?: string
+// Meia-tela com a foto preenchendo tudo + overlay escuro para legibilidade.
+function PhotoHalf({ url, gradient, hint, overlay, display }: {
+  url: string | null | undefined; gradient: string; hint: string; overlay: string; display?: string
 }) {
   return (
-    <div style={{ position: 'relative', display: 'flex', width: W, height, backgroundImage: gradient, alignItems: 'center', justifyContent: 'center' }}>
-      {url ? (
-        <img src={url} width={W} height={height} style={{ width: W, height, objectFit: 'cover' }} />
-      ) : (
-        <div style={{ display: 'flex', fontFamily: display, fontSize: 30, letterSpacing: 4, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase' }}>
-          {hint}
-        </div>
-      )}
+    <div style={{ position: 'relative', display: 'flex', width: W, height: HALF, backgroundImage: gradient, alignItems: 'center', justifyContent: 'center' }}>
+      {url
+        ? <img src={url} width={W} height={HALF} style={{ width: W, height: HALF, objectFit: 'cover' }} />
+        : <div style={{ display: 'flex', fontFamily: display, fontSize: 30, letterSpacing: 4, color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase' }}>{hint}</div>}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: W, height: HALF, backgroundImage: overlay }} />
     </div>
   )
 }
 
-function Flag({ url }: { url: string | null }) {
-  if (!url) return <div style={{ display: 'flex', width: 132, height: 88, borderRadius: 8, backgroundColor: 'rgba(0,0,0,0.15)' }} />
-  return <img src={url} width={132} height={88} style={{ width: 132, height: 88, objectFit: 'cover', borderRadius: 8, border: '3px solid rgba(255,255,255,0.85)' }} />
+function PillFlag({ url }: { url: string | null }) {
+  if (!url) return <div style={{ display: 'flex', width: 92, height: 62, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.25)' }} />
+  return <img src={url} width={92} height={62} style={{ width: 92, height: 62, objectFit: 'cover', borderRadius: 6 }} />
 }
 
 /** Renderiza o PNG 1080×1350 do template de gol. */
 export async function renderGoalArtPng(b: GoalTemplateBody): Promise<ArrayBuffer> {
   const anton = await loadAnton()
   const display = anton ? 'Anton' : undefined
-  const competition = b.competition || 'Copa do Mundo 2026'
-  const minute = b.minute != null ? `${b.minute}'` : ''
-  const headline = b.scorerName ? `GOL DE ${b.scorerName.toUpperCase()} ${minute}`.trim() : `GOL! ${minute}`.trim()
-  const footer = footerFor(b)
+  const headline = b.scorerName ? `GOL DE ${b.scorerName.toUpperCase()}` : 'GOL!'
+  const footer = b.footerText
+    ? b.footerText.toUpperCase()
+    : (b.minute != null ? minuteBR(b.minute) : contextualFooter(b))
   const homeFlag = flagFor(b.homeTeam, b.homeFlag)
   const awayFlag = flagFor(b.awayTeam, b.awayFlag)
 
+  const Chevron = ({ dir }: { dir: 'l' | 'r' }) => (
+    <span style={{ display: 'flex', color: GREEN, fontFamily: display, fontSize: 56 }}>{dir === 'l' ? '›' : '‹'}</span>
+  )
+
   const tree = (
-    <div style={{ width: W, height: H, display: 'flex', flexDirection: 'column', backgroundColor: DARK, fontFamily: display ?? 'sans-serif' }}>
-      {/* TOPO — foto de ação + logo + watermark */}
-      <div style={{ position: 'relative', display: 'flex', width: W, height: 520 }}>
-        <PhotoBand url={b.topImageUrl} height={520} gradient="linear-gradient(135deg, #14532d, #052e16)" hint="Foto de ação" display={display} />
-        <div style={{ position: 'absolute', top: 34, left: 34, display: 'flex', flexDirection: 'column', alignItems: 'center', backgroundColor: DARK, border: `3px solid ${TEAL}`, borderRadius: 14, padding: '10px 16px' }}>
-          <div style={{ display: 'flex', fontFamily: display, fontSize: 22, color: '#fff', letterSpacing: 2, lineHeight: 1 }}>CANAL</div>
-          <div style={{ display: 'flex', fontFamily: display, fontSize: 34, color: TEAL, letterSpacing: 2, lineHeight: 1 }}>BRA</div>
-        </div>
-        <div style={{ position: 'absolute', top: 40, left: 0, right: 0, display: 'flex', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontSize: 22, letterSpacing: 10 }}>
-          @ C A N A L . B R A
-        </div>
+    <div style={{ position: 'relative', width: W, height: H, display: 'flex', flexDirection: 'column', backgroundColor: '#05080a', fontFamily: display ?? 'sans-serif' }}>
+      {/* TOPO — foto do gol */}
+      <PhotoHalf url={b.topImageUrl} gradient="linear-gradient(135deg, #1f2937, #0b1220)" hint="Foto do gol"
+        overlay="linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.05) 32%, rgba(0,0,0,0.62) 100%)" display={display} />
+      {/* BAIXO — foto da comemoração */}
+      <PhotoHalf url={b.bottomImageUrl} gradient="linear-gradient(135deg, #0e3a3a, #0b1220)" hint="Foto da comemoração"
+        overlay="linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.78) 100%)" display={display} />
+
+      {/* Linha divisória — gradiente Canal BRA, atravessa toda a arte */}
+      <div style={{ position: 'absolute', top: HALF - 4, left: 0, width: W, height: 8, backgroundImage: GRAD }} />
+
+      {/* Logo oficial — canto superior esquerdo */}
+      <img src={CANAL_BRA_LOGO} width={LOGO_W} height={LOGO_H} style={{ position: 'absolute', top: 30, left: 40, width: LOGO_W, height: LOGO_H }} />
+
+      {/* Watermark @CANAL.BRA — topo centro */}
+      <div style={{ position: 'absolute', top: 48, left: 0, width: W, display: 'flex', justifyContent: 'center', color: 'rgba(255,255,255,0.55)', fontSize: 24, letterSpacing: 12, fontWeight: 700 }}>
+        @ C A N A L . B R A
       </div>
 
-      {/* MEIO — faixa teal com título, placar e competição */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: W, height: 380, backgroundColor: TEAL, padding: '24px 40px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, color: '#fff', fontFamily: display, fontSize: 64, letterSpacing: 1 }}>
-          <span style={{ display: 'flex', color: 'rgba(255,255,255,0.6)' }}>›</span>
-          <span style={{ display: 'flex' }}>{headline}</span>
-          <span style={{ display: 'flex', color: 'rgba(255,255,255,0.6)' }}>‹</span>
-        </div>
+      {/* Título — GOL DE {jogador}, logo acima do placar */}
+      <div style={{ position: 'absolute', top: 506, left: 0, width: W, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
+        <Chevron dir="l" />
+        <span style={{ display: 'flex', color: '#fff', fontFamily: display, fontSize: 60, letterSpacing: 1 }}>{headline}</span>
+        <Chevron dir="r" />
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 28, marginTop: 26, backgroundColor: DARK, borderRadius: 18, padding: '14px 28px' }}>
-          <Flag url={homeFlag} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 18, color: '#fff', fontFamily: display, fontSize: 84 }}>
+      {/* Placar — centralizado SOBRE a linha divisória */}
+      <div style={{ position: 'absolute', top: 612, left: 0, width: W, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 26, backgroundImage: GRAD, border: '4px solid rgba(255,255,255,0.92)', borderRadius: 20, padding: '14px 30px' }}>
+          <PillFlag url={homeFlag} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: '#fff', fontFamily: display, fontSize: 76 }}>
             <span style={{ display: 'flex' }}>{String(b.homeScore ?? 0)}</span>
-            <span style={{ display: 'flex', color: TEAL, fontSize: 56 }}>×</span>
+            <span style={{ display: 'flex', fontSize: 50 }}>×</span>
             <span style={{ display: 'flex' }}>{String(b.awayScore ?? 0)}</span>
           </div>
-          <Flag url={awayFlag} />
-        </div>
-
-        <div style={{ display: 'flex', marginTop: 22, color: TEAL_DARK, fontSize: 30, fontWeight: 700, letterSpacing: 1 }}>
-          {competition}
+          <PillFlag url={awayFlag} />
         </div>
       </div>
 
-      {/* BAIXO — foto do jogador comemorando */}
-      <div style={{ position: 'relative', display: 'flex', width: W, height: 320 }}>
-        <PhotoBand url={b.bottomImageUrl} height={320} gradient="linear-gradient(135deg, #0e7490, #155e75)" hint="Foto comemoração" display={display} />
-      </div>
-
-      {/* RODAPÉ — frase em branco sobre fundo escuro */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, width: W, height: 130, backgroundColor: DARK }}>
-        <span style={{ display: 'flex', color: TEAL }}>›</span>
-        <span style={{ display: 'flex', color: '#fff', fontFamily: display, fontSize: 44, letterSpacing: 1 }}>{footer}</span>
-        <span style={{ display: 'flex', color: TEAL }}>‹</span>
+      {/* Rodapé — minuto no padrão brasileiro */}
+      <div style={{ position: 'absolute', bottom: 54, left: 0, width: W, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+        <Chevron dir="l" />
+        <span style={{ display: 'flex', color: '#fff', fontFamily: display, fontSize: 48, letterSpacing: 1 }}>{footer}</span>
+        <Chevron dir="r" />
       </div>
     </div>
   )
