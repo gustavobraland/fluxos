@@ -21,6 +21,7 @@
 import { NextResponse } from 'next/server'
 import { ALL_TEAMS, TEAM_CATEGORY } from '@/lib/teams30'
 import type { Fixture, MatchCategory } from '@/types/fixtures'
+import { wc2026Fallback } from '@/lib/wc2026-fallback'
 
 const BASE = 'https://v3.football.api-sports.io'
 
@@ -109,7 +110,7 @@ function matchPriority(homeId: number, awayId: number, category: MatchCategory):
 export async function GET(): Promise<NextResponse> {
   const apiKey = process.env.FOOTBALL_API_KEY
   if (!apiKey) {
-    return NextResponse.json({ fixtures: [], connected: false, error: 'NO_API_KEY', requestsUsed: 0 })
+    return NextResponse.json({ fixtures: wc2026Fallback(Date.now()), connected: true, error: null, requestsUsed: 0, source: 'fallback' })
   }
 
   const seen = new Set<number>()
@@ -123,7 +124,7 @@ export async function GET(): Promise<NextResponse> {
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'FETCH_ERROR'
         if (msg.includes('token') || msg.includes('Missing') || msg.includes('requests')) {
-          return NextResponse.json({ fixtures: [], connected: false, error: msg, requestsUsed: 0 })
+          return NextResponse.json({ fixtures: wc2026Fallback(Date.now()), connected: true, error: null, requestsUsed: 0, source: 'fallback' })
         }
         continue
       }
@@ -161,12 +162,24 @@ export async function GET(): Promise<NextResponse> {
     })
 
     const requestsUsed = await fetchQuotaUsed(apiKey)
-    return NextResponse.json({ fixtures, connected: true, error: null, requestsUsed })
+    // API indisponível (conta suspensa / sem plano / sem jogos no período) →
+    // fallback com a Copa do Mundo 2026 para a Timeline continuar útil.
+    if (fixtures.length === 0) {
+      return NextResponse.json({
+        fixtures: wc2026Fallback(Date.now()), connected: true, error: null,
+        requestsUsed, source: 'fallback',
+      })
+    }
+    return NextResponse.json({ fixtures, connected: true, error: null, requestsUsed, source: 'live' })
   } catch {
     const requestsUsed = await fetchQuotaUsed(apiKey)
+    const fixtures = collected.length > 0
+      ? collected.sort((a, b) => a.fixture.timestamp - b.fixture.timestamp)
+      : wc2026Fallback(Date.now())
     return NextResponse.json({
-      fixtures: collected.sort((a, b) => a.fixture.timestamp - b.fixture.timestamp),
-      connected: true, error: 'PARTIAL_FETCH', requestsUsed,
+      fixtures, connected: true,
+      error: collected.length > 0 ? 'PARTIAL_FETCH' : null,
+      requestsUsed, source: collected.length > 0 ? 'live' : 'fallback',
     })
   }
 }

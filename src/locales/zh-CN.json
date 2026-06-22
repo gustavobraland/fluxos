@@ -501,6 +501,7 @@
     "openWarRoomForMatch": "为此比赛打开战时指挥室",
     "deselect": "取消选择",
     "category": {
+      "CUP": "世界杯",
       "BR": "巴西",
       "EU": "欧洲",
       "NT": "国家队"

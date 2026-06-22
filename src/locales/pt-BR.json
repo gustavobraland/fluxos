@@ -502,6 +502,7 @@
     "openWarRoomForMatch": "Abrir War Room para este jogo",
     "deselect": "Desmarcar",
     "category": {
+      "CUP": "COPA",
       "BR": "BRASIL",
       "EU": "EUROPA",
       "NT": "SELEÇÃO"
