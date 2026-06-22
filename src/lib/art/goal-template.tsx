@@ -91,7 +91,7 @@ function PhotoHalf({ url, gradient, hint, overlay, display }: {
   return (
     <div style={{ position: 'relative', display: 'flex', width: W, height: HALF, backgroundImage: gradient, alignItems: 'center', justifyContent: 'center' }}>
       {url
-        ? <img src={url} width={W} height={HALF} style={{ width: W, height: HALF, objectFit: 'cover' }} />
+        ? <img src={url} width={W} height={HALF} style={{ width: W, height: HALF, objectFit: 'cover', objectPosition: 'center 22%' }} />
         : <div style={{ display: 'flex', fontFamily: display, fontSize: 30, letterSpacing: 4, color: 'rgba(255,255,255,0.30)', textTransform: 'uppercase' }}>{hint}</div>}
       <div style={{ position: 'absolute', top: 0, left: 0, width: W, height: HALF, backgroundImage: overlay }} />
     </div>

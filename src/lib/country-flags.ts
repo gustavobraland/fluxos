@@ -88,22 +88,37 @@ export function ptName(teamName: string | null | undefined): string {
   return PT_NAMES[normalize(teamName)] ?? teamName
 }
 
-// Cor predominante do uniforme da seleção (para o prompt do DALL-E da comemoração).
+// Cor predominante do uniforme da seleção (para os prompts do DALL-E).
+// Cobertura ampla do field da Copa 2026 (48 seleções + reservas plausíveis).
 const JERSEY_COLOR: Record<string, string> = {
-  brazil: 'yellow and green', argentina: 'light blue and white', uruguay: 'sky blue',
+  // CONMEBOL
+  brazil: 'yellow and green', argentina: 'light blue and white striped', uruguay: 'light blue',
   colombia: 'yellow', chile: 'red', peru: 'white with a red sash', ecuador: 'yellow',
-  paraguay: 'red and white stripes', portugal: 'dark red', france: 'blue',
-  germany: 'white', spain: 'red', england: 'white', netherlands: 'orange',
-  holland: 'orange', croatia: 'red and white checkered', belgium: 'red',
-  switzerland: 'red', italy: 'blue', serbia: 'red', poland: 'white and red',
-  denmark: 'red', sweden: 'yellow and blue', norway: 'red', morocco: 'red',
-  senegal: 'white and green', 'congo dr': 'blue', 'dr congo': 'blue', ghana: 'white',
-  nigeria: 'green and white', cameroon: 'green', 'ivory coast': 'orange',
-  algeria: 'green and white', tunisia: 'red and white', egypt: 'red',
-  'south africa': 'gold and green', japan: 'blue', 'south korea': 'red',
-  'korea republic': 'red', iran: 'white', 'saudi arabia': 'white and green',
-  australia: 'gold and green', qatar: 'maroon', 'united states': 'white and navy blue',
-  usa: 'white and navy blue', mexico: 'green', canada: 'red',
+  paraguay: 'red and white striped', venezuela: 'wine red', bolivia: 'green',
+  // UEFA
+  portugal: 'dark red and green', france: 'blue', germany: 'white', spain: 'red',
+  england: 'white', scotland: 'dark blue', wales: 'red', netherlands: 'orange', holland: 'orange',
+  italy: 'blue', croatia: 'red and white checkered', belgium: 'red', switzerland: 'red',
+  serbia: 'red', poland: 'white and red', denmark: 'red', sweden: 'yellow and blue',
+  norway: 'red', austria: 'red and white', ukraine: 'yellow and blue',
+  'czech republic': 'red', czechia: 'red', turkey: 'red', 'türkiye': 'red', turkiye: 'red',
+  hungary: 'red', greece: 'blue and white', romania: 'yellow', slovenia: 'white', slovakia: 'blue',
+  // CAF
+  morocco: 'red', senegal: 'white', 'congo dr': 'blue', 'dr congo': 'blue', ghana: 'white',
+  nigeria: 'green and white', cameroon: 'green', 'ivory coast': 'orange', "cote d'ivoire": 'orange',
+  algeria: 'white and green', tunisia: 'red and white', egypt: 'red',
+  'south africa': 'gold and green', mali: 'green', 'cape verde': 'blue',
+  // AFC
+  japan: 'blue', 'south korea': 'red', 'korea republic': 'red', iran: 'white',
+  'saudi arabia': 'white and green', australia: 'gold and green', qatar: 'maroon',
+  iraq: 'green', uzbekistan: 'white and blue', jordan: 'red',
+  'united arab emirates': 'white', uae: 'white',
+  // CONCACAF
+  'united states': 'white and blue', usa: 'white and blue', mexico: 'green', canada: 'red',
+  'costa rica': 'red', panama: 'red', honduras: 'white and blue', jamaica: 'yellow and green',
+  'el salvador': 'blue', curacao: 'blue', curaçao: 'blue', haiti: 'blue and red',
+  // OFC
+  'new zealand': 'white',
 }
 
 /** Cor do uniforme da seleção (texto p/ prompt do DALL-E), ou genérico se desconhecido. */
