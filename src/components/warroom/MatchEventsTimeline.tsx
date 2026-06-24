@@ -66,9 +66,13 @@ export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSS
           awayFlag: fx.teams.away.logo,
         }),
       })
-      const data = (await res.json()) as { artUrl?: string | null }
+      const data = (await res.json()) as {
+        artUrl?: string | null
+        photos?: { action: boolean; player: boolean }
+        error?: string
+      }
       if (!data.artUrl) {
-        toast.error('Não foi possível gerar a arte')
+        toast.error(`Não foi possível gerar a arte${data.error ? ` (${data.error})` : ''}`)
         return
       }
       // Cai na fila com preview para aprovação humana (painel de postagem manual)
@@ -88,7 +92,15 @@ export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSS
         artUrl: data.artUrl,
       })
       store.markEventDeployed(ev.id)
-      toast.success('Arte pronta! Veja na fila para aprovar ↓')
+      // Diz claramente se as fotos IA vieram ou não (e o motivo)
+      const withPhotos = data.photos?.action && data.photos?.player
+      if (withPhotos) {
+        toast.success('Arte pronta com fotos IA! Veja na fila ↓')
+      } else {
+        toast.message('Arte gerada SEM fotos IA — veja na fila ↓', {
+          description: `Fotos: gol ${data.photos?.action ? 'OK' : 'falhou'} · comemoração ${data.photos?.player ? 'OK' : 'falhou'}${data.error ? ` · motivo: ${data.error}` : ''}`,
+        })
+      }
     } catch {
       toast.error('Erro ao gerar a arte')
     } finally {

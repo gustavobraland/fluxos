@@ -32,31 +32,34 @@ function norm(s: string): string {
 }
 
 // FOTO 1 — topo: cena do gol (comemoração com adversário batido ao fundo).
+// Sem marcas registradas (FIFA/Getty) p/ não disparar recusa de content-policy.
 function actionPrompt(scorerTeam: string, scorerColor: string, opponentTeam: string, opponentColor: string): string {
-  return `Photorealistic sports photography, FIFA World Cup 2026. ` +
+  return `Photorealistic sports photography, international football World Cup 2026. ` +
     `A ${scorerTeam} football player in ${scorerColor} jersey just scored a goal, ` +
     `celebrating with arms wide open, euphoric expression, mouth open screaming. ` +
-    `Behind him, ${opponentTeam} goalkeeper in ${opponentColor} jersey on the ground defeated, ` +
+    `Behind him, the ${opponentTeam} goalkeeper in ${opponentColor} jersey on the ground defeated, ` +
     `and ${opponentTeam} defenders in ${opponentColor} jerseys looking frustrated. ` +
     `Packed stadium crowd in background, dramatic stadium lights, broadcast camera angle. ` +
-    `Cinematic, high contrast, Getty Images wire photo style. ` +
-    `NO text, NO logos, NO numbers on jerseys, NO recognizable real faces.`
+    `Cinematic, high contrast, professional sports wire photo style. ` +
+    `No text, no logos, no numbers on jerseys, no recognizable real faces.`
 }
 
-// FOTO 2 — baixo: retrato de estúdio do jogador que marcou.
+// FOTO 2 — baixo: jogador do time que marcou comemorando (close, fundo desfocado).
 function playerPrompt(scorerTeam: string, scorerColor: string): string {
-  return `Professional studio sports portrait photography. ` +
-    `A ${scorerTeam} national football player in ${scorerColor} official jersey, ` +
-    `confident pose looking at camera, slight smile, professional studio lighting, ` +
-    `clean teal/dark gradient background, shoulders up frame. ` +
-    `High-end editorial sports magazine style, sharp focus, professional athlete portrait. ` +
-    `NO text, NO logos, NO recognizable real faces, NO numbers.`
+  return `Photorealistic sports photography. ` +
+    `A ${scorerTeam} football player in ${scorerColor} jersey celebrating a goal, ` +
+    `joyful emotional close-up, fist clenched or pointing to the sky, ` +
+    `blurred packed stadium with floodlights behind him, dramatic lighting, ` +
+    `professional sports wire photo style, sharp focus on the player. ` +
+    `No text, no logos, no numbers on jerseys, no recognizable real faces.`
 }
 
-/** Uma geração DALL-E 3 → data URI (base64) ou null. Nunca lança. */
-async function dalleDataUri(prompt: string, size: DalleSize, apiKey: string, label: string): Promise<string | null> {
+interface DalleResult { url: string | null; err: string | null }
+
+/** Uma geração DALL-E 3 → data URI (base64). Captura o motivo do erro. Nunca lança. */
+async function dalleDataUri(prompt: string, size: DalleSize, apiKey: string, label: string): Promise<DalleResult> {
   const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), 50_000)
+  const timer = setTimeout(() => ctrl.abort(), 55_000)
   try {
     const res = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
@@ -65,18 +68,23 @@ async function dalleDataUri(prompt: string, size: DalleSize, apiKey: string, lab
       signal: ctrl.signal,
     })
     if (!res.ok) {
-      const err = await res.text().catch(() => '')
-      console.error(`[art-goal] DALL-E ${label} HTTP ${res.status}:`, err.slice(0, 240))
-      return null
+      let detail = `http_${res.status}`
+      try {
+        const j = await res.json() as { error?: { code?: string; type?: string; message?: string } }
+        detail = `${res.status}:${j?.error?.code || j?.error?.type || ''}:${(j?.error?.message || '').slice(0, 120)}`
+      } catch { /* corpo não-JSON */ }
+      console.error(`[art-goal] DALL-E ${label} erro ${detail}`)
+      return { url: null, err: detail }
     }
     const data = (await res.json()) as { data?: { b64_json?: string }[] }
     const b64 = data?.data?.[0]?.b64_json
-    if (!b64) { console.error(`[art-goal] DALL-E ${label} sem b64_json`); return null }
+    if (!b64) { console.error(`[art-goal] DALL-E ${label} sem b64_json`); return { url: null, err: 'no_b64' } }
     console.log(`[art-goal] DALL-E ${label} OK (${Math.round(b64.length / 1024)}KB)`)
-    return `data:image/png;base64,${b64}`
+    return { url: `data:image/png;base64,${b64}`, err: null }
   } catch (e) {
-    console.error(`[art-goal] DALL-E ${label} exceção:`, e)
-    return null
+    const msg = (e as Error)?.name === 'AbortError' ? 'timeout' : String(e).slice(0, 120)
+    console.error(`[art-goal] DALL-E ${label} exceção: ${msg}`)
+    return { url: null, err: msg }
   } finally {
     clearTimeout(timer)
   }
@@ -105,11 +113,14 @@ export async function POST(req: Request): Promise<Response> {
   let playerImg: string | null = null
   let dalleError: string | undefined
   if (apiKey) {
-    ;[actionImg, playerImg] = await Promise.all([
+    const [a, p] = await Promise.all([
       dalleDataUri(actionPrompt(scorerTeam, scorerColor, opponentTeam, opponentColor), '1024x1792', apiKey, 'gol'),
-      dalleDataUri(playerPrompt(scorerTeam, scorerColor), '1024x1792', apiKey, 'retrato'),
+      dalleDataUri(playerPrompt(scorerTeam, scorerColor), '1024x1792', apiKey, 'comemoração'),
     ])
-    if (!actionImg && !playerImg) dalleError = 'dalle_failed'
+    actionImg = a.url
+    playerImg = p.url
+    // Propaga o motivo real (key inválida, billing, content-policy, timeout…) se faltou alguma foto
+    if (!actionImg || !playerImg) dalleError = a.err || p.err || 'dalle_failed'
   } else {
     dalleError = 'no_openai_key'
     console.log('[art-goal] OPENAI_API_KEY ausente — gerando com placeholders')
