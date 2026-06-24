@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays,
   Send, FolderOpen, CheckSquare, BarChart3, Plug, ChevronRight,
-  Settings, HelpCircle, ClipboardList, Sparkles, Scissors, LogOut,
+  Settings, HelpCircle, ClipboardList, Sparkles, Scissors, LogOut, MessageSquare,
 } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import { useUserStore } from '@/store/useUserStore'
@@ -16,7 +16,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 
 const ICON_MAP: Record<string, React.ElementType> = {
   LayoutDashboard, Activity, Zap, KanbanSquare, CalendarDays,
-  Send, FolderOpen, CheckSquare, BarChart3, Plug, ClipboardList, Scissors, Sparkles,
+  Send, FolderOpen, CheckSquare, BarChart3, Plug, ClipboardList, Scissors, Sparkles, MessageSquare,
 }
 
 export function Sidebar() {

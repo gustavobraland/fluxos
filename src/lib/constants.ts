@@ -20,6 +20,7 @@ export const NAV_ITEMS: NavSection[] = [
     { id: 'integrations', label: 'Integrações', icon: 'Plug',            permission: 'integrations.manage' },
   ]},
   { section: 'Operações', items: [
+    { id: 'chat',         label: 'Chat',          icon: 'MessageSquare', permission: null },
     { id: 'reports',      label: 'Daily Reports', icon: 'ClipboardList', permission: 'content.submit_approval' },
   ]},
 ]

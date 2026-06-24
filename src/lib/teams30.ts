@@ -24,18 +24,23 @@ const BR_TEAMS: PriorityTeam[] = [
   { id: 1062, name: 'Atlético-MG',   category: 'BR' },
 ]
 
-// 🌍 European clubs (10) — verified
+// 🌍 European clubs (15)
 const EU_TEAMS: PriorityTeam[] = [
-  { id: 529, name: 'Barcelona',        category: 'EU' },
-  { id: 541, name: 'Real Madrid',      category: 'EU' },
-  { id: 50,  name: 'Manchester City',  category: 'EU' },
-  { id: 40,  name: 'Liverpool',        category: 'EU' },
-  { id: 85,  name: 'PSG',              category: 'EU' },
-  { id: 157, name: 'Bayern Munich',    category: 'EU' },
-  { id: 505, name: 'Inter Milan',      category: 'EU' },
-  { id: 496, name: 'Juventus',         category: 'EU' },
-  { id: 42,  name: 'Arsenal',          category: 'EU' },
-  { id: 33,  name: 'Manchester Utd',   category: 'EU' },
+  { id: 529, name: 'Barcelona',         category: 'EU' },
+  { id: 541, name: 'Real Madrid',       category: 'EU' },
+  { id: 50,  name: 'Manchester City',   category: 'EU' },
+  { id: 40,  name: 'Liverpool',         category: 'EU' },
+  { id: 85,  name: 'PSG',               category: 'EU' },
+  { id: 157, name: 'Bayern Munich',     category: 'EU' },
+  { id: 505, name: 'Inter Milan',       category: 'EU' },
+  { id: 496, name: 'Juventus',          category: 'EU' },
+  { id: 42,  name: 'Arsenal',           category: 'EU' },
+  { id: 33,  name: 'Manchester Utd',    category: 'EU' },
+  { id: 49,  name: 'Chelsea',           category: 'EU' },
+  { id: 47,  name: 'Tottenham',         category: 'EU' },
+  { id: 530, name: 'Atlético Madrid',   category: 'EU' },
+  { id: 165, name: 'Borussia Dortmund', category: 'EU' },
+  { id: 489, name: 'AC Milan',          category: 'EU' },
 ]
 
 // 🏳 National teams (10) — verified

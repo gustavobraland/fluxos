@@ -8,7 +8,6 @@ import { StatusBar } from './StatusBar'
 import { BottomNav } from './BottomNav'
 import { CommandPalette } from '@/components/overlays/CommandPalette'
 import { AIBar } from '@/components/overlays/AIBar'
-import { QuickDock } from '@/components/overlays/QuickDock'
 import { NotifPanel } from '@/components/overlays/NotifPanel'
 import { useAppStore } from '@/store/useAppStore'
 import type { ViewId } from '@/types'
@@ -134,7 +133,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <CommandPalette />
       <AIBar />
-      <QuickDock />
       <NotifPanel />
 
       <Toaster

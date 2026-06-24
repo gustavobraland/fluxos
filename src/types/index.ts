@@ -3,7 +3,7 @@ export type Theme = 'dark' | 'light'
 export type ViewId =
   | 'dashboard' | 'timeline' | 'warroom' | 'pipeline'
   | 'calendar'  | 'multipost'| 'assets'  | 'approvals'
-  | 'analytics' | 'integrations' | 'reports' | 'prompts' | 'clipador'
+  | 'analytics' | 'integrations' | 'reports' | 'prompts' | 'clipador' | 'chat'
 
 export type PlatformId =
   | 'instagram' | 'twitter' | 'tiktok' | 'linkedin'

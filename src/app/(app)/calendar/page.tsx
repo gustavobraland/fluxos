@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Plus, Trophy, FileText, Clock, TrendingUp, CalendarDays, RefreshCw, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
 import { useIntegrationsStore } from '@/store/useIntegrationsStore'
 import { useCalendarStore } from '@/store/useCalendarStore'
@@ -14,6 +15,10 @@ import { TeamLogo } from '@/components/timeline/TeamLogo'
 import { useTranslation } from '@/hooks/useTranslation'
 
 const TZ = 'America/Sao_Paulo'
+
+// Cache de módulo dos jogos dos clubes (10 BR + 15 EU). Buscados 1x por sessão e
+// reaproveitados entre remounts — o servidor ainda cacheia 6h por time.
+let clubCache: Fixture[] | null = null
 
 // Converte um Fixture da API num evento de exibição do calendário.
 function fixtureToDisplay(fx: Fixture): DisplayEvent {
@@ -89,10 +94,34 @@ function getFirstDayOfMonth(year: number, month: number) {
 export default function CalendarPage() {
   const { t } = useTranslation()
   const router = useRouter()
-  const { integrations, connectInt, connecting } = useIntegrationsStore()
+  const { integrations } = useIntegrationsStore()
   const gcal = integrations.find(i => i.id === 'gcal')
-  const gcalConnected = gcal?.connected ?? false
-  const isConnecting = connecting === 'gcal'
+
+  // Conexão real com o Google Calendar (OAuth popup → /api/auth/gcal).
+  const [gcalConnected, setGcalConnected] = useState(gcal?.connected ?? false)
+  const [isConnecting, setIsConnecting] = useState(false)
+  const connectGoogleCalendar = () => {
+    setIsConnecting(true)
+    const popup = window.open('/api/auth/gcal', 'gcal_oauth', 'width=520,height=680')
+    const onMsg = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return
+      const d = e.data as { type?: string; status?: string; detail?: string }
+      if (d?.type !== 'flux:social') return
+      window.removeEventListener('message', onMsg)
+      setIsConnecting(false)
+      if (d.status === 'connected') {
+        setGcalConnected(true)
+        toast.success('Google Calendar conectado! Seus eventos vão sincronizar.')
+      } else {
+        toast.error(`Falha ao conectar (${d.status}${d.detail ? ': ' + d.detail : ''})`)
+      }
+    }
+    window.addEventListener('message', onMsg)
+    // Se o usuário fechar o popup sem concluir, libera o botão.
+    const iv = setInterval(() => {
+      if (popup?.closed) { clearInterval(iv); window.removeEventListener('message', onMsg); setIsConnecting(false) }
+    }, 800)
+  }
 
   // Data real de hoje (BRT) — o calendário abre no mês corrente.
   const now = new Date()
@@ -112,11 +141,23 @@ export default function CalendarPage() {
   // cache do Timeline (TTL 10 min) para NÃO gastar créditos extras da API.
   const copaFixtures = useFixturesStore(useShallow(s => s.fixtures))
   const fetchFixtures = useFixturesStore(s => s.fetchAll)
+
+  // Jogos completos dos clubes (10 BR + 15 EU) — todos os próximos, não só 7 dias.
+  const [clubFixtures, setClubFixtures] = useState<Fixture[]>(() => clubCache ?? [])
   useEffect(() => {
     // Garante que tarefas com prazo (Pipeline) também apareçam no calendário.
     usePipelineStore.getState().loadTasks()
-    // Carrega os jogos (pula se o cache do Timeline ainda estiver fresco).
+    // Carrega os jogos da Copa/seleções (janela de dias, cache do Timeline).
     void fetchFixtures()
+    // Carrega o calendário completo dos clubes (cacheado 6h no servidor).
+    if (clubCache) { setClubFixtures(clubCache); return }
+    fetch('/api/fixtures/teams', { cache: 'no-store' })
+      .then(r => r.json())
+      .then((d: { fixtures?: Fixture[] }) => {
+        clubCache = Array.isArray(d.fixtures) ? d.fixtures : []
+        setClubFixtures(clubCache)
+      })
+      .catch(() => { /* mantém o que houver */ })
   }, [fetchFixtures])
 
   // Live events from the War Room / Multipost / Pipeline (deadlines) sync
@@ -140,10 +181,17 @@ export default function CalendarPage() {
   // Merge: jogos da Copa + eventos do store (War Room / posts / prazos).
   // Eventos do store têm prioridade (ex.: resultado preenchido) sobre o fixture cru.
   const allDisplay = useMemo<DisplayEvent[]>(() => {
-    const storeIds = new Set(storeDisplay.map(e => e.id))
-    const copa = copaFixtures.map(fixtureToDisplay).filter(e => !storeIds.has(e.id))
-    return [...copa, ...storeDisplay]
-  }, [copaFixtures, storeDisplay])
+    const taken = new Set(storeDisplay.map(e => e.id))
+    const out = [...storeDisplay]
+    // Copa/seleções (janela de dias) + jogos completos dos clubes; dedupe por id.
+    for (const fx of [...copaFixtures, ...clubFixtures]) {
+      const ev = fixtureToDisplay(fx)
+      if (taken.has(ev.id)) continue
+      taken.add(ev.id)
+      out.push(ev)
+    }
+    return out
+  }, [copaFixtures, clubFixtures, storeDisplay])
 
   const daysInMonth = getDaysInMonth(currentYear, currentMonth)
   const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
@@ -189,7 +237,7 @@ export default function CalendarPage() {
             {t('calendar.bannerConnectDesc')}
           </span>
           <button
-            onClick={() => connectInt('gcal')}
+            onClick={connectGoogleCalendar}
             disabled={isConnecting}
             style={{
               height: 28,

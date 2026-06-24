@@ -277,3 +277,23 @@ alter table public.pipeline_tasks add column if not exists reference_url text;
 -- drop policy if exists "approvals workspace" on public.approvals;
 -- create policy "approvals workspace" on public.approvals
 --   for all to anon, authenticated using (true) with check (true);
+
+-- ─── Chat interno da equipe ───────────────────────────────────────────────────
+create table if not exists public.chat_messages (
+  id           uuid primary key default gen_random_uuid(),
+  workspace_id text not null default 'braland',
+  user_email   text,                 -- autor (email do Flux)
+  user_name    text,                 -- nome exibido
+  text         text not null,
+  created_at   timestamptz not null default now()
+);
+
+alter table public.chat_messages enable row level security;
+
+-- RLS: anon + authenticated (mesmo padrão de pipeline_tasks/flux_state).
+drop policy if exists "chat workspace" on public.chat_messages;
+create policy "chat workspace" on public.chat_messages
+  for all to anon, authenticated using (true) with check (true);
+
+-- índice p/ leitura cronológica
+create index if not exists idx_chat_created on public.chat_messages (workspace_id, created_at);
