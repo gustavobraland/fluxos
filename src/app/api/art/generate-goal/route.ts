@@ -24,9 +24,6 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 export const maxDuration = 60
 
-type DalleSize = '1024x1024' | '1792x1024' | '1024x1792'
-const QUALITY = (process.env.OPENAI_IMAGE_QUALITY as 'standard' | 'hd') || 'standard'
-
 function norm(s: string): string {
   return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
 }
@@ -56,21 +53,29 @@ function playerPrompt(scorerTeam: string, scorerColor: string): string {
 
 interface DalleResult { url: string | null; err: string | null }
 
+// Configs de geração tentadas em ordem (a conta pode servir gpt-image-1 OU
+// dall-e-3, com parâmetros/sizes diferentes). Cada uma já com size landscape
+// que encaixa nas faixas da arte. Para no 1º sucesso. Erros 400/403 NÃO cobram
+// crédito — só a geração bem-sucedida cobra.
+const IMAGE_CONFIGS: Record<string, unknown>[] = [
+  { model: 'gpt-image-1', size: '1536x1024', quality: 'high' },
+  { model: 'gpt-image-1', size: '1536x1024' },
+  { model: 'gpt-image-1', size: '1024x1024' },
+  { model: 'dall-e-3', size: '1792x1024', response_format: 'b64_json' },
+  { model: 'dall-e-3', size: '1792x1024' },
+]
+
 /**
- * Geração DALL-E 3 → data URI (base64). Auto-cura: se a API recusar um parâmetro
- * ("Unknown parameter: 'X'"), remove X e retenta. Aceita resposta em b64_json OU
- * url (baixa e converte). Captura o motivo do erro. Nunca lança.
+ * Geração de imagem → data URI (base64). Tenta IMAGE_CONFIGS até uma funcionar.
+ * Aceita resposta em b64_json OU url (baixa e converte). Nunca lança.
  */
-async function dalleDataUri(prompt: string, size: DalleSize, apiKey: string, label: string): Promise<DalleResult> {
+async function dalleDataUri(prompt: string, apiKey: string, label: string): Promise<DalleResult> {
   const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), 55_000)
-  // Parâmetros iniciais; os "extras" são removidos se a API recusar.
-  const body: Record<string, unknown> = {
-    model: 'dall-e-3', prompt, n: 1, size,
-    quality: QUALITY, response_format: 'b64_json', style: 'natural',
-  }
+  const timer = setTimeout(() => ctrl.abort(), 58_000)
+  let lastErr = 'no_attempt'
   try {
-    for (let attempt = 0; attempt < 5; attempt++) {
+    for (const cfg of IMAGE_CONFIGS) {
+      const body = { ...cfg, prompt, n: 1 }
       const res = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -82,35 +87,28 @@ async function dalleDataUri(prompt: string, size: DalleSize, apiKey: string, lab
         const data = (await res.json()) as { data?: { b64_json?: string; url?: string }[] }
         const item = data?.data?.[0]
         if (item?.b64_json) {
-          console.log(`[art-goal] DALL-E ${label} OK (${Math.round(item.b64_json.length / 1024)}KB)`)
+          console.log(`[art-goal] ${label} OK via ${cfg.model} (${Math.round(item.b64_json.length / 1024)}KB)`)
           return { url: `data:image/png;base64,${item.b64_json}`, err: null }
         }
         if (item?.url) {
           const buf = await fetch(item.url, { signal: ctrl.signal }).then(r => r.arrayBuffer())
-          console.log(`[art-goal] DALL-E ${label} OK via url (${Math.round(buf.byteLength / 1024)}KB)`)
+          console.log(`[art-goal] ${label} OK via ${cfg.model}/url (${Math.round(buf.byteLength / 1024)}KB)`)
           return { url: `data:image/png;base64,${Buffer.from(buf).toString('base64')}`, err: null }
         }
-        return { url: null, err: 'no_image' }
-      }
-
-      // Erro: se for parâmetro desconhecido, remove e retenta.
-      let j: { error?: { code?: string; type?: string; param?: string; message?: string } } = {}
-      try { j = await res.json() } catch { /* corpo não-JSON */ }
-      const msg = j?.error?.message || ''
-      const bad = msg.match(/Unknown parameter:\s*'?([\w.]+)'?/i)?.[1] || j?.error?.param || ''
-      if (bad && bad in body && attempt < 4) {
-        console.warn(`[art-goal] ${label}: API recusou '${bad}' — removendo e retentando`)
-        delete body[bad]
+        lastErr = `${cfg.model}:no_image`
         continue
       }
-      const detail = `${res.status}:${j?.error?.code || j?.error?.type || ''}:${msg.slice(0, 120)}`
-      console.error(`[art-goal] DALL-E ${label} erro ${detail}`)
-      return { url: null, err: detail }
+
+      let j: { error?: { code?: string; type?: string; message?: string } } = {}
+      try { j = await res.json() } catch { /* corpo não-JSON */ }
+      lastErr = `${cfg.model} ${res.status}:${j?.error?.code || j?.error?.type || ''}:${(j?.error?.message || '').slice(0, 90)}`
+      console.warn(`[art-goal] ${label} tentativa ${cfg.model} falhou → ${lastErr}`)
     }
-    return { url: null, err: 'param_retry_exhausted' }
+    console.error(`[art-goal] ${label} todas as configs falharam → ${lastErr}`)
+    return { url: null, err: lastErr }
   } catch (e) {
     const msg = (e as Error)?.name === 'AbortError' ? 'timeout' : String(e).slice(0, 120)
-    console.error(`[art-goal] DALL-E ${label} exceção: ${msg}`)
+    console.error(`[art-goal] ${label} exceção: ${msg}`)
     return { url: null, err: msg }
   } finally {
     clearTimeout(timer)
@@ -141,8 +139,8 @@ export async function POST(req: Request): Promise<Response> {
   let dalleError: string | undefined
   if (apiKey) {
     const [a, p] = await Promise.all([
-      dalleDataUri(actionPrompt(scorerTeam, scorerColor, opponentTeam, opponentColor), '1024x1792', apiKey, 'gol'),
-      dalleDataUri(playerPrompt(scorerTeam, scorerColor), '1024x1792', apiKey, 'comemoração'),
+      dalleDataUri(actionPrompt(scorerTeam, scorerColor, opponentTeam, opponentColor), apiKey, 'gol'),
+      dalleDataUri(playerPrompt(scorerTeam, scorerColor), apiKey, 'comemoração'),
     ])
     actionImg = a.url
     playerImg = p.url
