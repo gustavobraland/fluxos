@@ -56,31 +56,58 @@ function playerPrompt(scorerTeam: string, scorerColor: string): string {
 
 interface DalleResult { url: string | null; err: string | null }
 
-/** Uma geração DALL-E 3 → data URI (base64). Captura o motivo do erro. Nunca lança. */
+/**
+ * Geração DALL-E 3 → data URI (base64). Auto-cura: se a API recusar um parâmetro
+ * ("Unknown parameter: 'X'"), remove X e retenta. Aceita resposta em b64_json OU
+ * url (baixa e converte). Captura o motivo do erro. Nunca lança.
+ */
 async function dalleDataUri(prompt: string, size: DalleSize, apiKey: string, label: string): Promise<DalleResult> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), 55_000)
+  // Parâmetros iniciais; os "extras" são removidos se a API recusar.
+  const body: Record<string, unknown> = {
+    model: 'dall-e-3', prompt, n: 1, size,
+    quality: QUALITY, response_format: 'b64_json', style: 'natural',
+  }
   try {
-    const res = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'dall-e-3', prompt, n: 1, size, quality: QUALITY, style: 'natural', response_format: 'b64_json' }),
-      signal: ctrl.signal,
-    })
-    if (!res.ok) {
-      let detail = `http_${res.status}`
-      try {
-        const j = await res.json() as { error?: { code?: string; type?: string; message?: string } }
-        detail = `${res.status}:${j?.error?.code || j?.error?.type || ''}:${(j?.error?.message || '').slice(0, 120)}`
-      } catch { /* corpo não-JSON */ }
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const res = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify(body),
+        signal: ctrl.signal,
+      })
+
+      if (res.ok) {
+        const data = (await res.json()) as { data?: { b64_json?: string; url?: string }[] }
+        const item = data?.data?.[0]
+        if (item?.b64_json) {
+          console.log(`[art-goal] DALL-E ${label} OK (${Math.round(item.b64_json.length / 1024)}KB)`)
+          return { url: `data:image/png;base64,${item.b64_json}`, err: null }
+        }
+        if (item?.url) {
+          const buf = await fetch(item.url, { signal: ctrl.signal }).then(r => r.arrayBuffer())
+          console.log(`[art-goal] DALL-E ${label} OK via url (${Math.round(buf.byteLength / 1024)}KB)`)
+          return { url: `data:image/png;base64,${Buffer.from(buf).toString('base64')}`, err: null }
+        }
+        return { url: null, err: 'no_image' }
+      }
+
+      // Erro: se for parâmetro desconhecido, remove e retenta.
+      let j: { error?: { code?: string; type?: string; param?: string; message?: string } } = {}
+      try { j = await res.json() } catch { /* corpo não-JSON */ }
+      const msg = j?.error?.message || ''
+      const bad = msg.match(/Unknown parameter:\s*'?([\w.]+)'?/i)?.[1] || j?.error?.param || ''
+      if (bad && bad in body && attempt < 4) {
+        console.warn(`[art-goal] ${label}: API recusou '${bad}' — removendo e retentando`)
+        delete body[bad]
+        continue
+      }
+      const detail = `${res.status}:${j?.error?.code || j?.error?.type || ''}:${msg.slice(0, 120)}`
       console.error(`[art-goal] DALL-E ${label} erro ${detail}`)
       return { url: null, err: detail }
     }
-    const data = (await res.json()) as { data?: { b64_json?: string }[] }
-    const b64 = data?.data?.[0]?.b64_json
-    if (!b64) { console.error(`[art-goal] DALL-E ${label} sem b64_json`); return { url: null, err: 'no_b64' } }
-    console.log(`[art-goal] DALL-E ${label} OK (${Math.round(b64.length / 1024)}KB)`)
-    return { url: `data:image/png;base64,${b64}`, err: null }
+    return { url: null, err: 'param_retry_exhausted' }
   } catch (e) {
     const msg = (e as Error)?.name === 'AbortError' ? 'timeout' : String(e).slice(0, 120)
     console.error(`[art-goal] DALL-E ${label} exceção: ${msg}`)
