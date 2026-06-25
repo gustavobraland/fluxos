@@ -25,17 +25,21 @@ export default function ChatPage() {
   const messages = useChatStore(s => s.messages)
   const load = useChatStore(s => s.load)
   const send = useChatStore(s => s.send)
+  const subscribe = useChatStore(s => s.subscribe)
+  const unsubscribe = useChatStore(s => s.unsubscribe)
   const myEmail = useUserStore(s => s.email)
 
   const [text, setText] = useState('')
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
-  // Carrega no mount + polling a cada 4s (sem realtime configurado)
+  // Carrega o histórico + Realtime (instantâneo) + polling lento de segurança (12s)
+  // caso a publication de realtime não esteja habilitada.
   useEffect(() => {
     void load()
-    const iv = setInterval(() => { void load() }, 4000)
-    return () => clearInterval(iv)
-  }, [load])
+    subscribe()
+    const iv = setInterval(() => { void load() }, 12000)
+    return () => { clearInterval(iv); unsubscribe() }
+  }, [load, subscribe, unsubscribe])
 
   // Auto-scroll pro fim quando chega mensagem
   useEffect(() => {

@@ -297,3 +297,9 @@ create policy "chat workspace" on public.chat_messages
 
 -- índice p/ leitura cronológica
 create index if not exists idx_chat_created on public.chat_messages (workspace_id, created_at);
+
+-- Realtime: habilita broadcast de INSERT na tabela (chat instantâneo).
+-- Idempotente: ignora se já estiver na publication.
+do $$ begin
+  alter publication supabase_realtime add table public.chat_messages;
+exception when duplicate_object then null; end $$;
