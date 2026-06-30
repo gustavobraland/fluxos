@@ -19,6 +19,7 @@
 
 import { renderGoalArtPng, uploadArtPng, type GoalTemplateBody } from '@/lib/art/goal-template'
 import { jerseyColor } from '@/lib/country-flags'
+import { findPlayerPhotoDataUri } from '@/lib/art/acervo'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -132,23 +133,38 @@ export async function POST(req: Request): Promise<Response> {
   const scorerColor = jerseyColor(scorerTeam)
   const opponentColor = jerseyColor(opponentTeam)
 
-  // 1. Gera as 2 fotos em paralelo (data URI). Degrada p/ placeholders se faltar key/erro.
+  // 1a. Foto do jogador (baixo): primeiro tenta o ACERVO (casa pelo nome do
+  //     arquivo, normalizado sem acento). Se achar, usa a foto real e economiza
+  //     uma geração DALL-E.
+  const acervoPlayer = await findPlayerPhotoDataUri(b.scorerName)
+  let playerSource: 'acervo' | 'dalle' | 'none' = 'none'
+  if (acervoPlayer) {
+    playerSource = 'acervo'
+    console.log(`[art-goal] foto do jogador "${b.scorerName}" veio do acervo`)
+  }
+
+  // 1b. Foto de ação (topo) sempre via DALL-E; jogador via DALL-E só se faltou no acervo.
   const apiKey = process.env.OPENAI_API_KEY
   let actionImg: string | null = null
-  let playerImg: string | null = null
+  let playerImg: string | null = acervoPlayer
   let dalleError: string | undefined
   if (apiKey) {
-    const [a, p] = await Promise.all([
-      dalleDataUri(actionPrompt(scorerTeam, scorerColor, opponentTeam, opponentColor), apiKey, 'gol'),
-      dalleDataUri(playerPrompt(scorerTeam, scorerColor), apiKey, 'comemoração'),
-    ])
+    const tasks = [dalleDataUri(actionPrompt(scorerTeam, scorerColor, opponentTeam, opponentColor), apiKey, 'gol')]
+    if (!acervoPlayer) tasks.push(dalleDataUri(playerPrompt(scorerTeam, scorerColor), apiKey, 'comemoração'))
+    const [a, p] = await Promise.all(tasks)
     actionImg = a.url
-    playerImg = p.url
-    // Propaga o motivo real (key inválida, billing, content-policy, timeout…) se faltou alguma foto
-    if (!actionImg || !playerImg) dalleError = a.err || p.err || 'dalle_failed'
-  } else {
+    if (!acervoPlayer) {
+      playerImg = p?.url ?? null
+      if (playerImg) playerSource = 'dalle'
+    }
+    if (!actionImg || !playerImg) dalleError = a.err || p?.err || 'dalle_failed'
+  } else if (!acervoPlayer) {
+    // Sem OpenAI E sem acervo → placeholders nas duas.
     dalleError = 'no_openai_key'
     console.log('[art-goal] OPENAI_API_KEY ausente — gerando com placeholders')
+  } else {
+    // Tem acervo p/ o jogador, mas sem OpenAI p/ a foto de ação.
+    dalleError = 'no_openai_key'
   }
 
   // 2. Monta a arte final com as fotos (data URI) ou placeholders.
@@ -163,5 +179,10 @@ export async function POST(req: Request): Promise<Response> {
   // 3. Upload + URL pública.
   const safe = (s: string) => s.replace(/\s+/g, '')
   const { artUrl, source } = await uploadArtPng(png, `goal-${safe(b.homeTeam)}-${safe(b.awayTeam)}`)
-  return Response.json({ artUrl, source, photos: { action: !!actionImg, player: !!playerImg }, error: dalleError })
+  return Response.json({
+    artUrl,
+    source,
+    photos: { action: !!actionImg, player: !!playerImg, playerSource },
+    error: dalleError,
+  })
 }

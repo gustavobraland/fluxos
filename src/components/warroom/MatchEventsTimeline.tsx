@@ -68,7 +68,7 @@ export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSS
       })
       const data = (await res.json()) as {
         artUrl?: string | null
-        photos?: { action: boolean; player: boolean }
+        photos?: { action: boolean; player: boolean; playerSource?: 'acervo' | 'dalle' | 'none' }
         error?: string
       }
       if (!data.artUrl) {
@@ -94,11 +94,12 @@ export function MatchEventsTimeline({ desktopStyle }: { desktopStyle?: React.CSS
       store.markEventDeployed(ev.id)
       // Diz claramente se as fotos IA vieram ou não (e o motivo)
       const withPhotos = data.photos?.action && data.photos?.player
+      const fromAcervo = data.photos?.playerSource === 'acervo'
       if (withPhotos) {
-        toast.success('Arte pronta com fotos IA! Veja na fila ↓')
+        toast.success(fromAcervo ? 'Arte pronta! Foto do jogador veio do acervo ✓ ↓' : 'Arte pronta com fotos IA! Veja na fila ↓')
       } else {
-        toast.message('Arte gerada SEM fotos IA — veja na fila ↓', {
-          description: `Fotos: gol ${data.photos?.action ? 'OK' : 'falhou'} · comemoração ${data.photos?.player ? 'OK' : 'falhou'}${data.error ? ` · motivo: ${data.error}` : ''}`,
+        toast.message('Arte gerada — veja na fila ↓', {
+          description: `Foto gol: ${data.photos?.action ? 'OK' : 'falhou'} · jogador: ${data.photos?.player ? (fromAcervo ? 'acervo' : 'IA') : 'falhou'}${data.error ? ` · ${data.error}` : ''}`,
         })
       }
     } catch {

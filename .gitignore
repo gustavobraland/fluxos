@@ -43,3 +43,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Acervo local de imagens de referência (já está no Supabase Storage; não versionar)
+Imagens referencia Flux OS/
